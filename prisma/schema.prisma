@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["express_v1"]
+}
+
+enum Role {
+  ADMIN
+  SUB_ADMIN
+  FREELANCER
+  STUDENT
+  @@schema("express_v1")
+}
+
+enum ProjectStatus {
+  CREATED
+  ASSIGNED
+  IN_PROGRESS
+  REVIEW
+  REVISION
+  COMPLETED
+  @@schema("express_v1")
+}
+
+enum ChatType {
+  CLIENT_CHAT
+  INTERNAL_CHAT
+  ADMIN_CHAT
+  @@schema("express_v1")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  @@schema("express_v1")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(STUDENT)
+  permissions   String[]  @default([])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  projectsOwned    Project[] @relation("StudentProjects")
+  projectsAssigned Project[] @relation("FreelancerProjects")
+  projectsManaged  Project[] @relation("SubAdminProjects")
+  
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  
+  notifications    Notification[]
+  orders           Order[]
+  projectLogs      ProjectLog[]
+
+  @@schema("express_v1")
+}
+
+model Project {
+  id                String        @id @default(cuid())
+  title             String
+  description       String?
+  status            ProjectStatus @default(CREATED)
+  deadline          DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  studentId        String
+  student          User          @relation("StudentProjects", fields: [studentId], references: [id])
+  
+  freelancerId     String?
+  freelancer       User?         @relation("FreelancerProjects", fields: [freelancerId], references: [id])
+  
+  subAdminId       String?
+  subAdmin         User?         @relation("SubAdminProjects", fields: [subAdminId], references: [id])
+
+  messages         Message[]
+  orders           Order[]
+  logs             ProjectLog[]
+
+  @@schema("express_v1")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String
+  chatType    ChatType
+  attachments Json[]   // Array of {url, name}
+  createdAt   DateTime @default(now())
+
+  // Relations
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  
+  receiverId  String?
+  receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+
+  @@schema("express_v1")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@schema("express_v1")
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  amount        Float
+  paymentStatus PaymentStatus @default(PENDING)
+  razorpayId    String?       @unique
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id])
+  
+  studentId     String
+  student       User          @relation(fields: [studentId], references: [id])
+
+  @@schema("express_v1")
+}
+
+model ProjectLog {
+  id        String   @id @default(cuid())
+  action    String
+  timestamp DateTime @default(now())
+
+  // Relations
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@schema("express_v1")
+}

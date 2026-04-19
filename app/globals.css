@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  
+  --color-primary: #0a192f; /* Deep Navy Blue-Black */
+  --color-secondary: #f0f4f8; /* Soft Azure Grey */
+  --color-accent: #0071e3; /* Professional Blue */
+  --color-border: #e2e8f0;
+  --color-background: #ffffff;
+  --color-foreground: #0a192f;
+
+  --radius-subtle: 8px;
+}
+
+@layer base {
+  body {
+    @apply bg-[#f8fafc] text-slate-900 antialiased font-sans;
+  }
+}
+
+@layer components {
+  /* Classy SaaS Buttons - More Fiverr/Upwork like */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 
+           bg-[#0a192f] text-white rounded-md font-semibold text-sm
+           hover:bg-[#112240] transition-all duration-200 active:scale-95 shadow-sm;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 
+           bg-white text-slate-700 border border-slate-200 rounded-md font-semibold text-sm
+           hover:bg-slate-50 transition-all duration-200 active:scale-95;
+  }
+
+  /* Refined Cards */
+  .card-subtle {
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm 
+           hover:shadow-md transition-all duration-300;
+  }
+
+  /* Professional Inputs */
+  .input-professional {
+    @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-md 
+           text-sm font-medium focus:ring-4 focus:ring-blue-500/5 
+           focus:border-blue-500 outline-none transition-all;
+  }
+
+  /* Navigation Item */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
+           text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all;
+  }
+
+  .nav-item-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold
+           text-blue-600 bg-blue-50 transition-all;
+  }
+
+  .sidebar-container {
+     @apply fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 p-6 flex flex-col;
+  }
+}
+
+/* Scrollbar Refinement */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300;
+}

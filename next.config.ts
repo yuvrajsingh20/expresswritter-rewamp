@@ -1,16 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* 
+    FIX: In Next.js 16, 'turbopack' MUST be at the top level, 
+    NOT inside 'experimental'. This resolves the "Unrecognized key" error.
+  */
+  turbopack: {}, 
+
   experimental: {
-    // Ensuring Turbopack ignores or correctly handles the generated Prisma Client
-    turbo: {
-      resolveAlias: {
-        "@prisma/client": "./node_modules/@prisma/client/index.js",
-      },
-    },
+    // Other experimental features can go here, but NOT turbopack
   },
-  // Fallback for webpack if Turbopack is disabled
+
+  // Fallback for webpack (used in 'next build' and if --webpack flag is used)
   webpack: (config) => {
     config.externals = [...(config.externals || []), "@prisma/client", ".prisma/client"];
     return config;

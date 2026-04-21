@@ -1,10 +1,26 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          role: profile.role ?? "STUDENT", // Default role for social logins
+        };
+      },
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -14,7 +30,6 @@ const handler = NextAuth({
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            console.error("Auth: Missing credentials");
             return null;
           }
 
@@ -22,9 +37,13 @@ const handler = NextAuth({
             where: { email: credentials.email }
           });
 
-          if (!user) {
-            console.error(`Auth: User not found - ${credentials.email}`);
+          if (!user || !user.password) {
             return null;
+          }
+
+          // Strict verification check for production-level security
+          if (!user.emailVerified) {
+            throw new Error("EMAIL_NOT_VERIFIED");
           }
 
           const isValid = await bcrypt.compare(
@@ -32,14 +51,10 @@ const handler = NextAuth({
             user.password
           );
 
-          console.log(`Auth: Password check for ${credentials.email} -> ${isValid}`);
-
           if (!isValid) {
-            console.error(`Auth: Invalid password for - ${credentials.email}`);
             return null;
           }
 
-          console.log(`Auth: Successful login - ${credentials.email} (${user.role})`);
           return {
             id: user.id,
             name: user.name,
@@ -55,11 +70,11 @@ const handler = NextAuth({
   ],
 
   session: {
-    strategy: "jwt"
+    strategy: "jwt" // We use JWT for production speed, even with Prisma Adapter
   },
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.role = user.role;
         token.id = user.id;
@@ -71,7 +86,6 @@ const handler = NextAuth({
       if (session?.user) {
         session.user.id = token.id;
         session.user.role = token.role;
-        console.log("Auth: Session created for", session.user.email);
       }
       return session;
     }
@@ -79,7 +93,7 @@ const handler = NextAuth({
 
   pages: {
     signIn: "/login",
-    error: "/login", // Redirect errors back to login with query param
+    error: "/login",
   },
   
   secret: process.env.NEXTAUTH_SECRET,

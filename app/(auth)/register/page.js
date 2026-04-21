@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const RegisterPage = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'STUDENT' });
+  const searchParams = useSearchParams();
+  const initialRole = searchParams.get('role')?.toUpperCase() || 'STUDENT';
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: initialRole });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,8 @@ const RegisterPage = () => {
       });
 
       if (res.ok) {
-        router.push("/login?registered=true");
+        const redirectPath = searchParams.get('redirect') || '/dashboard';
+        router.push(`/login?registered=true&callbackUrl=${encodeURIComponent(redirectPath)}`);
       } else {
         const data = await res.json();
         setError(data.message || "Something went wrong");

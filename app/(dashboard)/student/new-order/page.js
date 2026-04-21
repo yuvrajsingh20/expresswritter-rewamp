@@ -26,6 +26,21 @@ export default function NewOrderPage() {
     files: []
   });
 
+  useEffect(() => {
+    const pending = sessionStorage.getItem('pendingProject');
+    if (pending) {
+      const data = JSON.parse(pending);
+      setFormData(prev => ({
+        ...prev,
+        serviceId: data.serviceId,
+        deadline: data.deadline,
+        description: data.description
+      }));
+      // Optional: Clear it so it doesn't persist if they navigate away and come back
+      // sessionStorage.removeItem('pendingProject');
+    }
+  }, []);
+
   const selectedService = SERVICES.find(s => s.id === formData.serviceId);
 
   const handleCreateOrder = async (e) => {

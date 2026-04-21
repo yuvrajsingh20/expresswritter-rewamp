@@ -1,12 +1,11 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
-  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
-  provider = "postgresql"
-  schemas  = ["express_v1"]
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -14,7 +13,6 @@ enum Role {
   SUB_ADMIN
   FREELANCER
   STUDENT
-  @@schema("express_v1")
 }
 
 enum ProjectStatus {
@@ -24,34 +22,36 @@ enum ProjectStatus {
   REVIEW
   REVISION
   COMPLETED
-  @@schema("express_v1")
 }
 
 enum ChatType {
   CLIENT_CHAT
   INTERNAL_CHAT
   ADMIN_CHAT
-  @@schema("express_v1")
 }
 
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
-  @@schema("express_v1")
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  password      String
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
   role          Role      @default(STUDENT)
   permissions   String[]  @default([])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   // Relations
+  accounts      Account[]
+  sessions      Session[]
+  
   projectsOwned    Project[] @relation("StudentProjects")
   projectsAssigned Project[] @relation("FreelancerProjects")
   projectsManaged  Project[] @relation("SubAdminProjects")
@@ -62,12 +62,46 @@ model User {
   notifications    Notification[]
   orders           Order[]
   projectLogs      ProjectLog[]
+}
 
-  @@schema("express_v1")
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Project {
-  id                String        @id @default(cuid())
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
   title             String
   description       String?
   status            ProjectStatus @default(CREATED)
@@ -76,83 +110,73 @@ model Project {
   updatedAt         DateTime      @updatedAt
 
   // Relations
-  studentId        String
+  studentId        String        @db.ObjectId
   student          User          @relation("StudentProjects", fields: [studentId], references: [id])
   
-  freelancerId     String?
+  freelancerId     String?       @db.ObjectId
   freelancer       User?         @relation("FreelancerProjects", fields: [freelancerId], references: [id])
   
-  subAdminId       String?
+  subAdminId       String?       @db.ObjectId
   subAdmin         User?         @relation("SubAdminProjects", fields: [subAdminId], references: [id])
 
   messages         Message[]
   orders           Order[]
   logs             ProjectLog[]
-
-  @@schema("express_v1")
 }
 
 model Message {
-  id          String   @id @default(cuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   content     String
   chatType    ChatType
   attachments Json[]   // Array of {url, name}
   createdAt   DateTime @default(now())
 
   // Relations
-  senderId    String
+  senderId    String   @db.ObjectId
   sender      User     @relation("SentMessages", fields: [senderId], references: [id])
   
-  receiverId  String?
+  receiverId  String?  @db.ObjectId
   receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
   
-  projectId   String
+  projectId   String   @db.ObjectId
   project     Project  @relation(fields: [projectId], references: [id])
-
-  @@schema("express_v1")
 }
 
 model Notification {
-  id          String   @id @default(cuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   message     String
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   // Relations
-  userId      String
+  userId      String   @db.ObjectId
   user        User     @relation(fields: [userId], references: [id])
-
-  @@schema("express_v1")
 }
 
 model Order {
-  id            String        @id @default(cuid())
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
   amount        Float
   paymentStatus PaymentStatus @default(PENDING)
   razorpayId    String?       @unique
   createdAt     DateTime      @default(now())
 
   // Relations
-  projectId     String
+  projectId     String        @db.ObjectId
   project       Project       @relation(fields: [projectId], references: [id])
   
-  studentId     String
+  studentId     String        @db.ObjectId
   student       User          @relation(fields: [studentId], references: [id])
-
-  @@schema("express_v1")
 }
 
 model ProjectLog {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   action    String
   timestamp DateTime @default(now())
 
   // Relations
-  projectId String
+  projectId String   @db.ObjectId
   project   Project  @relation(fields: [projectId], references: [id])
   
-  userId    String
+  userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
-
-  @@schema("express_v1")
 }

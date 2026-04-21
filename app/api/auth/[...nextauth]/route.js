@@ -41,8 +41,8 @@ const handler = NextAuth({
             return null;
           }
 
-          // Strict verification check for production-level security
-          if (!user.emailVerified) {
+          // Skip verification check in development for smoother testing
+          if (!user.emailVerified && process.env.NODE_ENV === "production") {
             throw new Error("EMAIL_NOT_VERIFIED");
           }
 

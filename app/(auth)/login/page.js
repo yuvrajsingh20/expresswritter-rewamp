@@ -6,7 +6,7 @@ import Link from "next/link";
 import { 
   ChevronRight, ArrowLeft, Lock, 
   Mail, ShieldCheck, Zap, 
-  Loader2, ArrowRight
+  Loader2, ArrowRight, Eye, EyeOff
 } from "lucide-react";
 
 function LoginForm() {
@@ -17,6 +17,7 @@ function LoginForm() {
   const [socialLoading, setSocialLoading] = useState(null); // 'google' or null
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("verified")) {
@@ -153,11 +154,18 @@ function LoginForm() {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/field:text-blue-600 transition-colors" size={16} />
                   <input
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-sm font-medium focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-12 text-sm font-medium focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                </div>
             </div>
           </div>

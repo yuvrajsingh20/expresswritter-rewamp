@@ -31,8 +31,8 @@ const Sidebar = ({ role = 'ADMIN' }) => {
     ],
     FREELANCER: [
       { name: 'My Tasks', icon: Briefcase, path: '/freelancer' },
-      { name: 'Client Chat', icon: MessageSquare, path: '/freelancer' },
-      { name: 'Earnings', icon: TrendingUp, path: '/freelancer' },
+      { name: 'Client Chat', icon: MessageSquare, path: '/freelancer/chat' },
+      { name: 'Earnings', icon: TrendingUp, path: '/freelancer/earnings' },
     ],
     STUDENT: [
       { name: 'Dashboard', icon: Home, path: '/student' },
@@ -62,7 +62,9 @@ const Sidebar = ({ role = 'ADMIN' }) => {
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navigation</p>
         </div>
         {currentMenu.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive = item.path === '/' 
+            ? pathname === '/' 
+            : pathname === item.path || pathname.startsWith(item.path + '/');
           return (
             <Link 
               key={item.name} 

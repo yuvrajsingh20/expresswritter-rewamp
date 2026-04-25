@@ -70,6 +70,25 @@ export const updateProjectStatus = async (projectId, status, userId) => {
 };
 
 /**
+ * Generic update for project fields (attachments, description, etc)
+ */
+export const updateProject = async (projectId, data, userId) => {
+    return await prisma.$transaction([
+      prisma.project.update({
+        where: { id: projectId },
+        data: data,
+      }),
+      prisma.projectLog.create({
+        data: {
+          action: `Project fields updated: ${Object.keys(data).join(', ')}`,
+          projectId: projectId,
+          userId: userId,
+        },
+      }),
+    ]);
+};
+
+/**
  * Retrieve a single project by ID with relations
  */
 export const getProjectById = async (projectId) => {

@@ -6,13 +6,13 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { 
   Briefcase, Clock, FileText, Send, 
   ChevronLeft, MessageSquare, Info, 
-  Upload, CheckCircle2, AlertCircle, ExternalLink
+  Upload, CheckCircle, CheckCircle2, AlertCircle, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SpecialistConsole() {
   const params = useParams();
-  const id = React.use(params).id;
+  const id = params.id;
   const router = useRouter();
   const { data: session } = useSession();
   
@@ -22,6 +22,8 @@ export default function SpecialistConsole() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -94,6 +96,49 @@ export default function SpecialistConsole() {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const uploadData = await res.json();
+        
+        // Update project status to REVIEW
+        await fetch(`/api/projects/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'REVIEW',
+            attachments: [...(project.attachments || []), uploadData]
+          })
+        });
+
+        setProject(prev => ({
+          ...prev,
+          status: 'REVIEW',
+          attachments: [...(prev.attachments || []), uploadData]
+        }));
+        
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const updateStatus = async (newStatus) => {
     try {
       const res = await fetch(`/api/projects/${id}`, {
@@ -161,7 +206,8 @@ export default function SpecialistConsole() {
                 <div className={`px-3 py-1 rounded-sm text-[9px] font-bold uppercase tracking-wider ${
                     project.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                     project.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 
-                    'bg-amber-50 text-amber-600 border border-amber-100'
+                    project.status === 'REVIEW' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                    'bg-slate-50 text-slate-600 border border-slate-100'
                 }`}>
                     {project.status}
                 </div>
@@ -189,7 +235,7 @@ export default function SpecialistConsole() {
                                     {[
                                         { s: 'ASSIGNED', l: 'Initial Assignment' },
                                         { s: 'IN_PROGRESS', l: 'Work Started' },
-                                        { s: 'REVIEW', l: 'Submit for Review' },
+                                        { s: 'REVIEW', l: 'In Review' },
                                         { s: 'COMPLETED', l: 'Mark Final Delivery' }
                                     ].map((step, idx) => {
                                         const isDone = project.status === step.s || (idx < 2 && project.status === 'IN_PROGRESS') || (idx < 3 && project.status === 'REVIEW') || project.status === 'COMPLETED';
@@ -222,13 +268,13 @@ export default function SpecialistConsole() {
                                           Start Working Now
                                         </button>
                                     )}
-                                    {project.status === 'IN_PROGRESS' && (
-                                        <button 
-                                          onClick={() => updateStatus('REVIEW')}
-                                          className="w-full h-11 bg-amber-500 text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
-                                        >
-                                          Submit for Student Review
-                                        </button>
+                                    {project.status === 'REVIEW' && (
+                                         <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-sm">
+                                            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider flex items-center gap-2">
+                                                <CheckCircle2 size={12} /> Submitted for Review
+                                            </p>
+                                            <p className="text-[9px] text-emerald-600 mt-1">Waiting for student feedback or approval.</p>
+                                         </div>
                                     )}
                                     <button className="w-full h-11 bg-white text-slate-600 border border-slate-200 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
                                         Support Request
@@ -244,9 +290,9 @@ export default function SpecialistConsole() {
                     <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm h-full flex flex-col">
                         <div className="p-6 border-b border-[#E5E5E5] flex items-center gap-3">
                             <FileText size={16} className="text-[#0067B8]" />
-                            <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Source Requirement Docs</h4>
+                            <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Project Artifacts</h4>
                         </div>
-                        <div className="p-6 flex-1">
+                        <div className="p-6 flex-1 max-h-[300px] overflow-y-auto">
                             {project.attachments?.length > 0 ? (
                                 <div className="space-y-3">
                                     {project.attachments.map((file, idx) => (
@@ -257,13 +303,22 @@ export default function SpecialistConsole() {
                                                 </div>
                                                 <p className="text-[11px] font-medium text-slate-700 truncate max-w-[150px]">{file.name}</p>
                                             </div>
-                                            <a 
-                                              href={file.url} 
-                                              target="_blank" 
-                                              className="text-slate-400 hover:text-[#0067B8] transition-colors"
-                                            >
-                                                <ExternalLink size={14} />
-                                            </a>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                  onClick={() => setPreviewUrl(file.url)}
+                                                  className="p-1.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-sm transition-all"
+                                                  title="Preview PDF"
+                                                >
+                                                    <Info size={14} />
+                                                </button>
+                                                <a 
+                                                  href={file.url} 
+                                                  target="_blank" 
+                                                  className="p-1.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-sm transition-all"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </a>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -276,18 +331,26 @@ export default function SpecialistConsole() {
                         </div>
                     </div>
 
-                    <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm h-full flex flex-col">
+                    <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm h-full flex flex-col relative overflow-hidden">
                         <div className="p-6 border-b border-[#E5E5E5] flex items-center gap-3">
                             <Upload size={16} className="text-emerald-500" />
                             <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Submit Deliverable</h4>
                         </div>
-                        <div className="p-8 flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 m-6 rounded-sm bg-slate-50/50">
+                        
+                        <div className="p-8 flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 m-6 rounded-sm bg-slate-50/50 relative">
+                            {uploading && (
+                                <div className="absolute inset-0 bg-white/80 z-20 flex flex-col items-center justify-center">
+                                    <div className="w-8 h-8 border-2 border-slate-200 border-t-[#002D5B] rounded-full animate-spin"></div>
+                                    <p className="text-[9px] font-bold text-[#002D5B] uppercase tracking-widest mt-3">Uploading to Cloudinary...</p>
+                                </div>
+                            )}
                             <Upload size={32} className="text-slate-300 mb-4" />
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Drag & drop final draft</p>
                             <p className="text-[9px] text-slate-400 mt-1">PDF, DOCX up to 10MB</p>
-                            <button className="mt-6 px-6 py-2 bg-white border border-slate-200 rounded-sm text-[10px] font-bold text-[#002D5B] uppercase tracking-widest hover:bg-white/50 transition-all">
+                            <label className="mt-6 px-6 py-2 bg-white border border-slate-200 rounded-sm text-[10px] font-bold text-[#002D5B] uppercase tracking-widest hover:bg-white/50 transition-all cursor-pointer">
                                 Browse Files
-                            </button>
+                                <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx" />
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -368,6 +431,77 @@ export default function SpecialistConsole() {
              </aside>
           </div>
       </div>
+
+      {/* SUCCESS MODAL */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed bottom-12 right-12 z-[110]"
+          >
+            <div className="bg-[#002D5B] text-white p-6 shadow-2xl border-t-4 border-emerald-500 min-w-[320px] flex items-center gap-5">
+               <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={20} className="text-emerald-400" />
+               </div>
+               <div>
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-1">Stream Updated</h5>
+                  <p className="text-xs font-medium text-slate-200">Deliverable submitted & status synced.</p>
+               </div>
+               <button 
+                onClick={() => setShowSuccess(false)}
+                className="ml-auto text-slate-400 hover:text-white"
+               >
+                 <span className="text-xl">×</span>
+               </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PDF PREVIEW MODAL */}
+      <AnimatePresence>
+        {previewUrl && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-12 backdrop-blur-sm"
+            onClick={() => setPreviewUrl(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full h-full rounded-sm shadow-2xl flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="h-14 border-b border-slate-200 flex items-center justify-between px-8 bg-slate-50 shrink-0">
+                <div className="flex items-center gap-3">
+                   <div className="w-8 h-8 bg-red-50 text-red-500 rounded-sm flex items-center justify-center">
+                      <FileText size={16} />
+                   </div>
+                   <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Academic Document Preview</h3>
+                </div>
+                <button 
+                  onClick={() => setPreviewUrl(null)}
+                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-200 rounded-sm transition-all"
+                >
+                  <span className="text-xl font-light">×</span>
+                </button>
+              </div>
+              <div className="flex-1 bg-slate-100 p-4">
+                <iframe 
+                   src={previewUrl} 
+                   className="w-full h-full rounded-sm border-none shadow-lg"
+                   title="PDF Preview"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

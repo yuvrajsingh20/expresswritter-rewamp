@@ -7,7 +7,7 @@ export async function GET(req, { params }) {
     const authUser = await getAuthUser();
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    const { id } = params;
+    const { id } = await params;
     const project = await getProjectById(id);
 
     if (!project) {
@@ -15,7 +15,7 @@ export async function GET(req, { params }) {
     }
 
     // Role check: Only assigned student, assigned freelancer, or admin can view
-    if (authUser.role === 'STUDENT' && project.studentId !== authUser.id) {
+    if (authUser.role === 'STUDENT' && project.studentId.toString() !== authUser.id.toString()) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

@@ -11,6 +11,8 @@ export const createProject = async (data) => {
       description: data.description,
       deadline: data.deadline,
       studentId: data.studentId,
+      serviceType: data.serviceType,
+      attachments: data.attachments || [],
       status: data.status || 'CREATED',
     },
   });

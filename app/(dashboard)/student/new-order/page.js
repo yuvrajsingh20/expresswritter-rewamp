@@ -1,12 +1,12 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { 
   ChevronRight, ArrowLeft, Check, 
   Upload, Calendar, FileText, CreditCard,
-  ShieldCheck, Zap, Loader2, Minus, Plus
+  ShieldCheck, Zap, Loader2, Info, X
 } from 'lucide-react';
 
 const SERVICES = [
@@ -17,13 +17,15 @@ const SERVICES = [
 
 export default function NewOrderPage() {
   const router = useRouter();
+  const fileInputRef = useRef(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     serviceId: '',
     deadline: '',
     description: '',
-    files: []
+    attachments: [] // Stores {url, name}
   });
 
   useEffect(() => {
@@ -36,12 +38,50 @@ export default function NewOrderPage() {
         deadline: data.deadline,
         description: data.description
       }));
-      // Optional: Clear it so it doesn't persist if they navigate away and come back
-      // sessionStorage.removeItem('pendingProject');
     }
   }, []);
 
   const selectedService = SERVICES.find(s => s.id === formData.serviceId);
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body
+        });
+        
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, ...uploadedFiles]
+      }));
+    } catch (error) {
+      console.error('File upload failure:', error);
+      alert('Failed to upload one or more files.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const remoteAttachment = (url) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter(a => a.url !== url)
+    }));
+  };
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
@@ -54,10 +94,13 @@ export default function NewOrderPage() {
         body: JSON.stringify({
           title: `${selectedService.name} Order`,
           description: formData.description,
-          deadline: new Date(formData.deadline),
-          serviceType: selectedService.id
+          deadline: formData.deadline ? new Date(formData.deadline) : null,
+          serviceType: selectedService.id,
+          attachments: formData.attachments
         }),
       });
+      
+      if (!projectRes.ok) throw new Error('Failed to create project');
       const project = await projectRes.json();
 
       const paymentRes = await fetch('/api/payments/razorpay', {
@@ -68,6 +111,8 @@ export default function NewOrderPage() {
           projectId: project.id
         }),
       });
+      
+      if (!paymentRes.ok) throw new Error('Failed to initiate payment');
       const order = await paymentRes.json();
 
       const options = {
@@ -97,197 +142,232 @@ export default function NewOrderPage() {
           name: "Student Name",
           email: "student@example.com",
         },
-        theme: { color: "#000000" },
+        theme: { color: "#002D5B" },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      if (window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        alert("Payment gateway not loaded. Please refresh.");
+      }
     } catch (error) {
       console.error("Order creation failed:", error);
+      alert("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex bg-white min-h-screen text-black">
+    <div className="flex bg-[#FBFBFB] min-h-screen text-[#111111] font-sans">
       <Sidebar role="STUDENT" />
       <script src="https://checkout.razorpay.com/v1/checkout.js" async />
 
       <div className="flex-1 ml-64 flex flex-col">
-        <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10 transition-all">
-          <div className="flex items-center gap-6">
-             <button onClick={() => router.back()} className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] hover:text-black transition-colors">Abort Process</button>
-             <ChevronRight size={14} className="text-slate-100" />
-             <span className="text-[10px] font-black text-black uppercase tracking-[0.3em]">Step {step === 1 ? '01_Configuration' : '02_Authorization'}</span>
+        <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 sticky top-0 z-10 transition-all">
+          <div className="flex items-center gap-4">
+             <button onClick={() => router.back()} className="text-xs font-semibold text-slate-500 hover:text-[#0067B8] flex items-center gap-1 transition-colors">
+               <ArrowLeft size={14} /> Back
+             </button>
+             <div className="h-4 w-px bg-slate-200" />
+             <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${step === 1 ? 'text-[#0067B8]' : 'text-slate-400'}`}>01. Configure</span>
+                <ChevronRight size={12} className="text-slate-300" />
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${step === 2 ? 'text-[#0067B8]' : 'text-slate-400'}`}>02. Review & Pay</span>
+             </div>
           </div>
         </header>
 
-        <main className="p-10 max-w-5xl mx-auto w-full space-y-20">
+        <main className="p-12 max-w-4xl mx-auto w-full">
           <div className="mb-12">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em] mb-4">Project Initialization</p>
-            <h1 className="text-6xl font-black tracking-tighter mb-4 italic leading-tight uppercase">New Sequence.</h1>
-            <p className="text-slate-500 text-sm font-medium max-w-2xl leading-relaxed whitespace-pre-line">
-               {step === 1 ? 'Configure your academic artifact parameters.' : 'Authorize payment protocol to initialize the drafting stream.'}
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Create New Project</h1>
+            <p className="text-sm text-slate-500">Provide the requirements and deadline for your academic document.</p>
           </div>
 
           <AnimatePresence mode="wait">
             {step === 1 ? (
               <motion.div 
                 key="step1"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-10"
               >
                 {/* Service Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-slate-100 divide-x divide-slate-100">
-                  {SERVICES.map((s) => (
-                    <div 
-                      key={s.id}
-                      onClick={() => setFormData({ ...formData, serviceId: s.id })}
-                      className={`p-10 cursor-pointer transition-all ${
-                        formData.serviceId === s.id ? 'bg-black text-white scale-[1.02] z-10' : 'bg-white text-black hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 mb-8 flex items-center justify-center border ${formData.serviceId === s.id ? 'border-white/20' : 'border-black/5'}`}>
-                        {s.id === 'SOP' && <FileText size={18} />}
-                        {s.id === 'LOR' && <Check size={18} />}
-                        {s.id === 'RESUME' && <Zap size={18} />}
-                      </div>
-                      <h3 className="font-black text-sm mb-2 uppercase tracking-widest">{s.name}</h3>
-                      <p className={`text-[9px] font-bold uppercase tracking-widest mb-10 ${formData.serviceId === s.id ? 'text-white/40' : 'text-slate-400'}`}>{s.description}</p>
-                      <p className="text-3xl font-black tracking-tighter italic">₹{s.price}</p>
+                <div>
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-4">Select Service Category</label>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {SERVICES.map((s) => (
+                        <button 
+                        key={s.id}
+                        onClick={() => setFormData({ ...formData, serviceId: s.id })}
+                        className={`p-6 text-left border rounded-sm transition-all ${
+                            formData.serviceId === s.id 
+                            ? 'border-[#0067B8] bg-blue-50/30' 
+                            : 'border-[#E5E5E5] bg-white hover:border-slate-300'
+                        }`}
+                        >
+                            <div className={`w-8 h-8 rounded-sm mb-4 flex items-center justify-center ${formData.serviceId === s.id ? 'bg-[#0067B8] text-white' : 'bg-slate-50 text-slate-400'}`}>
+                                {s.id === 'SOP' && <FileText size={16} />}
+                                {s.id === 'LOR' && <Check size={16} />}
+                                {s.id === 'RESUME' && <Zap size={16} />}
+                            </div>
+                            <h3 className="font-bold text-sm text-slate-900 mb-1">{s.name}</h3>
+                            <p className="text-[11px] text-slate-500 mb-4">{s.description}</p>
+                            <p className="text-lg font-bold text-slate-900">₹{s.price}</p>
+                        </button>
+                    ))}
                     </div>
-                  ))}
                 </div>
 
                 {/* Form Fields */}
-                <div className="space-y-12">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4 block">Delivery Deadline</label>
-                      <div className="relative border border-slate-100 bg-slate-50 px-8 py-5">
-                        <Calendar className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Delivery Deadline</label>
+                      <div className="relative group">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-[#0067B8]" size={16} />
                         <input 
                           type="date" 
                           value={formData.deadline}
                           onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                          className="w-full bg-transparent pl-10 text-[10px] font-black uppercase tracking-widest focus:outline-none"
+                          className="input-professional pl-12 h-11"
                         />
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4 block">Document Integrity</label>
-                      <div className="border border-slate-100 bg-slate-50 px-8 py-5 flex items-center justify-between group cursor-pointer hover:bg-black hover:bg-white transition-all">
-                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest group-hover:text-black">Drop contextual assets...</p>
-                         <Upload className="text-slate-200 group-hover:text-black" size={16} />
-                      </div>
+                    <div className="space-y-2">
+                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Supporting Documents</label>
+                       <input 
+                         type="file" 
+                         className="hidden" 
+                         ref={fileInputRef} 
+                         multiple 
+                         onChange={handleFileUpload}
+                       />
+                       <button 
+                         onClick={() => fileInputRef.current?.click()}
+                         disabled={uploading}
+                         className="w-full h-11 border border-[#CCCCCC] border-dashed rounded-sm bg-white hover:bg-slate-50 flex items-center justify-center px-4 cursor-pointer transition-all gap-2 group"
+                       >
+                          {uploading ? (
+                            <Loader2 className="animate-spin text-[#0067B8]" size={14} />
+                          ) : (
+                            <Upload size={14} className="text-slate-400 group-hover:text-[#0067B8]" />
+                          )}
+                          <span className="text-xs font-medium text-slate-400 group-hover:text-slate-600">
+                            {uploading ? 'Uploading assets...' : 'Click to upload assets'}
+                          </span>
+                       </button>
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4 block">Project Brief & Parameters</label>
-                    <textarea 
-                      rows={6}
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="SHARE YOUR ACADEMIC TRAJECTORY AND PROJECT SPECIFICS..."
-                      className="w-full bg-white border border-slate-100 p-8 text-[10px] font-black uppercase tracking-[0.3em] leading-relaxed focus:bg-slate-50 transition-all outline-none"
-                    />
-                  </div>
                 </div>
 
-                <div className="flex justify-end pt-10 border-t border-slate-50">
+                {/* Attachment List */}
+                {formData.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.attachments.map((file) => (
+                      <div key={file.url} className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-sm text-[10px] font-bold text-slate-600 flex items-center gap-2">
+                        <FileText size={12} />
+                        <span className="max-w-[100px] truncate">{file.name}</span>
+                        <div className="flex items-center gap-1.5 border-l border-slate-300 ml-1 pl-2">
+                           <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-[#0067B8]">
+                             View
+                           </a>
+                           <button onClick={() => remoteAttachment(file.url)} className="text-slate-400 hover:text-red-500">
+                             <X size={12} />
+                           </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Project Brief & Requirements</label>
+                    <textarea 
+                        rows={6}
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Detail your academic background and specific goals for this project..."
+                        className="input-professional min-h-[150px] py-4 resize-none"
+                    />
+                </div>
+
+                <div className="flex justify-end pt-8 border-t border-[#E5E5E5]">
                   <button 
-                    disabled={!formData.serviceId || !formData.deadline}
+                    disabled={!formData.serviceId || !formData.deadline || uploading}
                     onClick={() => setStep(2)}
-                    className="btn-classy px-16 py-6 text-[10px]"
+                    className="btn-primary h-11 px-10 disabled:opacity-50"
                   >
-                    PROCEED TO AUTHORIZATION <ChevronRight size={16} />
+                    Next Step <ChevronRight size={16} />
                   </button>
                 </div>
               </motion.div>
             ) : (
               <motion.div 
                 key="step2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-12"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-8"
               >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-slate-100">
-                  {/* Summary Card */}
-                  <div className="bg-white p-12 space-y-12 border-r border-slate-100">
-                     <div>
-                       <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-400 mb-8 border-b border-slate-50 pb-4">Configuration Audit</h3>
-                       <div className="space-y-8">
-                          <div className="flex justify-between items-center">
-                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Selected Artifact</span>
-                             <span className="text-xs font-black text-black uppercase tracking-widest">{selectedService.name}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Temporal Deadline</span>
-                             <span className="text-xs font-black text-black uppercase tracking-widest">{formData.deadline}</span>
-                          </div>
-                          <div className="pt-8 border-t border-slate-50 flex justify-between items-end">
-                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Fiscal Total</span>
-                             <span className="text-5xl font-black italic tracking-tighter">₹{selectedService.price}</span>
-                          </div>
-                       </div>
-                     </div>
-
-                     <div className="bg-slate-50 p-8 flex items-start gap-6 border border-slate-100">
-                        <ShieldCheck className="text-black mt-1" size={20} />
-                        <div>
-                           <p className="text-[10px] font-black text-black mb-2 uppercase tracking-widest">Protocol: Escrow Protected</p>
-                           <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-loose">Funds are locked in a neutral node until you authorize the final drafting release.</p>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Payment Card */}
-                  <div className="bg-black p-12 text-white flex flex-col justify-between">
-                    <div>
-                      <h3 className="text-2xl font-black tracking-tighter italic mb-8 uppercase">Authorization Gate.</h3>
-                      <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em] mb-12 leading-relaxed">
-                        Secure transaction interface. RSA-4096 encryption active. Your payment parameters are never cached.
-                      </p>
-                      
-                      <div className="space-y-6 mb-12">
-                        {[
-                          'Verified Subject Specialist Assignment',
-                          'Direct Inter-Role Messaging',
-                          'Algorithmic Plagiarism Verification'
-                        ].map((item, i) => (
-                          <div key={i} className="flex items-center gap-4">
-                             <Check size={14} className="text-white/40" />
-                             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/60">{item}</span>
-                          </div>
-                        ))}
+                <div className="bg-white border border-[#E5E5E5] rounded-sm overflow-hidden">
+                   <div className="p-8 border-b border-[#E5E5E5]">
+                      <h3 className="text-sm font-bold text-slate-900 mb-6 uppercase tracking-wider">Order Summary</h3>
+                      <div className="space-y-4">
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-slate-500">Service Type</span>
+                            <span className="font-semibold text-slate-900">{selectedService?.name}</span>
+                         </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-slate-500">Requested Deadline</span>
+                            <span className="font-semibold text-slate-900">{formData.deadline}</span>
+                         </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-slate-500">Attachments</span>
+                            <span className="font-semibold text-slate-900">{formData.attachments.length} files</span>
+                         </div>
+                         <div className="pt-6 border-t border-slate-100 flex justify-between items-end">
+                            <span className="text-sm font-bold text-slate-900">Total Payable</span>
+                            <span className="text-2xl font-bold text-[#002D5B]">₹{selectedService?.price}</span>
+                         </div>
                       </div>
-                    </div>
+                   </div>
 
-                    <div className="space-y-6">
-                      <button 
-                        onClick={handleCreateOrder}
-                        disabled={loading}
-                        className="w-full py-6 bg-white text-black font-black text-[10px] uppercase tracking-[0.4em] hover:bg-slate-200 transition-all flex items-center justify-center gap-4"
-                      >
-                         {loading ? <Loader2 className="animate-spin" size={16} /> : <CreditCard size={18} />}
-                         {loading ? 'INITIALIZING PROTOCOL...' : `AUTHORIZE ₹${selectedService.price}`}
-                      </button>
-                      <button 
-                        onClick={() => setStep(1)}
-                        className="w-full text-white/20 text-[9px] font-black uppercase tracking-[0.5em] hover:text-white transition-colors"
-                      >
-                         MODIFY PARAMETERS.BACK
-                      </button>
-                    </div>
-                  </div>
+                   <div className="p-8 bg-slate-50/50 flex items-start gap-4">
+                      <div className="p-2 bg-blue-100 text-[#0067B8] rounded-sm">
+                        <ShieldCheck size={18} />
+                      </div>
+                      <div>
+                         <p className="text-xs font-bold text-slate-900 mb-1">Escrow Protocol Active</p>
+                         <p className="text-[11px] text-slate-500 leading-relaxed max-w-md">Your payment will be held securely and only released to the writer after your review and approval of the final draft.</p>
+                      </div>
+                   </div>
                 </div>
+
+                <div className="flex items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-sm">
+                   <Info size={16} className="text-amber-600 shrink-0" />
+                   <p className="text-[11px] text-amber-800 font-medium">Once payment is authorized, a dedicated specialist will be auto-assigned to your project immediately.</p>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4 pt-4">
+                  <button 
+                    onClick={handleCreateOrder}
+                    disabled={loading}
+                    className="flex-1 btn-primary h-12 gap-3 disabled:opacity-50"
+                  >
+                     {loading ? <Loader2 className="animate-spin" size={18} /> : <CreditCard size={18} />}
+                     {loading ? 'Processing Payment...' : `Confirm & Pay ₹${selectedService?.price}`}
+                  </button>
+                  <button 
+                    onClick={() => setStep(1)}
+                    className="btn-outline px-8 h-12"
+                  >
+                     Modify Details
+                  </button>
+                </div>
+
+                <p className="text-center text-[10px] text-slate-400 uppercase tracking-widest">Secure 256-bit SSL Encrypted Payment</p>
               </motion.div>
             )}
           </AnimatePresence>

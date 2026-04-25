@@ -1,0 +1,179 @@
+"use client";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Briefcase, CheckCircle, Clock, 
+  DollarSign, Star, Zap, ChevronRight,
+  Filter, Download, ArrowUpRight
+} from 'lucide-react';
+
+import { useState, useEffect } from 'react';
+
+export default function FreelancerDashboardClient({ session, profile }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setTasks(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTasks();
+  }, []);
+
+  const stats = [
+    { title: 'Active Tasks', count: tasks.filter(t => t.status !== 'COMPLETED').length, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Total Earnings', count: '₹0', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'Avg Rating', count: profile.rating?.toFixed(1) || '5.0', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
+  ];
+
+  return (
+    <div className="flex-1 ml-64 flex flex-col bg-[#FBFBFB] min-h-screen text-[#111111]">
+      <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Workspace</span>
+           <ChevronRight size={14} className="text-slate-300" />
+           <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">Expert Console</span>
+        </div>
+        <div className="flex items-center gap-4">
+           <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-sm text-[10px] font-bold">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              {profile.availability ? 'ONLINE & ACTIVE' : 'OFFLINE'}
+           </div>
+        </div>
+      </header>
+
+      <main className="p-10 max-w-7xl mx-auto w-full space-y-10">
+        {/* Header Section */}
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Welcome back, {session?.user?.name || "Freelancer"}</h1>
+            <p className="text-sm text-slate-500 mt-1">Here is what is happening with your projects today.</p>
+          </div>
+          <div className="flex gap-3">
+             <button className="flex items-center gap-2 px-4 py-2 border border-[#CCCCCC] rounded-sm text-xs font-semibold hover:bg-white hover:border-slate-400 transition-all">
+                <Filter size={14} /> Filter View
+             </button>
+             <button className="flex items-center gap-2 px-6 py-2 bg-[#002D5B] text-white rounded-sm text-sm font-semibold hover:bg-[#001D3D] transition-all">
+                Withdraw Funds
+             </button>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           {stats.map((stat) => (
+             <div 
+               key={stat.title}
+               className="bg-white p-6 border border-[#E5E5E5] rounded-sm shadow-sm hover:border-slate-300 transition-all flex items-center gap-5"
+             >
+               <div className={`w-12 h-12 ${stat.bg} ${stat.color} flex items-center justify-center rounded-sm`}>
+                  <stat.icon size={20} />
+               </div>
+               <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">{stat.title}</p>
+                  <p className="text-2xl font-bold text-slate-900">{stat.count}</p>
+               </div>
+             </div>
+           ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-6">
+           {/* Task Queue */}
+           <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center justify-between">
+                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Active Queue</h3>
+              </div>
+              <div className="space-y-4">
+                  {tasks.length > 0 ? tasks.map((task) => (
+                     <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex items-center justify-between">
+                       <div className="flex items-center gap-6">
+                         <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-sm text-slate-400 group-hover:bg-[#0067B8]/5 group-hover:text-[#0067B8] transition-colors">
+                            <Briefcase size={18} />
+                         </div>
+                         <div>
+                            <div className="flex items-center gap-3">
+                               <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
+                               <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                  task.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' :
+                                  task.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+                               }`}>
+                                 {task.status}
+                               </span>
+                            </div>
+                            <div className="flex gap-4 mt-1">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{task.serviceType}</p>
+                               <span className="text-[10px] text-slate-200">|</span>
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                 <Clock size={10} /> {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
+                               </p>
+                            </div>
+                         </div>
+                       </div>
+                       <a 
+                         href={`/freelancer/projects/${task.id}`}
+                         className="h-9 px-4 flex items-center gap-2 border border-[#E5E5E5] rounded-sm text-[10px] font-bold uppercase tracking-widest hover:border-[#0067B8] hover:text-[#0067B8] transition-all"
+                       >
+                         Manage <ChevronRight size={14} />
+                       </a>
+                     </div>
+                  )) : (
+                    <div className="bg-white border border-[#E5E5E5] border-dashed p-16 rounded-sm flex flex-col items-center justify-center text-center">
+                       <div className="w-12 h-12 bg-slate-50 rounded-sm flex items-center justify-center mb-4 text-slate-300">
+                          <Briefcase size={24} />
+                       </div>
+                       <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No assigned projects</p>
+                       <p className="text-xs text-slate-300 mt-1 uppercase tracking-wider font-medium">Monitoring for new submissions...</p>
+                    </div>
+                 )}
+              </div>
+           </div>
+
+           {/* Sidebar Info Cards */}
+           <div className="space-y-6">
+              <div className="bg-[#002D5B] rounded-sm p-8 text-white flex flex-col justify-between shadow-lg relative overflow-hidden h-[380px]">
+                 <div className="relative z-10">
+                    <div className="w-10 h-10 bg-white/10 rounded-sm flex items-center justify-center mb-8">
+                       <Zap className="text-blue-300" size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold mb-3">Writer Guidelines</h3>
+                    <p className="text-blue-100/60 text-xs leading-relaxed mb-8">Ensure all deliverables follow IEEE/APA academic formatting standards. 98% accuracy is required for ELITE status.</p>
+                    
+                    <div className="space-y-3">
+                       <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-all group">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Quality Checklist</span>
+                          <ArrowUpRight size={14} className="text-blue-300 opacity-50 group-hover:opacity-100" />
+                       </button>
+                       <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-all group">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Project Templates</span>
+                          <Download size={14} className="text-blue-300 opacity-50 group-hover:opacity-100" />
+                       </button>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Verified Badge */}
+              <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-sm flex items-center gap-4">
+                 <div className="p-2 bg-emerald-500 text-white rounded-sm">
+                    <CheckCircle size={18} />
+                 </div>
+                 <div>
+                    <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Verified Identity</p>
+                    <p className="text-[10px] text-emerald-700 font-medium">Full access to high-priority stream enabled.</p>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </main>
+    </div>
+  );
+}

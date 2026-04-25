@@ -44,6 +44,108 @@ async function main() {
   });
 
   console.log('SubAdmin seeded:', subAdmin.email);
+
+  // Seed Freelancers
+  const freelancers = [
+    { email: 'sop-expert@yopmail.com', name: 'Dr. Sarah (SOP Specialist)', skills: ['SOP', 'Academic'] },
+    { email: 'lor-expert@yopmail.com', name: 'Prof. Michael (LOR Expert)', skills: ['LOR', 'Business'] },
+    { email: 'resume-pro@yopmail.com', name: 'Janice (Resume Writer)', skills: ['RESUME', 'Technical'] },
+  ];
+
+  for (const f of freelancers) {
+    const user = await prisma.user.upsert({
+      where: { email: f.email },
+      update: { role: 'FREELANCER', emailVerified: now, password },
+      create: { 
+        email: f.email, 
+        name: f.name, 
+        password, 
+        role: 'FREELANCER', 
+        emailVerified: now 
+      },
+    });
+
+    await prisma.freelancerProfile.upsert({
+      where: { userId: user.id },
+      update: { skills: f.skills, isVerified: true },
+      create: {
+        userId: user.id,
+        bio: `Expert in ${f.skills.join(', ')} with 5+ years of experience.`,
+        skills: f.skills,
+        isVerified: true,
+        experience: 5
+      }
+    });
+
+    console.log(`Freelancer seeded: ${user.email} with skills: ${f.skills.join(', ')}`);
+  }
+
+  // Seed Mock Student
+  const student = await prisma.user.upsert({
+    where: { email: 'student-test@yopmail.com' },
+    update: { role: 'STUDENT', emailVerified: now, password },
+    create: { 
+      email: 'student-test@yopmail.com', 
+      name: 'John Doe (Test Student)', 
+      password, 
+      role: 'STUDENT', 
+      emailVerified: now 
+    },
+  });
+  console.log('Student seeded:', student.email);
+
+  // Seed Mock Projects (SOP & LOR)
+  const proj1 = await prisma.project.create({
+    data: {
+      title: 'Harvard SOP Draft',
+      description: 'I need a professional SOP for my Masters in Data Science at Harvard. I have 3 years of experience at Google.',
+      serviceType: 'SOP',
+      status: 'ASSIGNED',
+      studentId: student.id,
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      freelancerId: (await prisma.user.findFirst({ where: { email: 'sop-expert@yopmail.com' } })).id,
+      attachments: [
+        { name: 'My_Resume.pdf', url: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.pdf' }
+      ]
+    }
+  });
+
+  const proj2 = await prisma.project.create({
+    data: {
+      title: 'Professor Recommendation LOR',
+      description: 'Requesting a LOR from my professor for my PhD applications.',
+      serviceType: 'LOR',
+      status: 'COMPLETED',
+      studentId: student.id,
+      deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // Finished 2 days ago
+      freelancerId: (await prisma.user.findFirst({ where: { email: 'lor-expert@yopmail.com' } })).id,
+    }
+  });
+
+  console.log('Projects seeded:', proj1.title, ',', proj2.title);
+
+  // Seed Mock Messages
+  const welcomeMsg = await prisma.message.create({
+    data: {
+      content: 'Hello John! I am Sarah, your SOP specialist. I have received your resume and started working on your Harvard draft. Do you have any specific points you want me to highlight about your tenure at Google?',
+      chatType: 'CLIENT_CHAT',
+      senderId: proj1.freelancerId,
+      receiverId: student.id,
+      projectId: proj1.id
+    }
+  });
+
+  const studentReply = await prisma.message.create({
+    data: {
+      content: 'Hi Sarah, yes! Please focus on the cross-functional team leadership role I played in the Cloud infrastructure project.',
+      chatType: 'CLIENT_CHAT',
+      senderId: student.id,
+      receiverId: proj1.freelancerId,
+      projectId: proj1.id
+    }
+  });
+
+  console.log('Messages seeded for project:', proj1.title);
 }
 
 main()

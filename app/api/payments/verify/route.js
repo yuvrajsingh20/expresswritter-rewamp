@@ -21,28 +21,71 @@ export async function POST(req) {
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-      // Payment successful
-      await prisma.$transaction([
-        // 1. Update Order status
-        prisma.order.update({
+      // 1. Fetch project to get service type
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { serviceType: true, title: true, studentId: true }
+      });
+
+      // 2. Auto-Assignment Logic (Phase 1: Simple Skill Match)
+      // Look for a freelancer who has the matching serviceType in their skills
+      const matchedFreelancer = await prisma.freelancerProfile.findFirst({
+        where: {
+          skills: { has: project.serviceType || 'Academic' },
+          availability: true,
+          isVerified: true
+        },
+        include: { user: true }
+      });
+
+      const freelancerId = matchedFreelancer ? matchedFreelancer.userId : null;
+
+      await prisma.$transaction(async (tx) => {
+        // 3. Update Order status
+        await tx.order.update({
           where: { razorpayId: razorpay_order_id },
           data: { paymentStatus: "PAID" },
-        }),
-        // 2. Update Project status
-        prisma.project.update({
+        });
+
+        // 4. Update Project status and assign freelancer
+        await tx.project.update({
           where: { id: projectId },
-          data: { status: "ASSIGNED" }, // Auto-moving to ASSIGNED status for MVP
-        }),
-        // 3. Create Project Log
-        prisma.projectLog.updateMany({
-           where: { projectId: projectId }, // Simple way to ensure log exists or just create
-           data: { action: "Payment Completed & Project Assigned" }
-        })
-      ]);
+          data: { 
+            status: freelancerId ? "ASSIGNED" : "CREATED",
+            freelancerId: freelancerId
+          },
+        });
 
-      // Note: In real app, we would also trigger freelancer assignment logic here.
+        // 5. Create Project Log
+        await tx.projectLog.create({
+          data: { 
+            action: freelancerId 
+              ? `Payment Completed & Auto-Assigned to ${matchedFreelancer.user.name}` 
+              : "Payment Completed - Dynamic Assignment Pending",
+            projectId: projectId,
+            userId: project.studentId // Action logged against student's payment
+          }
+        });
 
-      return NextResponse.json({ message: "Payment verified successfully" }, { status: 200 });
+        // 6. Initialize Chat Room (Step 3 & 5)
+        if (freelancerId) {
+          const serviceName = project.serviceType || "Project";
+          await tx.message.create({
+            data: {
+              content: `Hello! I am ${matchedFreelancer.user.name}, your assigned specialist for this ${serviceName} project. I've reviewed your brief and will begin the draft immediately. Feel free to share any additional context here.`,
+              chatType: "CLIENT_CHAT",
+              senderId: freelancerId,
+              receiverId: project.studentId,
+              projectId: projectId
+            }
+          });
+        }
+      });
+
+      return NextResponse.json({ 
+        message: "Payment verified and project initialized",
+        assigned: !!freelancerId
+      }, { status: 200 });
     } else {
       return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
     }

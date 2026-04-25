@@ -4,8 +4,13 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  const password = await bcrypt.hash('Admin@123', 10);
+  const password = await bcrypt.hash('test123', 10);
   const now = new Date();
+
+  // Clear existing data to ensure clean seed
+  await prisma.message.deleteMany({});
+  await prisma.project.deleteMany({});
+  await prisma.order.deleteMany({});
 
   // Seed Admin
   const admin = await prisma.user.upsert({
@@ -50,6 +55,7 @@ async function main() {
     { email: 'sop-expert@yopmail.com', name: 'Dr. Sarah (SOP Specialist)', skills: ['SOP', 'Academic'] },
     { email: 'lor-expert@yopmail.com', name: 'Prof. Michael (LOR Expert)', skills: ['LOR', 'Business'] },
     { email: 'resume-pro@yopmail.com', name: 'Janice (Resume Writer)', skills: ['RESUME', 'Technical'] },
+    { email: 'freelancer-test@yopmail.com', name: 'Test Freelancer', skills: ['SOP', 'LOR', 'RESUME'] },
   ];
 
   for (const f of freelancers) {
@@ -95,6 +101,8 @@ async function main() {
   console.log('Student seeded:', student.email);
 
   // Seed Mock Projects (SOP & LOR)
+  const testFreelancer = await prisma.user.findFirst({ where: { email: 'freelancer-test@yopmail.com' } });
+
   const proj1 = await prisma.project.create({
     data: {
       title: 'Harvard SOP Draft',
@@ -102,8 +110,8 @@ async function main() {
       serviceType: 'SOP',
       status: 'ASSIGNED',
       studentId: student.id,
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      freelancerId: (await prisma.user.findFirst({ where: { email: 'sop-expert@yopmail.com' } })).id,
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
+      freelancerId: testFreelancer.id,
       attachments: [
         { name: 'My_Resume.pdf', url: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.pdf' }
       ]
@@ -112,13 +120,25 @@ async function main() {
 
   const proj2 = await prisma.project.create({
     data: {
-      title: 'Professor Recommendation LOR',
+      title: 'Stanford MBA LOR',
       description: 'Requesting a LOR from my professor for my PhD applications.',
       serviceType: 'LOR',
+      status: 'IN_PROGRESS',
+      studentId: student.id,
+      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      freelancerId: testFreelancer.id,
+    }
+  });
+
+  const proj3 = await prisma.project.create({
+    data: {
+      title: 'MIT Technical Resume',
+      description: 'Update my resume for Big Tech roles.',
+      serviceType: 'RESUME',
       status: 'COMPLETED',
       studentId: student.id,
-      deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // Finished 2 days ago
-      freelancerId: (await prisma.user.findFirst({ where: { email: 'lor-expert@yopmail.com' } })).id,
+      deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      freelancerId: testFreelancer.id,
     }
   });
 

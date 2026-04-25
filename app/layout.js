@@ -1,9 +1,15 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({ 
+const inter = Inter({ 
   subsets: ["latin"],
-  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const outfit = Outfit({ 
+  subsets: ["latin"],
+  variable: '--font-outfit',
   display: 'swap',
 });
 
@@ -16,8 +22,8 @@ import SessionWrapper from "@/components/SessionWrapper";
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${jakarta.className} bg-background text-foreground antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable}`}>
+       <body className={`${inter.className} bg-background text-foreground antialiased`}>
         <SessionWrapper>
           {children}
         </SessionWrapper>

@@ -1,74 +1,83 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
+  --font-heading: var(--font-outfit), var(--font-inter), sans-serif;
   
-  --color-primary: #0a192f; /* Deep Navy Blue-Black */
-  --color-secondary: #f0f4f8; /* Soft Azure Grey */
-  --color-accent: #0071e3; /* Professional Blue */
-  --color-border: #e2e8f0;
-  --color-background: #ffffff;
-  --color-foreground: #0a192f;
+  --color-primary: #002D5B; /* Royal Navy */
+  --color-secondary: #F8F9FA; /* Microsoft Light Gray */
+  --color-accent: #0067B8; /* Microsoft Blue */
+  --color-border: #E5E5E5; /* High Contrast Border */
+  --color-background: #FFFFFF;
+  --color-foreground: #111111;
 
-  --radius-subtle: 8px;
+  --radius-subtle: 4px; /* Sharp, Microsoft-like radius */
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
 }
 
 @layer base {
   body {
-    @apply bg-[#f8fafc] text-slate-900 antialiased font-sans;
+    @apply bg-[#FBFBFB] text-[#111111] antialiased font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
   }
 }
 
 @layer components {
-  /* Classy SaaS Buttons - More Fiverr/Upwork like */
+  /* Microsoft-style Sharp Cards */
+  .card-subtle {
+    @apply bg-white border border-[#E5E5E5] rounded-sm 
+           hover:border-slate-300 transition-all duration-200;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+
+  /* Royal/Microsoft Primary Button */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 
-           bg-[#0a192f] text-white rounded-md font-semibold text-sm
-           hover:bg-[#112240] transition-all duration-200 active:scale-95 shadow-sm;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-2 
+           bg-[#002D5B] text-white rounded-sm font-semibold text-sm
+           hover:bg-[#001D3D] transition-all duration-200 active:scale-95 shadow-sm;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 
-           bg-white text-slate-700 border border-slate-200 rounded-md font-semibold text-sm
-           hover:bg-slate-50 transition-all duration-200 active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-2 
+           bg-white text-[#111111] border border-[#CCCCCC] rounded-sm font-semibold text-sm
+           hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-95;
   }
 
-  /* Refined Cards */
-  .card-subtle {
-    @apply bg-white border border-slate-200 rounded-xl shadow-sm 
-           hover:shadow-md transition-all duration-300;
-  }
-
-  /* Professional Inputs */
+  /* Professional Sharp Inputs */
   .input-professional {
-    @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-md 
-           text-sm font-medium focus:ring-4 focus:ring-blue-500/5 
-           focus:border-blue-500 outline-none transition-all;
+    @apply w-full px-4 py-2 bg-white border border-[#CCCCCC] rounded-sm 
+           text-sm font-medium focus:ring-1 focus:ring-[#0067B8] 
+           focus:border-[#0067B8] outline-none transition-all;
   }
 
-  /* Navigation Item */
+  /* Microsoft Fluent Navigation */
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
-           text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all;
+    @apply flex items-center gap-3 px-4 py-2 rounded-sm text-sm font-medium
+           text-slate-600 hover:text-[#0067B8] hover:bg-slate-50 transition-all;
   }
 
   .nav-item-active {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold
-           text-blue-600 bg-blue-50 transition-all;
+    @apply flex items-center gap-3 px-4 py-2 rounded-sm text-sm font-semibold
+           text-white bg-[#0067B8] transition-all;
   }
 
   .sidebar-container {
-     @apply fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 p-6 flex flex-col;
+     @apply fixed left-0 top-0 h-screen w-64 bg-white border-r border-[#E5E5E5] p-6 flex flex-col;
   }
 }
 
 /* Scrollbar Refinement */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full hover:bg-slate-300;
+  @apply bg-[#CCCCCC] rounded-none hover:bg-[#999999];
 }

@@ -38,7 +38,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
   if (!projects || projects.length === 0) {
     return (
       <div className="card-subtle py-32 flex flex-col items-center justify-center text-center px-10">
-        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 border border-slate-100">
+        <div className="w-16 h-16 bg-slate-50 rounded-sm flex items-center justify-center mb-6 border border-[#E5E5E5]">
           <AlertCircle size={28} className="text-slate-200" />
         </div>
         <h3 className="text-lg font-bold text-slate-800 mb-2">No active projects found</h3>
@@ -65,7 +65,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
               <tr key={project.id} className="hover:bg-slate-50/50 transition-all duration-200 group">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-5">
-                    <div className="w-11 h-11 bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:border-blue-100 rounded-lg transition-all shadow-sm">
+                    <div className="w-11 h-11 bg-white border border-[#E5E5E5] flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:border-primary rounded-sm transition-all shadow-sm">
                       <FileText size={18} />
                     </div>
                     <div>
@@ -75,7 +75,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                   </div>
                 </td>
                 <td className="px-8 py-6">
-                  <span className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded-md ${getStatusStyle(project.status)}`}>
+                  <span className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded-sm ${getStatusStyle(project.status)}`}>
                     {project.status.replace('_', ' ')}
                   </span>
                 </td>
@@ -101,11 +101,11 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                 <td className="px-8 py-6 text-right">
                   <div className="flex justify-end gap-2">
                     <Link href={`${getRolePrefix()}/${project.id}`}>
-                      <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100 rounded-lg transition-all">
+                      <button className="p-2.5 text-slate-400 hover:text-primary hover:bg-slate-50 border border-transparent hover:border-slate-200 rounded-sm transition-all">
                         <Eye size={16} />
                       </button>
                     </Link>
-                    <button className="p-2.5 text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-lg transition-all">
+                    <button className="p-2.5 text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-sm transition-all">
                       <MoreHorizontal size={16} />
                     </button>
                   </div>

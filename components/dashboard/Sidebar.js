@@ -47,7 +47,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
     <aside className="sidebar-container">
       <div className="mb-10 px-2">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#0a192f] rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
+          <div className="w-10 h-10 bg-indigo-900 rounded-sm flex items-center justify-center text-white font-bold text-lg">
             E
           </div>
           <div>
@@ -79,7 +79,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
       <div className="mt-auto pt-6 border-t border-slate-100 px-2">
         <button 
           onClick={handleLogout}
-          className="nav-item w-full hover:bg-red-50 hover:text-red-500 transition-colors"
+          className="nav-item w-full hover:bg-red-50 hover:text-red-600 transition-colors rounded-sm"
         >
           <LogOut size={18} />
           <span>Logout System</span>

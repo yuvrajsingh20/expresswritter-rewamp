@@ -63,6 +63,7 @@ model User {
   orders           Order[]
   projectLogs      ProjectLog[]
   freelancerProfile FreelancerProfile?
+  payoutRequests    PayoutRequest[]
 }
 
 model FreelancerProfile {
@@ -201,4 +202,17 @@ model ProjectLog {
   
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model PayoutRequest {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount        Float
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  paymentMethod String?
+  paymentDetails String? // UPI ID or Bank Details
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  freelancerId  String   @db.ObjectId
+  freelancer    User     @relation(fields: [freelancerId], references: [id])
 }

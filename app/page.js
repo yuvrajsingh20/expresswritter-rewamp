@@ -11,6 +11,7 @@ import {
   Library, BookOpen, PenTool, Briefcase
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 const SERVICES = [
   { id: 'SOP', name: 'Statement of Purpose', price: 2499, description: 'Academic & Professional SOPs' },
@@ -22,34 +23,99 @@ export default function LandingPage() {
   const router = useRouter();
   const [activeFlow, setActiveFlow] = useState(null); // 'STUDENT' or 'FREELANCER'
   const [studentStep, setStudentStep] = useState(1);
+  const [writerStep, setWriterStep] = useState(1);
   const [formData, setFormData] = useState({
     serviceId: '',
-    deadline: '',
-    description: '',
+    name: '',
+    email: '',
+    password: '',
   });
+
+  const [writerFormData, setWriterFormData] = useState({
+    domainId: '',
+    experience: '',
+    bio: '',
+    education: '',
+    resumeUrl: '',
+    photoUrl: '',
+    linkedinUrl: '',
+    name: '',
+    email: '',
+    password: '',
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const selectedService = SERVICES.find(s => s.id === formData.serviceId);
 
-  const handleStudentNext = () => {
-    if (studentStep === 2) {
-      sessionStorage.setItem('pendingProject', JSON.stringify({
-        ...formData,
-        serviceName: selectedService.name,
-        price: selectedService.price
-      }));
-      router.push('/register?role=STUDENT&redirect=/student/new-order');
-    } else {
-      setStudentStep(2);
+  const handleStudentNext = async () => {
+    setIsSubmitting(true);
+    setAuthError("");
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: "STUDENT",
+          studentProfile: {
+            targetService: formData.serviceId
+          }
+        }),
+      });
+
+      if (res.ok) {
+        router.push('/login?registered=true&role=STUDENT');
+      } else {
+        const data = await res.json();
+        setAuthError(data.message || "Signup failed");
+      }
+    } catch (err) {
+      setAuthError("Connection error. Try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWriterSubmit = async () => {
+    setIsSubmitting(true);
+    setAuthError("");
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: writerFormData.name,
+          email: writerFormData.email,
+          password: writerFormData.password,
+          role: "FREELANCER",
+          writerProfile: writerFormData
+        }),
+      });
+
+      if (res.ok) {
+        router.push('/login?registered=true&role=FREELANCER');
+      } else {
+        const data = await res.json();
+        setAuthError(data.message || "Signup failed");
+      }
+    } catch (err) {
+      setAuthError("Connection error. Try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="bg-white min-h-screen text-[#0a192f] font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       {/* Navigation */}
-      <nav className="h-24 flex items-center justify-between px-10 md:px-20 sticky top-0 bg-white/90 backdrop-blur-md z-50 border-b border-slate-50">
+      <nav className="h-24 flex items-center justify-between px-10 md:px-20 sticky top-0 bg-white/90 backdrop-blur-md z-[100] border-b border-slate-50">
         <Link href="/" className="flex items-center gap-3">
-           <div className="w-10 h-10 bg-[#0a192f] rounded-xl flex items-center justify-center text-white font-bold text-xl">E</div>
-           <span className="text-2xl font-[900] tracking-tighter italic">Express Writer</span>
+           <div className="w-10 h-10 bg-black flex items-center justify-center text-white font-bold text-xl">E</div>
+           <span className="text-2xl font-[900] tracking-tighter italic uppercase text-black">Express Writer</span>
         </Link>
         
         <div className="hidden lg:flex items-center gap-12">
@@ -59,7 +125,9 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-8">
-           <Link href="/login" className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-black transition-colors">Login</Link>
+           <Link href="/login" className="bg-black text-white px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.4em] hover:bg-slate-800 transition-all rounded-none">
+              Authorized Login
+           </Link>
         </div>
       </nav>
 
@@ -136,155 +204,304 @@ export default function LandingPage() {
           {/* Student Flow Overlay - Modern Cinematic */}
           <AnimatePresence>
             {activeFlow === 'STUDENT' && (
-              <motion.div 
-                initial={{ opacity: 0, y: 100 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 100 }}
-                className="absolute inset-4 md:inset-10 bg-white shadow-[0_100px_150px_rgba(0,0,0,0.2)] rounded-[4rem] z-20 flex flex-col border border-slate-100 overflow-hidden"
-              >
-                <div className="h-24 border-b border-slate-50 flex items-center justify-between px-12 bg-slate-50/30">
-                   <div className="flex items-center gap-6">
-                      <span className="text-[10px] font-black uppercase tracking-[0.6em] text-blue-600">Phase 0{studentStep}</span>
-                      <div className="w-40 h-[2px] bg-slate-100">
-                        <div className={`h-full bg-blue-600 transition-all duration-500`} style={{ width: `${(studentStep/2)*100}%` }} />
-                      </div>
-                   </div>
-                   <button onClick={() => { setActiveFlow(null); setStudentStep(1); }} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-black">Abort Flow.CLOSE</button>
-                </div>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => { setActiveFlow(null); setStudentStep(1); }}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                />
                 
-                <div className="flex-1 p-10 md:p-20 overflow-y-auto">
-                  <div className="max-w-3xl mx-auto w-full space-y-20">
-                    {studentStep === 1 ? (
-                      <div className="space-y-16">
-                        <div className="text-center space-y-4">
-                           <h2 className="text-5xl font-[900] tracking-tighter uppercase italic leading-none">Choose Service.</h2>
-                           <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">Select the artifact required for your application stream</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                           {SERVICES.map(s => (
-                             <div 
-                               key={s.id}
-                               onClick={() => setFormData({ ...formData, serviceId: s.id })}
-                               className={`p-12 rounded-[3.5rem] border-4 cursor-pointer transition-all duration-500 flex flex-col items-center text-center gap-8 ${
-                                 formData.serviceId === s.id ? 'border-blue-600 bg-white shadow-3xl shadow-blue-600/10' : 'border-slate-50 hover:bg-slate-50'
-                               }`}
-                             >
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${formData.serviceId === s.id ? 'bg-blue-600 text-white rotate-6' : 'bg-slate-100 text-slate-300'}`}>
-                                  {s.id === 'SOP' && <FileText size={24} />}
-                                  {s.id === 'LOR' && <Target size={24} />}
-                                  {s.id === 'RESUME' && <Users size={24} />}
-                                </div>
-                                <div>
-                                  <h4 className="font-black text-xs uppercase tracking-[0.2em] mb-2">{s.name}</h4>
-                                  <p className="text-[10px] text-slate-400 font-bold italic opacity-0 transition-opacity group-hover:opacity-100">Config: Active</p>
-                                </div>
-                             </div>
-                           ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-16">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 pb-12 border-b-2 border-slate-100">
-                           <div className="space-y-4">
-                              <h2 className="text-6xl font-[900] tracking-tighter italic uppercase leading-none text-[#0a192f]">Project Brief.</h2>
-                              <p className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-                                {selectedService.name} <Star size={10} fill="currentColor" /> Premium Stream
-                              </p>
-                           </div>
-                           <div className="text-left md:text-right">
-                              <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-300 mb-2">Protocol Value</p>
-                              <p className="text-7xl font-[900] italic tracking-tighter text-blue-600 leading-none">₹{selectedService.price}</p>
-                           </div>
-                        </div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="relative w-full max-w-4xl bg-white shadow-[0_50px_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col border border-white/10"
+                >
+                  {/* Minimal Header */}
+                  <div className="h-20 border-b border-slate-100 flex items-center justify-between px-10 md:px-16 shrink-0 bg-white">
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-black flex items-center justify-center text-white font-bold text-sm">E</div>
+                        <span className="text-lg font-[900] tracking-tighter italic uppercase text-black">Student Registration</span>
+                     </div>
+                     <button onClick={() => { setActiveFlow(null); setStudentStep(1); }} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
+                        Close <ChevronRight size={14} />
+                     </button>
+                  </div>
+                  
+                  <div className="p-10 md:p-16">
+                     <div className="bg-white">
+                        <div className="h-1 bg-black w-full mb-12" />
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                           <div className="space-y-6">
-                              <label className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-400 ml-2">Temporal Deadline</label>
-                              <input 
-                                type="date" 
-                                value={formData.deadline}
-                                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                                className="w-full bg-slate-50 border-2 border-transparent px-10 py-6 rounded-[2rem] font-black text-sm outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm"
-                              />
+                        <div className="space-y-12">
+                           <div className="space-y-4 border-b border-slate-100 pb-10 text-center">
+                              <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black leading-none">Create Your Account.</h1>
+                              <p className="text-slate-500 font-medium tracking-tight text-sm uppercase">Join our academic platform to start your first project.</p>
                            </div>
-                           <div className="space-y-6">
-                              <label className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-400 ml-2">Contextual Briefing</label>
-                              <textarea 
-                                rows={4}
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="DETAILS ABOUT YOUR ACADEMIC GOALS..."
-                                className="w-full bg-slate-50 border-2 border-transparent p-10 rounded-[2.5rem] font-black text-sm outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm resize-none leading-relaxed"
-                              />
+
+                           <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto">
+                              {/* Google Auth Integration */}
+                              <button 
+                                onClick={() => signIn('google', { callbackUrl: '/student' })}
+                                className="w-full flex items-center justify-center gap-4 bg-white border border-slate-200 py-5 font-black text-xs uppercase tracking-[0.3em] hover:bg-slate-50 transition-all rounded-none"
+                              >
+                                 <svg viewBox="0 0 24 24" className="w-5 h-5">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                 </svg>
+                                 Continue with Google
+                              </button>
+
+                              <div className="relative flex items-center justify-center py-4">
+                                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+                                 <span className="relative bg-white px-4 text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Or Manual Registration</span>
+                              </div>
+
+                              <div className="space-y-4">
+                                 <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</label>
+                                 <input 
+                                   type="text" 
+                                   value={formData.name}
+                                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                   className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                   placeholder="E.G. ALEXANDER PIERCE"
+                                 />
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Email Address</label>
+                                    <input 
+                                      type="email" 
+                                      value={formData.email}
+                                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                      className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                      placeholder="EMAIL@INSTITUTION.COM"
+                                    />
+                                 </div>
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Secure Password</label>
+                                    <input 
+                                      type="password" 
+                                      value={formData.password}
+                                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                      className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                      placeholder="••••••••"
+                                    />
+                                 </div>
+                              </div>
+                           </div>
+
+                           {authError && (
+                              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest text-center border border-red-100">
+                                 {authError}
+                              </div>
+                           )}
+
+                           <div className="pt-10 flex flex-col items-center gap-8 border-t border-slate-100">
+                               <button 
+                                 onClick={handleStudentNext}
+                                 disabled={isSubmitting || !formData.email || !formData.name || !formData.password}
+                                 className="w-full md:w-auto bg-black text-white px-24 py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none flex items-center justify-center gap-4"
+                               >
+                                 {isSubmitting ? 'CREATING ACCOUNT...' : 'REGISTER & CONTINUE'} <ChevronRight size={16} />
+                               </button>
+                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+                                 Institutional Grade Encryption / Secure Data Protocols
+                               </p>
                            </div>
                         </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-center pb-20">
-                      <button 
-                        onClick={handleStudentNext}
-                        disabled={studentStep === 1 ? !formData.serviceId : !formData.deadline}
-                        className="bg-[#0a192f] text-white px-24 py-8 rounded-full font-black text-xs uppercase tracking-[0.6em] hover:bg-black transition-all flex items-center gap-6 shadow-[0_30px_60px_rgba(0,0,0,0.3)] disabled:opacity-20 active:scale-95"
-                      >
-                        {studentStep === 1 ? 'NEXT SEQUENCE' : 'AUTHORIZE ACCOUNT'} <ChevronRight size={18} strokeWidth={4} />
-                      </button>
-                    </div>
+                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             )}
-
             {activeFlow === 'FREELANCER' && (
-              <motion.div 
-                initial={{ opacity: 0, y: 100 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 100 }}
-                className="absolute inset-4 md:inset-10 bg-[#0a192f] text-white shadow-[0_100px_150px_rgba(0,0,0,0.5)] rounded-[4rem] z-20 flex flex-col overflow-hidden"
-              >
-                <div className="h-24 border-b border-white/5 flex items-center justify-between px-12 bg-white/5">
-                   <div className="flex items-center gap-6">
-                      <span className="text-[10px] font-black uppercase tracking-[0.6em] text-blue-400">Writer Onboarding</span>
-                   </div>
-                   <button onClick={() => setActiveFlow(null)} className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-white">Exit Portal.X</button>
-                </div>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setActiveFlow(null)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                />
                 
-                <div className="flex-1 p-10 md:p-20 overflow-y-auto flex flex-col items-center justify-center text-center">
-                  <div className="max-w-3xl w-full space-y-16">
-                    <div className="space-y-4">
-                       <h2 className="text-6xl font-[900] tracking-tighter italic uppercase leading-none">Join the Elite.</h2>
-                       <p className="text-white/40 font-medium uppercase tracking-[0.4em] text-[10px]">Select your primary writing domain to initiate verification</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                       {[
-                         { id: 'ACADEMIC', name: 'Academic Study', icon: <Library size={24} /> },
-                         { id: 'TECHNICAL', name: 'Technical Docs', icon: <Laptop size={24} /> },
-                         { id: 'CREATIVE', name: 'Creative Content', icon: <PenTool size={24} /> }
-                       ].map(domain => (
-                         <div 
-                           key={domain.id}
-                           className="p-12 rounded-[3.5rem] bg-white/5 border-2 border-transparent hover:border-blue-500 hover:bg-white/10 transition-all cursor-pointer group flex flex-col items-center gap-6"
-                         >
-                            <div className="w-16 h-16 rounded-2xl bg-white text-[#0a192f] flex items-center justify-center group-hover:rotate-12 transition-all">
-                              {domain.icon}
-                            </div>
-                            <h4 className="font-black text-[10px] uppercase tracking-[0.2em]">{domain.name}</h4>
-                         </div>
-                       ))}
-                    </div>
-
-                    <div className="flex justify-center pt-10">
-                      <Link 
-                        href="/register?role=FREELANCER"
-                        className="bg-white text-[#0a192f] px-24 py-8 rounded-full font-black text-xs uppercase tracking-[0.6em] hover:bg-blue-50 transition-all flex items-center gap-6 shadow-3xl shadow-white/5 active:scale-95"
-                      >
-                        CREATE WRITER PROFILE <ChevronRight size={18} strokeWidth={4} />
-                      </Link>
-                    </div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="relative w-full max-w-5xl max-h-[90vh] bg-white shadow-[0_50px_100px_rgba(0,0,0,0.5)] overflow-y-auto flex flex-col border border-white/10"
+                >
+                  {/* Minimal Header */}
+                  <div className="h-20 border-b border-slate-100 flex items-center justify-between px-10 md:px-16 shrink-0 sticky top-0 bg-white z-10">
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-black flex items-center justify-center text-white font-bold text-sm">E</div>
+                        <span className="text-lg font-[900] tracking-tighter italic uppercase text-black">Writer Application</span>
+                     </div>
+                     <button onClick={() => setActiveFlow(null)} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
+                        Close <ChevronRight size={14} />
+                     </button>
                   </div>
-                </div>
-              </motion.div>
+
+                  <div className="flex-1 p-8 md:p-16">
+                     <div className="bg-white">
+                        {/* Form Banner */}
+                        <div className="h-1 bg-black w-full mb-12" />
+                        
+                        <div className="space-y-12">
+                           <div className="space-y-4 border-b border-slate-100 pb-10">
+                              <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black leading-none">Professional Onboarding.</h1>
+                              <p className="text-slate-500 font-medium tracking-tight text-sm uppercase">Complete your dossier to join our specialized writing panel.</p>
+                           </div>
+
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                              {/* Group 1: Identity */}
+                              <div className="space-y-8">
+                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 border-l-4 border-blue-600 pl-4">Account Information</h4>
+                                 
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</label>
+                                    <input 
+                                       type="text"
+                                       value={writerFormData.name}
+                                       onChange={(e) => setWriterFormData({...writerFormData, name: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="E.G. ALEXANDER PIERCE"
+                                    />
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Professional Email</label>
+                                    <input 
+                                       type="email"
+                                       value={writerFormData.email}
+                                       onChange={(e) => setWriterFormData({...writerFormData, email: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="EMAIL@INSTITUTION.COM"
+                                    />
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Secure Password</label>
+                                    <input 
+                                       type="password"
+                                       value={writerFormData.password}
+                                       onChange={(e) => setWriterFormData({...writerFormData, password: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="MINIMUM 8 CHARACTERS"
+                                    />
+                                 </div>
+                              </div>
+
+                              {/* Group 2: Professional Details */}
+                              <div className="space-y-8">
+                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 border-l-4 border-blue-600 pl-4">Expertise Profile</h4>
+                                 
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Primary Domain</label>
+                                    <select 
+                                       value={writerFormData.domainId}
+                                       onChange={(e) => setWriterFormData({...writerFormData, domainId: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
+                                    >
+                                       <option value="">SELECT SPECIALIZATION...</option>
+                                       <option value="ACADEMIC">ACADEMIC RESEARCH</option>
+                                       <option value="TECHNICAL">TECHNICAL DOCUMENTATION</option>
+                                       <option value="CREATIVE">CREATIVE & ADMISSIONS</option>
+                                    </select>
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Highest Qualification</label>
+                                    <input 
+                                       type="text"
+                                       value={writerFormData.education}
+                                       onChange={(e) => setWriterFormData({...writerFormData, education: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="E.G. PHD IN ASTROPHYSICS"
+                                    />
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Years of Experience</label>
+                                    <select 
+                                       value={writerFormData.experience}
+                                       onChange={(e) => setWriterFormData({...writerFormData, experience: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
+                                    >
+                                       <option value="">SELECT EXPERIENCE...</option>
+                                       <option value="1">1-3 YEARS</option>
+                                       <option value="4">4-7 YEARS</option>
+                                       <option value="8">8+ YEARS</option>
+                                    </select>
+                                 </div>
+                              </div>
+                           </div>
+
+                           {/* Verification Links */}
+                           <div className="space-y-8 pt-6 border-t border-slate-100">
+                              <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 border-l-4 border-blue-600 pl-4">Verification Artifacts</h4>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Resume / CV Link</label>
+                                    <input 
+                                       type="text"
+                                       value={writerFormData.resumeUrl}
+                                       onChange={(e) => setWriterFormData({...writerFormData, resumeUrl: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="DRIVE OR PORTFOLIO LINK"
+                                    />
+                                 </div>
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">LinkedIn Profile</label>
+                                    <input 
+                                       type="text"
+                                       value={writerFormData.linkedinUrl}
+                                       onChange={(e) => setWriterFormData({...writerFormData, linkedinUrl: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="LINKEDIN.COM/IN/USER"
+                                    />
+                                 </div>
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Professional Photo</label>
+                                    <input 
+                                       type="text"
+                                       value={writerFormData.photoUrl}
+                                       onChange={(e) => setWriterFormData({...writerFormData, photoUrl: e.target.value})}
+                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
+                                       placeholder="IMAGE URL"
+                                    />
+                                 </div>
+                              </div>
+                           </div>
+
+                           {authError && (
+                              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest text-center border border-red-100">
+                                 {authError}
+                              </div>
+                           )}
+
+                           <div className="pt-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-xs">
+                                 By submitting this dossier, you agree to our institutional quality standards and non-disclosure protocols.
+                               </p>
+                               <button 
+                                 onClick={handleWriterSubmit}
+                                 disabled={isSubmitting || !writerFormData.email || !writerFormData.name || !writerFormData.domainId}
+                                 className="bg-black text-white px-16 py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none shrink-0"
+                               >
+                                 {isSubmitting ? 'PROCESSING DOSSIER...' : 'SUBMIT APPLICATION'}
+                               </button>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </section>

@@ -9,6 +9,9 @@ import {
   Upload, CheckCircle, CheckCircle2, AlertCircle, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
+
+let socket;
 
 export default function SpecialistConsole() {
   const params = useParams();
@@ -63,6 +66,38 @@ export default function SpecialistConsole() {
     }
   }, [messages]);
 
+  // Socket.io Real-time Logic
+  useEffect(() => {
+    socketInitializer();
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, []);
+
+  const socketInitializer = async () => {
+    // We connect to the same host
+    socket = io();
+
+    socket.on('connect', () => {
+      console.log('Connected to socket');
+      socket.emit('join_project', id);
+    });
+
+    socket.on('receive_message', (data) => {
+      if (data.projectId === id) {
+        setMessages((prev) => [...prev, data]);
+      }
+    });
+
+    socket.on('project_status_changed', (data) => {
+      if (data.projectId === id) {
+        setProject(prev => ({ ...prev, status: data.status }));
+      }
+    });
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -78,7 +113,14 @@ export default function SpecialistConsole() {
       createdAt: new Date()
     };
 
-    setMessages([...messages, tmpMsg]);
+    // Emit via Socket for real-time delivery
+    if (socket) {
+        socket.emit('send_message', {
+            ...tmpMsg,
+            projectId: id
+        });
+    }
+
     setNewMessage("");
 
     try {
@@ -129,6 +171,11 @@ export default function SpecialistConsole() {
           attachments: [...(prev.attachments || []), uploadData]
         }));
         
+        // Emit status update via Socket
+        if (socket) {
+            socket.emit('status_update', { projectId: id, status: 'REVIEW' });
+        }
+
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
       }
@@ -139,7 +186,7 @@ export default function SpecialistConsole() {
     }
   };
 
-  const updateStatus = async (newStatus) => {
+   const updateStatus = async (newStatus) => {
     try {
       const res = await fetch(`/api/projects/${id}`, {
         method: 'PATCH',
@@ -148,6 +195,10 @@ export default function SpecialistConsole() {
       });
       if (res.ok) {
         setProject({ ...project, status: newStatus });
+        // Emit status update via Socket
+        if (socket) {
+            socket.emit('status_update', { projectId: id, status: newStatus });
+        }
       }
     } catch (error) {
       console.error("Status update failed:", error);

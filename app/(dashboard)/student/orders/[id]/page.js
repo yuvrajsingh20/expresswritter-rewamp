@@ -10,6 +10,9 @@ import {
   User, MessageSquare, Download, AlertCircle,
   Loader2, FileText, Info, ExternalLink, Calendar
 } from 'lucide-react';
+import { io } from 'socket.io-client';
+
+let socket;
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -60,6 +63,61 @@ export default function OrderDetailsPage() {
     }
   }, [messages]);
 
+  // Socket.io Real-time Logic
+  useEffect(() => {
+    socketInitializer();
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, []);
+
+  const socketInitializer = async () => {
+    // We connect to the same host
+    socket = io();
+
+    socket.on('connect', () => {
+      console.log('Connected to socket');
+      socket.emit('join_project', id);
+    });
+
+    socket.on('receive_message', (data) => {
+      if (data.projectId === id) {
+        setMessages((prev) => [...prev, data]);
+      }
+    });
+
+    socket.on('project_status_changed', (data) => {
+      if (data.projectId === id) {
+        setProject(prev => ({ ...prev, status: data.status }));
+      }
+    });
+
+    return () => {
+      socket.off('receive_message');
+      socket.off('project_status_changed');
+    };
+  }, [id]);
+
+  const handleApprove = async () => {
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'COMPLETED' }),
+      });
+
+      if (res.ok) {
+        const socket = io('http://localhost:3000');
+        socket.emit('status_update', { projectId: id, status: 'COMPLETED' });
+        setProject(prev => ({ ...prev, status: 'COMPLETED' }));
+      }
+    } catch (error) {
+      console.error("Failed to approve project:", error);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -75,7 +133,14 @@ export default function OrderDetailsPage() {
       createdAt: new Date()
     };
 
-    setMessages([...messages, tmpMsg]);
+    // Emit via Socket for real-time delivery
+    if (socket) {
+        socket.emit('send_message', {
+            ...tmpMsg,
+            projectId: id
+        });
+    }
+
     setNewMessage("");
 
     try {
@@ -217,7 +282,10 @@ export default function OrderDetailsPage() {
                   <button className="flex-1 md:flex-none h-10 px-6 bg-white text-emerald-700 border border-emerald-200 rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all">
                     Request Revision
                   </button>
-                  <button className="flex-1 md:flex-none h-10 px-6 bg-[#002D5B] text-white rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-[#001D3D] transition-all">
+                  <button 
+                    onClick={handleApprove}
+                    className="flex-1 md:flex-none h-10 px-6 bg-[#002D5B] text-white rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-[#001D3D] transition-all"
+                  >
                     Approve & Download
                   </button>
                 </div>

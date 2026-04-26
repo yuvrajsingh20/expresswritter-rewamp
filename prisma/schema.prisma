@@ -74,6 +74,9 @@ model FreelancerProfile {
   bio           String?
   skills        String[] // E.g. ["SOP", "LOR", "Technical", "Academic"]
   experience    Int?     // Years of experience
+  education     String?  // Highest qualification
+  resumeUrl     String?  // Link to resume
+  photoUrl      String?  // Profile photo
   portfolioUrl  String?
   rating        Float    @default(5.0)
   totalProjects Int      @default(0)

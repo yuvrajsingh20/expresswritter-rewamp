@@ -6,7 +6,7 @@ import { dispatchNotification } from "@/lib/notifications";
 
 export async function POST(req) {
   try {
-    const { name, email, password, role } = await req.json();
+    const { name, email, password, role, writerProfile } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ message: "Missing fields" }, { status: 400 });
@@ -28,7 +28,24 @@ export async function POST(req) {
         name,
         email,
         password: hashedPassword,
-        role: role || "STUDENT"
+        role: role || "STUDENT",
+        ...(role === "FREELANCER" && writerProfile ? {
+          freelancerProfile: {
+            create: {
+              bio: writerProfile.bio,
+              experience: parseInt(writerProfile.experience) || 0,
+              education: writerProfile.education,
+              resumeUrl: writerProfile.resumeUrl,
+              photoUrl: writerProfile.photoUrl,
+              linkedinUrl: writerProfile.linkedinUrl,
+              skills: [writerProfile.domainId], // Default skill from domain
+              isVerified: false
+            }
+          }
+        } : {})
+      },
+      include: {
+        freelancerProfile: true
       }
     });
 

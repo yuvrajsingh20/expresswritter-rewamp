@@ -40,6 +40,12 @@ app.prepare().then(() => {
       console.log(`Message in ${projectId} (${chatType}): ${message}`);
     });
 
+    socket.on("status_update", (data) => {
+      const { projectId, status } = data;
+      io.to(projectId).emit("project_status_changed", data);
+      console.log(`Status update in ${projectId}: ${status}`);
+    });
+
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
     });

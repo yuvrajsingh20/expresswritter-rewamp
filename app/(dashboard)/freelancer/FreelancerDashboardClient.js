@@ -11,24 +11,78 @@ import { useState, useEffect } from 'react';
 
 export default function FreelancerDashboardClient({ session, profile }) {
   const [tasks, setTasks] = useState([]);
+  const [availableTasks, setAvailableTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('ACTIVE'); // 'ACTIVE' or 'AVAILABLE'
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setTasks(data);
+    if (profile.isVerified) {
+      const fetchAllData = async () => {
+        setLoading(true);
+        try {
+          const [activeRes, availableRes] = await Promise.all([
+            fetch('/api/projects'),
+            fetch('/api/projects/available')
+          ]);
+          
+          const activeData = await activeRes.json();
+          const availableData = await availableRes.json();
+
+          if (Array.isArray(activeData)) setTasks(activeData);
+          if (Array.isArray(availableData)) setAvailableTasks(availableData);
+        } catch (error) {
+          console.error("Failed to fetch dashboard data:", error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Failed to fetch tasks:", error);
-      } finally {
-        setLoading(false);
+      };
+      fetchAllData();
+    } else {
+      setLoading(false);
+    }
+  }, [profile.isVerified]);
+
+  const handleClaim = async (projectId) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freelancerId: session.user.id, status: 'ASSIGNED' })
+      });
+
+      if (res.ok) {
+        const claimedTask = availableTasks.find(t => t.id === projectId);
+        setAvailableTasks(prev => prev.filter(t => t.id !== projectId));
+        setTasks(prev => [{ ...claimedTask, status: 'ASSIGNED', freelancerId: session.user.id }, ...prev]);
+        setActiveTab('ACTIVE');
       }
-    };
-    fetchTasks();
-  }, []);
+    } catch (error) {
+      console.error("Failed to claim project:", error);
+    }
+  };
+
+  if (!profile.isVerified) {
+    return (
+      <div className="flex-1 ml-64 flex flex-col bg-[#FBFBFB] min-h-screen text-[#111111]">
+        <main className="flex-1 flex flex-col items-center justify-center p-10 max-w-2xl mx-auto text-center space-y-8">
+           <div className="w-24 h-24 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center shadow-xl shadow-amber-500/10 animate-bounce">
+              <Clock size={48} />
+           </div>
+           <div className="space-y-4">
+              <h1 className="text-4xl font-black tracking-tighter text-slate-900 italic uppercase">Account Under Review.</h1>
+              <p className="text-slate-500 font-medium leading-relaxed">
+                Welcome to the elite panel, <span className="text-slate-900 font-bold">{session?.user?.name}</span>. Our administrators are currently verifying your credentials and expertise dossier.
+              </p>
+           </div>
+           <div className="bg-white border border-slate-100 p-8 rounded-3xl shadow-sm w-full">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-2">Protocol Timeline</p>
+              <p className="text-lg font-bold text-slate-900">System clearance expected within <span className="text-blue-600 italic">24 Hours</span></p>
+           </div>
+           <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-300">You will receive an encrypted notification once verified.</p>
+        </main>
+      </div>
+    );
+  }
 
   const stats = [
     { title: 'Active Tasks', count: tasks.filter(t => t.status !== 'COMPLETED').length, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -90,51 +144,99 @@ export default function FreelancerDashboardClient({ session, profile }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-6">
            {/* Task Queue */}
            <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Active Queue</h3>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                 <div className="flex gap-8">
+                    <button 
+                      onClick={() => setActiveTab('ACTIVE')}
+                      className={`text-[11px] font-black uppercase tracking-widest pb-4 -mb-[17px] border-b-2 transition-all ${activeTab === 'ACTIVE' ? 'border-[#002D5B] text-[#002D5B]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                       Active Queue ({tasks.length})
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('AVAILABLE')}
+                      className={`text-[11px] font-black uppercase tracking-widest pb-4 -mb-[17px] border-b-2 transition-all ${activeTab === 'AVAILABLE' ? 'border-[#002D5B] text-[#002D5B]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                       Available Streams ({availableTasks.length})
+                    </button>
+                 </div>
               </div>
-              <div className="space-y-4">
-                  {tasks.length > 0 ? tasks.map((task) => (
-                     <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex items-center justify-between">
-                       <div className="flex items-center gap-6">
-                         <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-sm text-slate-400 group-hover:bg-[#0067B8]/5 group-hover:text-[#0067B8] transition-colors">
-                            <Briefcase size={18} />
+
+              <div className="space-y-4 pt-4">
+                  {activeTab === 'ACTIVE' ? (
+                    tasks.length > 0 ? tasks.map((task) => (
+                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-sm text-slate-400 group-hover:bg-[#0067B8]/5 group-hover:text-[#0067B8] transition-colors">
+                             <Briefcase size={18} />
+                          </div>
+                          <div>
+                             <div className="flex items-center gap-3">
+                                <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
+                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                   task.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' :
+                                   task.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+                                }`}>
+                                  {task.status}
+                                </span>
+                             </div>
+                             <div className="flex gap-4 mt-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{task.serviceType}</p>
+                                <span className="text-[10px] text-slate-200">|</span>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                  <Clock size={10} /> {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
+                                </p>
+                             </div>
+                          </div>
+                        </div>
+                        <a 
+                          href={`/freelancer/projects/${task.id}`}
+                          className="h-9 px-4 flex items-center gap-2 border border-[#E5E5E5] rounded-sm text-[10px] font-bold uppercase tracking-widest hover:border-[#0067B8] hover:text-[#0067B8] transition-all"
+                        >
+                          Manage <ChevronRight size={14} />
+                        </a>
+                      </div>
+                    )) : (
+                      <div className="bg-white border border-[#E5E5E5] border-dashed p-16 rounded-sm flex flex-col items-center justify-center text-center">
+                         <div className="w-12 h-12 bg-slate-50 rounded-sm flex items-center justify-center mb-4 text-slate-300">
+                            <Briefcase size={24} />
                          </div>
-                         <div>
-                            <div className="flex items-center gap-3">
-                               <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
-                               <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                  task.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' :
-                                  task.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
-                               }`}>
-                                 {task.status}
-                               </span>
-                            </div>
-                            <div className="flex gap-4 mt-1">
-                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{task.serviceType}</p>
-                               <span className="text-[10px] text-slate-200">|</span>
-                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                 <Clock size={10} /> {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
-                               </p>
-                            </div>
+                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No assigned projects</p>
+                         <p className="text-xs text-slate-300 mt-1 uppercase tracking-wider font-medium">Monitoring for new submissions...</p>
+                      </div>
+                    )
+                  ) : (
+                    availableTasks.length > 0 ? availableTasks.map((task) => (
+                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-10 h-10 bg-blue-50/50 flex items-center justify-center rounded-sm text-[#0067B8]">
+                             <Zap size={18} />
+                          </div>
+                          <div>
+                             <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
+                             <div className="flex gap-4 mt-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{task.serviceType}</p>
+                                <span className="text-[10px] text-slate-200">|</span>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Client: {task.student?.name}</p>
+                             </div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleClaim(task.id)}
+                          className="h-9 px-6 bg-[#002D5B] text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-[#001D3D] transition-all"
+                        >
+                          Claim Project
+                        </button>
+                      </div>
+                    )) : (
+                      <div className="bg-white border border-[#E5E5E5] border-dashed p-16 rounded-sm flex flex-col items-center justify-center text-center">
+                         <div className="w-12 h-12 bg-slate-50 rounded-sm flex items-center justify-center mb-4 text-slate-300">
+                            <Zap size={24} />
                          </div>
-                       </div>
-                       <a 
-                         href={`/freelancer/projects/${task.id}`}
-                         className="h-9 px-4 flex items-center gap-2 border border-[#E5E5E5] rounded-sm text-[10px] font-bold uppercase tracking-widest hover:border-[#0067B8] hover:text-[#0067B8] transition-all"
-                       >
-                         Manage <ChevronRight size={14} />
-                       </a>
-                     </div>
-                  )) : (
-                    <div className="bg-white border border-[#E5E5E5] border-dashed p-16 rounded-sm flex flex-col items-center justify-center text-center">
-                       <div className="w-12 h-12 bg-slate-50 rounded-sm flex items-center justify-center mb-4 text-slate-300">
-                          <Briefcase size={24} />
-                       </div>
-                       <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No assigned projects</p>
-                       <p className="text-xs text-slate-300 mt-1 uppercase tracking-wider font-medium">Monitoring for new submissions...</p>
-                    </div>
-                 )}
+                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No available streams</p>
+                         <p className="text-xs text-slate-300 mt-1 uppercase tracking-wider font-medium">All projects are currently under specialist management.</p>
+                      </div>
+                    )
+                  )}
               </div>
            </div>
 

@@ -5,8 +5,9 @@ const nextConfig: NextConfig = {
     FIX: In Next.js 16, 'turbopack' MUST be at the top level, 
     NOT inside 'experimental'. This resolves the "Unrecognized key" error.
   */
-  turbopack: {}, 
-
+  turbopack: {
+    root: process.cwd(),
+  },
   experimental: {
     // Other experimental features can go here, but NOT turbopack
   },

@@ -3,11 +3,13 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from "next-auth/react";
+import { motion } from 'framer-motion';
 import { 
   Home, Users, Briefcase, 
   MessageSquare, Shield, LogOut,
   TrendingUp, Award, Zap, PlusCircle,
-  Settings, CreditCard
+  Settings, CreditCard, ChevronRight,
+  LayoutGrid, Activity
 } from 'lucide-react';
 
 const Sidebar = ({ role = 'ADMIN' }) => {
@@ -19,7 +21,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
 
   const menuItems = {
     ADMIN: [
-      { name: 'Mission Control', icon: Home, path: '/admin' },
+      { name: 'Mission Control', icon: LayoutGrid, path: '/admin' },
       { name: 'Elite Workforce', icon: Zap, path: '/admin/freelancers' },
       { name: 'Global Projects', icon: Briefcase, path: '/admin/projects' },
       { name: 'Secure Comms', icon: MessageSquare, path: '/admin/chat' },
@@ -30,13 +32,13 @@ const Sidebar = ({ role = 'ADMIN' }) => {
       { name: 'Assignments', icon: Briefcase, path: '/subadmin' },
     ],
     FREELANCER: [
-      { name: 'Project Hub', icon: Home, path: '/freelancer' },
+      { name: 'Project Hub', icon: LayoutGrid, path: '/freelancer' },
       { name: 'Active Tasks', icon: Briefcase, path: '/freelancer/projects' },
       { name: 'Secure Inbox', icon: MessageSquare, path: '/freelancer/chat' },
       { name: 'Financials', icon: CreditCard, path: '/freelancer/earnings' },
     ],
     STUDENT: [
-      { name: 'Workspace', icon: Home, path: '/student' },
+      { name: 'Workspace', icon: LayoutGrid, path: '/student' },
       { name: 'Order History', icon: Briefcase, path: '/student/orders' },
       { name: 'Initialize Draft', icon: PlusCircle, path: '/student/new-order' },
     ],
@@ -45,49 +47,70 @@ const Sidebar = ({ role = 'ADMIN' }) => {
   const currentMenu = menuItems[role] || menuItems.STUDENT;
 
   return (
-    <aside className="w-72 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0 font-sans">
-      <div className="p-10 mb-2">
-        <Link href="/" className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-black flex items-center justify-center text-white font-black text-xl">
+    <aside className="w-64 bg-white border-r border-[#E5E5E5] flex flex-col h-screen fixed left-0 top-0 z-50 font-sans shadow-xl shadow-slate-900/5">
+      {/* Premium Logo Section */}
+      <div className="p-8 mb-4">
+        <Link href="/" className="group flex items-center gap-4">
+          <div className="w-10 h-10 bg-[#002D5B] text-white flex items-center justify-center font-black text-lg rounded-xl shadow-lg shadow-blue-900/20 group-hover:scale-110 transition-transform">
             E
           </div>
           <div>
-            <span className="text-sm font-[900] tracking-tighter uppercase italic text-black leading-none block">Express Writer</span>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{role.replace('_', ' ')} PORTAL</p>
+            <span className="text-xs font-black tracking-tight uppercase text-[#002D5B] leading-none block">Express Writer</span>
+            <div className="flex items-center gap-1.5 mt-1">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{role.replace('_', ' ')} NODE</p>
+            </div>
           </div>
         </Link>
       </div>
 
-      <nav className="flex-1 px-6 space-y-2 mt-4">
-        <div className="px-4 mb-6">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Institutional Navigation</p>
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-1.5">
+        <div className="px-4 mb-4">
+          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Institutional Core</p>
         </div>
         {currentMenu.map((item) => {
-          const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
+          const isActive = pathname === item.path || (item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path));
           return (
             <Link 
               key={item.name} 
               href={item.path}
-              className={`flex items-center gap-4 px-4 py-4 text-[11px] font-black uppercase tracking-widest transition-all rounded-none border-l-2 ${
+              className={`group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all ${
                 isActive 
-                  ? 'bg-slate-50 text-black border-black shadow-sm' 
-                  : 'text-slate-400 border-transparent hover:text-black hover:bg-slate-50'
+                  ? 'bg-[#002D5B] text-white shadow-xl shadow-blue-900/20' 
+                  : 'text-slate-500 hover:text-[#002D5B] hover:bg-slate-50'
               }`}
             >
-              <item.icon size={16} className={isActive ? "text-black" : "text-slate-300"} />
-              <span>{item.name}</span>
+              <div className="flex items-center gap-3.5">
+                <item.icon size={18} className={isActive ? "text-white" : "text-slate-400 group-hover:text-[#002D5B] transition-colors"} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{item.name}</span>
+              </div>
+              {isActive && (
+                <motion.div layoutId="activePill" className="w-1.5 h-1.5 bg-white rounded-full" />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-8 border-t border-slate-50 space-y-3">
+      {/* Footer Section */}
+      <div className="p-6 border-t border-slate-50 space-y-4">
+        <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4">
+           <div className="w-8 h-8 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-[#002D5B] shadow-sm">
+              <Activity size={14} />
+           </div>
+           <div>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Session Status</p>
+              <p className="text-[10px] font-bold text-slate-900 mt-1">Encrypted Stream</p>
+           </div>
+        </div>
+        
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-4 px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-none"
+          className="w-full flex items-center gap-4 px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
         >
           <LogOut size={16} />
-          <span>Terminate Session</span>
+          <span>Terminate Access</span>
         </button>
       </div>
     </aside>

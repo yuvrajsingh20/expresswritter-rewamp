@@ -29,7 +29,7 @@ app.prepare().then(() => {
     });
 
     socket.on("send_message", (data) => {
-      const { projectId, chatType, message, senderId } = data;
+      const { projectId, chatType, content, senderId } = data;
       
       // Broadcast to the project room
       io.to(projectId).emit("receive_message", {
@@ -37,7 +37,7 @@ app.prepare().then(() => {
         timestamp: new Date(),
       });
       
-      console.log(`Message in ${projectId} (${chatType}): ${message}`);
+      console.log(`Message in ${projectId} (${chatType}): ${content}`);
     });
 
     socket.on("status_update", (data) => {

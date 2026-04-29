@@ -143,6 +143,7 @@ model Project {
   subAdmin         User?         @relation("SubAdminProjects", fields: [subAdminId], references: [id])
 
   serviceType       String?       // E.g. "SOP", "LOR", "RESUME"
+  amount            Float?        @default(0)
   attachments       Json[]        // Array of {url, name}
   
   messages         Message[]

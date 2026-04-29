@@ -21,7 +21,6 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     // Scroll to bottom on new messages
     if (scrollRef.current) {
@@ -29,9 +28,12 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
     }
   }, [messages]);
 
+  const socketRef = useRef<any>(null);
+
   // Handle Real-time Socket Connection
   useEffect(() => {
     const socket = io();
+    socketRef.current = socket;
 
     socket.emit('join_project', projectId);
 
@@ -77,8 +79,9 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
       await axios.post('/api/chat', messageData);
       
       // 2. Emit to Socket (Server will broadcast)
-      const socket = io();
-      socket.emit('send_message', messageData);
+      if (socketRef.current) {
+        socketRef.current.emit('send_message', messageData);
+      }
       
       setInput('');
     } catch (err) {
@@ -180,4 +183,3 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
   );
 }
 
-import { MessageSquare } from 'lucide-react';

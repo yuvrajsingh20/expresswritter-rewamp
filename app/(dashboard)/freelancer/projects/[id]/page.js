@@ -6,12 +6,13 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { 
   Briefcase, Clock, FileText, Send, 
   ChevronLeft, MessageSquare, Info, 
-  Upload, CheckCircle, CheckCircle2, AlertCircle, ExternalLink
+  Upload, CheckCircle, CheckCircle2, AlertCircle, 
+  ExternalLink, Zap, Paperclip, Loader2,
+  LayoutGrid, Calendar, Target, ShieldCheck,
+  Search, ArrowRight, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
-
-let socket;
 
 export default function SpecialistConsole() {
   const params = useParams();
@@ -28,6 +29,7 @@ export default function SpecialistConsole() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const scrollRef = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -68,20 +70,10 @@ export default function SpecialistConsole() {
 
   // Socket.io Real-time Logic
   useEffect(() => {
-    socketInitializer();
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-  }, []);
-
-  const socketInitializer = async () => {
-    // We connect to the same host
-    socket = io();
+    const socket = io();
+    socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Connected to socket');
       socket.emit('join_project', id);
     });
 
@@ -96,7 +88,11 @@ export default function SpecialistConsole() {
         setProject(prev => ({ ...prev, status: data.status }));
       }
     });
-  };
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [id]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -113,9 +109,8 @@ export default function SpecialistConsole() {
       createdAt: new Date()
     };
 
-    // Emit via Socket for real-time delivery
-    if (socket) {
-        socket.emit('send_message', {
+    if (socketRef.current) {
+        socketRef.current.emit('send_message', {
             ...tmpMsg,
             projectId: id
         });
@@ -127,11 +122,7 @@ export default function SpecialistConsole() {
       await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: tmpMsg.content,
-          projectId: id,
-          chatType: 'CLIENT_CHAT'
-        })
+        body: JSON.stringify(tmpMsg)
       });
     } catch (error) {
       console.error("Message delivery failed:", error);
@@ -155,7 +146,6 @@ export default function SpecialistConsole() {
       if (res.ok) {
         const uploadData = await res.json();
         
-        // Update project status to REVIEW
         await fetch(`/api/projects/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -171,9 +161,8 @@ export default function SpecialistConsole() {
           attachments: [...(prev.attachments || []), uploadData]
         }));
         
-        // Emit status update via Socket
-        if (socket) {
-            socket.emit('status_update', { projectId: id, status: 'REVIEW' });
+        if (socketRef.current) {
+            socketRef.current.emit('status_update', { projectId: id, status: 'REVIEW' });
         }
 
         setShowSuccess(true);
@@ -195,9 +184,8 @@ export default function SpecialistConsole() {
       });
       if (res.ok) {
         setProject({ ...project, status: newStatus });
-        // Emit status update via Socket
-        if (socket) {
-            socket.emit('status_update', { projectId: id, status: newStatus });
+        if (socketRef.current) {
+            socketRef.current.emit('status_update', { projectId: id, status: newStatus });
         }
       }
     } catch (error) {
@@ -206,284 +194,342 @@ export default function SpecialistConsole() {
   };
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-[#FBFBFB]">
-       <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-[#002D5B] rounded-full animate-spin"></div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Initialising Secure Console...</p>
-       </div>
+    <div className="flex bg-[#FBFBFB] min-h-screen">
+      <Sidebar role="FREELANCER" />
+      <div className="flex-1 flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-slate-100 border-t-[#002D5B] rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Zap className="text-[#002D5B] animate-pulse" size={20} />
+          </div>
+        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Synchronizing Secure Console...</p>
+      </div>
     </div>
   );
 
   if (!project) return (
-    <div className="flex h-screen items-center justify-center bg-[#FBFBFB]">
-       <div className="text-center space-y-6 max-w-sm">
-          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-sm flex items-center justify-center mx-auto shadow-sm">
-            <AlertCircle size={32} />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900">Project Not Found</h2>
-          <p className="text-xs text-slate-500 leading-relaxed">The project you are looking for does not exist or you do not have permission to access this node.</p>
-          <button 
-            onClick={() => router.push('/freelancer')}
-            className="px-8 py-3 bg-[#002D5B] text-white rounded-sm text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-blue-900/10"
-          >
-            Return to Dashboard
-          </button>
-       </div>
+    <div className="flex bg-[#FBFBFB] min-h-screen">
+      <Sidebar role="FREELANCER" />
+      <div className="flex-1 flex items-center justify-center p-8">
+         <motion.div 
+           initial={{ opacity: 0, scale: 0.9 }}
+           animate={{ opacity: 1, scale: 1 }}
+           className="text-center p-12 bg-white border border-[#E5E5E5] rounded-3xl max-w-md shadow-2xl"
+         >
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={40} />
+            </div>
+            <h2 className="text-xl font-black text-slate-900 mb-3 uppercase tracking-tight">Access Denied</h2>
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium italic">This project stream is either encrypted, revoked, or non-existent in the current specialist directory.</p>
+            <button onClick={() => router.push('/freelancer')} className="w-full h-14 bg-[#002D5B] text-white rounded-xl flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all">
+              <ChevronLeft size={16} /> RETURN TO HUB
+            </button>
+         </motion.div>
+      </div>
     </div>
   );
 
   return (
-    <div className="flex bg-[#FBFBFB] min-h-screen text-[#111111]">
+    <div className="flex bg-[#FBFBFB] min-h-screen text-[#111111] font-sans overflow-hidden">
       <Sidebar role="FREELANCER" />
       
       <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
-          {/* Header */}
-          <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 shrink-0">
-             <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => router.push('/freelancer')}
-                  className="p-2 hover:bg-slate-50 rounded-sm text-slate-400 transition-colors"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <div className="h-4 w-[1px] bg-slate-200 mx-2" />
-                <div>
-                   <h2 className="text-sm font-bold text-slate-900">{project.title}</h2>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Case ID: {project.id.slice(-6).toUpperCase()}</p>
-                </div>
+        {/* Premium Header */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#E5E5E5] flex items-center justify-between px-10 shrink-0 z-20">
+          <div className="flex items-center gap-6">
+             <button 
+               onClick={() => router.push('/freelancer')} 
+               className="group flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-[#002D5B] transition-all"
+             >
+               <div className="p-2.5 rounded-xl bg-slate-50 group-hover:bg-blue-50 transition-colors">
+                 <ChevronLeft size={14} />
+               </div>
+               PROJECT HUB
+             </button>
+             <div className="h-6 w-px bg-slate-200" />
+             <div className="flex flex-col">
+               <h1 className="text-base font-black text-slate-900 tracking-tight">{project.title}</h1>
+               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                 <span className="text-[#0067B8]">CASE NODE: #{project.id.slice(-6).toUpperCase()}</span>
+                 <span>•</span>
+                 <span>DL: {new Date(project.deadline).toLocaleDateString()}</span>
+               </div>
              </div>
-             
-             <div className="flex items-center gap-3">
-                <div className={`px-3 py-1 rounded-sm text-[9px] font-bold uppercase tracking-wider ${
-                    project.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                    project.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 
-                    project.status === 'REVIEW' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                    'bg-slate-50 text-slate-600 border border-slate-100'
-                }`}>
-                    {project.status}
-                </div>
-             </div>
-          </header>
-
-          <div className="flex-1 flex overflow-hidden">
-             {/* Left Column: Management */}
-             <main className="flex-1 overflow-y-auto p-8 space-y-8">
-                {/* Master Action Node */}
-                <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-[#E5E5E5] bg-slate-50/50 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#002D5B] text-white rounded-sm flex items-center justify-center">
-                                <Briefcase size={16} />
-                            </div>
-                            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Specialist Action Node</h3>
-                        </div>
-                    </div>
-                    <div className="p-8 space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Workflow Progress</p>
-                                <div className="space-y-3">
-                                    {[
-                                        { s: 'ASSIGNED', l: 'Initial Assignment' },
-                                        { s: 'IN_PROGRESS', l: 'Work Started' },
-                                        { s: 'REVIEW', l: 'In Review' },
-                                        { s: 'COMPLETED', l: 'Mark Final Delivery' }
-                                    ].map((step, idx) => {
-                                        const isDone = project.status === step.s || (idx < 2 && project.status === 'IN_PROGRESS') || (idx < 3 && project.status === 'REVIEW') || project.status === 'COMPLETED';
-                                        const isCurrent = project.status === step.s;
-                                        
-                                        return (
-                                            <div key={idx} className="flex items-center gap-4">
-                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-                                                    isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-slate-300'
-                                                }`}>
-                                                    {isDone ? <CheckCircle2 size={12} /> : <span className="text-[10px]">{idx+1}</span>}
-                                                </div>
-                                                <span className={`text-[11px] font-bold uppercase tracking-wider ${isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
-                                                    {step.l}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            
-                            <div className="bg-slate-50 p-6 rounded-sm space-y-6">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Console Controls</p>
-                                <div className="space-y-3">
-                                    {project.status === 'ASSIGNED' && (
-                                        <button 
-                                          onClick={() => updateStatus('IN_PROGRESS')}
-                                          className="w-full h-11 bg-[#0067B8] text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-[#005a9e] transition-all flex items-center justify-center gap-2"
-                                        >
-                                          Start Working Now
-                                        </button>
-                                    )}
-                                    {project.status === 'REVIEW' && (
-                                         <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-sm">
-                                            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider flex items-center gap-2">
-                                                <CheckCircle2 size={12} /> Submitted for Review
-                                            </p>
-                                            <p className="text-[9px] text-emerald-600 mt-1">Waiting for student feedback or approval.</p>
-                                         </div>
-                                    )}
-                                    <button className="w-full h-11 bg-white text-slate-600 border border-slate-200 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                                        Support Request
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Project Assets */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm h-full flex flex-col">
-                        <div className="p-6 border-b border-[#E5E5E5] flex items-center gap-3">
-                            <FileText size={16} className="text-[#0067B8]" />
-                            <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Project Artifacts</h4>
-                        </div>
-                        <div className="p-6 flex-1 max-h-[300px] overflow-y-auto">
-                            {project.attachments?.length > 0 ? (
-                                <div className="space-y-3">
-                                    {project.attachments.map((file, idx) => (
-                                        <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-sm flex items-center justify-between group hover:border-[#0067B8] transition-all">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-white border border-slate-200 rounded-sm flex items-center justify-center text-slate-400 group-hover:text-[#0067B8]">
-                                                    <FileText size={14} />
-                                                </div>
-                                                <p className="text-[11px] font-medium text-slate-700 truncate max-w-[150px]">{file.name}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button 
-                                                  onClick={() => setPreviewUrl(file.url)}
-                                                  className="p-1.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-sm transition-all"
-                                                  title="Preview PDF"
-                                                >
-                                                    <Info size={14} />
-                                                </button>
-                                                <a 
-                                                  href={file.url} 
-                                                  target="_blank" 
-                                                  className="p-1.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-sm transition-all"
-                                                >
-                                                    <ExternalLink size={14} />
-                                                </a>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
-                                    <AlertCircle size={24} className="mb-2" />
-                                    <p className="text-[10px] font-bold uppercase tracking-widest">No source files provided.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm h-full flex flex-col relative overflow-hidden">
-                        <div className="p-6 border-b border-[#E5E5E5] flex items-center gap-3">
-                            <Upload size={16} className="text-emerald-500" />
-                            <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Submit Deliverable</h4>
-                        </div>
-                        
-                        <div className="p-8 flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 m-6 rounded-sm bg-slate-50/50 relative">
-                            {uploading && (
-                                <div className="absolute inset-0 bg-white/80 z-20 flex flex-col items-center justify-center">
-                                    <div className="w-8 h-8 border-2 border-slate-200 border-t-[#002D5B] rounded-full animate-spin"></div>
-                                    <p className="text-[9px] font-bold text-[#002D5B] uppercase tracking-widest mt-3">Uploading to Cloudinary...</p>
-                                </div>
-                            )}
-                            <Upload size={32} className="text-slate-300 mb-4" />
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Drag & drop final draft</p>
-                            <p className="text-[9px] text-slate-400 mt-1">PDF, DOCX up to 10MB</p>
-                            <label className="mt-6 px-6 py-2 bg-white border border-slate-200 rounded-sm text-[10px] font-bold text-[#002D5B] uppercase tracking-widest hover:bg-white/50 transition-all cursor-pointer">
-                                Browse Files
-                                <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx" />
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white border border-[#E5E5E5] rounded-sm shadow-sm p-8">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Briefing Observation</h4>
-                    <div className="prose prose-slate max-w-none">
-                        <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-6 rounded-sm border-l-4 border-slate-200 font-medium italic">
-                            "{project.description || 'No detailed instructions provided by student.'}"
-                        </p>
-                    </div>
-                </div>
-             </main>
-
-             {/* Right Column: Chat */}
-             <aside className="w-[450px] border-l border-[#E5E5E5] bg-white flex flex-col shrink-0">
-                <div className="p-6 border-b border-[#E5E5E5] bg-slate-50/50 flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-[#0067B8] text-white rounded-sm flex items-center justify-center">
-                            <MessageSquare size={16} />
-                        </div>
-                        <h4 className="text-sm font-bold text-slate-900">Communication Node</h4>
-                    </div>
-                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Direct stream: Specialist → Student</p>
-                </div>
-
-                <div 
-                  ref={scrollRef}
-                  className="flex-1 overflow-y-auto p-6 space-y-6"
-                >
-                   {messages.length === 0 ? (
-                     <div className="h-full flex flex-col items-center justify-center text-center opacity-30 px-12">
-                        <Info size={32} className="mb-4" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Secure stream initialized. Connect with the student to clarify requirements.</p>
-                     </div>
-                   ) : (
-                      <div className="space-y-6">
-                        {messages.map((msg, idx) => {
-                            const isMe = msg.senderId === user?.id || msg.senderId === session?.user?.id;
-                            return (
-                                <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                        <div className={`p-4 rounded-sm text-xs font-medium leading-relaxed ${
-                                            isMe ? 'bg-[#002D5B] text-white shadow-md' : 'bg-slate-100 text-slate-800'
-                                        }`}>
-                                            {msg.content}
-                                        </div>
-                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-2">
-                                            {isMe ? 'Expert Console' : 'Student (Client)'} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                      </div>
-                   )}
-                </div>
-
-                <form 
-                  onSubmit={handleSendMessage}
-                  className="p-6 border-t border-[#E5E5E5] bg-white gap-3 flex"
-                >
-                    <input 
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a secure message..."
-                      className="flex-1 h-11 px-4 bg-slate-50 border border-slate-200 rounded-sm text-xs focus:ring-1 focus:ring-[#0067B8] outline-none transition-all"
-                    />
-                    <button 
-                      type="submit"
-                      disabled={!newMessage.trim()}
-                      className="w-11 h-11 bg-[#002D5B] text-white rounded-sm flex items-center justify-center hover:bg-[#001D3D] disabled:opacity-50 transition-all shrink-0 shadow-lg shadow-blue-900/10"
-                    >
-                      <Send size={18} />
-                    </button>
-                </form>
-             </aside>
           </div>
+          <div className="flex items-center gap-4">
+             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm transition-all ${
+               project.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+               project.status === 'REVIEW' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+               'bg-blue-50 text-[#0067B8] border-blue-100'
+             }`}>
+               {project.status.replace('_', ' ')}
+             </div>
+          </div>
+        </header>
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* Main Content Area */}
+          <main className="flex-1 flex flex-col p-8 overflow-y-auto space-y-8 bg-slate-50/30">
+            
+            {/* Workflow Tracker Card */}
+            <div className="bg-[#002D5B] rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl shadow-blue-900/20">
+               <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none rotate-12">
+                 <Target size={140} />
+               </div>
+               <div className="relative z-10 space-y-10">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                       <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.3em]">Operational Phase</p>
+                       <h2 className="text-2xl font-black tracking-tight">Active Specialization Sequence</h2>
+                    </div>
+                    <div className="flex items-center gap-6 bg-white/10 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 shadow-inner">
+                       <div className="text-center">
+                          <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1">Contract Value</p>
+                          <p className="text-xl font-black">₹{project.amount || '---'}</p>
+                       </div>
+                       <div className="w-px h-8 bg-white/20" />
+                       <div className="text-center">
+                          <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1">Target DL</p>
+                          <p className="text-xl font-black">{new Date(project.deadline).toLocaleDateString([], { day: 'numeric', month: 'short' })}</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {[
+                      { s: 'ASSIGNED', l: 'Assigned', i: Briefcase },
+                      { s: 'IN_PROGRESS', l: 'Production', i: PlayCircle },
+                      { s: 'REVIEW', l: 'Verification', i: Search },
+                      { s: 'COMPLETED', l: 'Delivered', i: CheckCircle2 }
+                    ].map((step, idx) => {
+                      const isPast = project.status === step.s || (idx === 0 && project.status !== 'CREATED') || (idx === 1 && (project.status === 'REVIEW' || project.status === 'COMPLETED')) || (idx === 2 && project.status === 'COMPLETED');
+                      const isCurrent = project.status === step.s;
+                      return (
+                        <div key={idx} className="relative group">
+                           <div className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
+                             isCurrent ? 'bg-white text-[#002D5B] border-white shadow-xl scale-105' : 
+                             isPast ? 'bg-blue-800/40 text-blue-100 border-blue-700/50' : 
+                             'bg-blue-900/40 text-blue-400 border-blue-800/50'
+                           }`}>
+                              <step.i size={20} className={isCurrent ? 'animate-pulse' : ''} />
+                              <span className="text-[10px] font-black uppercase tracking-widest">{step.l}</span>
+                              {isPast && !isCurrent && <CheckCircle size={14} className="ml-auto text-emerald-400" />}
+                           </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+               </div>
+            </div>
+
+            {/* Console Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               {/* Controls & Briefing */}
+               <div className="space-y-8">
+                  <div className="bg-white p-8 border border-[#E5E5E5] rounded-3xl shadow-sm space-y-8">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Console Controls</h3>
+                        <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                           <LayoutGrid size={16} />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        {project.status === 'ASSIGNED' && (
+                          <button 
+                            onClick={() => updateStatus('IN_PROGRESS')}
+                            className="w-full h-16 bg-[#0067B8] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-900/10 active:scale-95"
+                          >
+                             <PlayCircle size={20} /> INITIALIZE PRODUCTION
+                          </button>
+                        )}
+                        {project.status === 'REVIEW' && (
+                          <div className="p-6 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-4">
+                             <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                                <Clock size={20} />
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Verification Pending</p>
+                                <p className="text-xs font-medium text-amber-600/80 mt-0.5">Deliverable is currently under student review sequence.</p>
+                             </div>
+                          </div>
+                        )}
+                        <button className="w-full h-14 bg-white border border-[#E5E5E5] text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                           <ShieldCheck size={16} className="text-[#0067B8]" /> PLATFORM SUPPORT
+                        </button>
+                      </div>
+                  </div>
+
+                  <div className="bg-white p-8 border border-[#E5E5E5] rounded-3xl shadow-sm">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Briefing Observation</h3>
+                        <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                           <Info size={16} />
+                        </div>
+                      </div>
+                      <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs leading-[1.8] text-slate-600 font-medium italic whitespace-pre-wrap min-h-[120px]">
+                         "{project.description || 'No detailed briefing provided by the client.'}"
+                      </div>
+                  </div>
+               </div>
+
+               {/* Asset Management */}
+               <div className="bg-white border border-[#E5E5E5] rounded-3xl shadow-sm flex flex-col p-8 space-y-8">
+                  <div className="flex items-center justify-between">
+                     <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Asset Management</h3>
+                     <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                        <Paperclip size={16} />
+                     </div>
+                  </div>
+
+                  {/* Upload Zone */}
+                  <div className="relative group">
+                      <div className={`p-10 border-2 border-dashed rounded-3xl bg-slate-50/50 flex flex-col items-center justify-center text-center transition-all ${
+                        uploading ? 'border-blue-200' : 'border-slate-100 group-hover:border-blue-200 group-hover:bg-blue-50/20'
+                      }`}>
+                          {uploading && (
+                             <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center rounded-3xl">
+                                <Loader2 size={32} className="animate-spin text-[#002D5B]" />
+                                <p className="text-[10px] font-black text-[#002D5B] uppercase tracking-widest mt-4 animate-pulse">Syncing to Cloud...</p>
+                             </div>
+                          )}
+                          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform">
+                             <Upload size={28} className="text-[#002D5B]" />
+                          </div>
+                          <p className="text-xs font-black text-slate-900 uppercase tracking-widest">Submit Final Deliverable</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-tight">PDF, DOCX up to 10MB accepted</p>
+                          <label className="mt-8 px-8 py-3 bg-[#002D5B] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all cursor-pointer shadow-xl shadow-blue-900/10 active:scale-95">
+                             SELECT FILES
+                             <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx" />
+                          </label>
+                      </div>
+                  </div>
+
+                  {/* Artifact List */}
+                  <div className="space-y-3">
+                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Registry Artifacts</p>
+                     {project.attachments?.length > 0 ? project.attachments.map((file, idx) => (
+                        <div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-[#0067B8] hover:shadow-lg hover:shadow-blue-900/5 transition-all">
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-slate-50 flex items-center justify-center text-slate-400 rounded-xl group-hover:bg-blue-50 group-hover:text-[#0067B8] transition-colors">
+                                 <FileText size={18} />
+                              </div>
+                              <div>
+                                 <p className="text-xs font-bold text-slate-700 truncate max-w-[140px]">{file.name}</p>
+                                 <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">ACADEMIC NODE</p>
+                              </div>
+                           </div>
+                           <div className="flex gap-2">
+                              <button onClick={() => setPreviewUrl(file.url)} className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
+                                 <Search size={16} />
+                              </button>
+                              <a href={file.url} target="_blank" className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
+                                 <Download size={16} />
+                              </a>
+                           </div>
+                        </div>
+                     )) : (
+                        <div className="py-10 text-center border border-dashed border-slate-100 rounded-2xl opacity-30">
+                           <p className="text-[10px] font-black uppercase tracking-widest italic">No assets detected.</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            </div>
+          </main>
+
+          {/* Premium Chat Sidebar */}
+          <aside className="w-[480px] border-l border-[#E5E5E5] bg-white flex flex-col shrink-0 relative">
+            <div className="p-8 border-b border-[#E5E5E5] bg-white flex flex-col gap-2 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-[#002D5B] text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/20">
+                       <MessageSquare size={20} />
+                     </div>
+                     <div>
+                        <h4 className="text-sm font-black text-slate-900 tracking-tight">Client Comms</h4>
+                        <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Active Stream</p>
+                     </div>
+                  </div>
+                  <div className="flex -space-x-3">
+                    <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-900 overflow-hidden shadow-sm">
+                      <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-white">SP</div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
+                      <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-slate-500">CL</div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#FBFBFB]/50">
+               {messages.length === 0 ? (
+                 <div className="h-full flex flex-col items-center justify-center text-center px-12 space-y-4 opacity-40">
+                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300">
+                      <Info size={28} />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">Direct communication node standby. Secure transmission authorized.</p>
+                 </div>
+               ) : (
+                  <div className="space-y-8">
+                    {messages.map((msg, idx) => {
+                        const isMe = msg.senderId === user?.id || msg.senderId === session?.user?.id;
+                        return (
+                            <motion.div 
+                              initial={{ opacity: 0, x: isMe ? 20 : -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              key={idx} 
+                              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                            >
+                                <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                    <div className={`px-5 py-4 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${
+                                        isMe ? 'bg-[#002D5B] text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none'
+                                    }`}>
+                                        {msg.content}
+                                    </div>
+                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
+                                        {isMe ? 'SPECIALIST CONSOLE' : 'STUDENT NODE'} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                  </div>
+               )}
+            </div>
+
+            <div className="p-8 border-t border-[#E5E5E5] bg-white">
+               <form onSubmit={handleSendMessage} className="space-y-6">
+                  <div className="relative group">
+                    <textarea 
+                        rows={3}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type secure transmit packet..."
+                        className="w-full bg-slate-50 border-2 border-transparent group-hover:bg-white group-hover:border-slate-100 rounded-2xl p-5 pr-14 text-xs font-medium focus:bg-white focus:border-[#0067B8]/20 focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none shadow-inner"
+                    />
+                    <div className="absolute right-4 bottom-4 flex items-center gap-3 text-slate-300">
+                        <Paperclip size={18} className="cursor-pointer hover:text-[#0067B8] transition-colors" />
+                    </div>
+                  </div>
+                  <button 
+                    disabled={!newMessage.trim()}
+                    type="submit" 
+                    className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
+                  >
+                    SEND MESSAGE <Send size={16} />
+                  </button>
+               </form>
+               <div className="mt-6 p-4 bg-slate-50 rounded-xl flex items-start gap-4">
+                  <ShieldCheck size={18} className="text-[#0067B8] mt-0.5 shrink-0" />
+                  <p className="text-[9px] text-slate-500 font-bold leading-relaxed uppercase tracking-tight">Security Warning: Platform integrity monitoring is active. All communications are logged for quality assurance.</p>
+               </div>
+            </div>
+          </aside>
+        </div>
       </div>
 
-      {/* SUCCESS MODAL */}
+      {/* Success Modal & PDF Preview would go here, consistent with student side */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div 
@@ -492,26 +538,19 @@ export default function SpecialistConsole() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed bottom-12 right-12 z-[110]"
           >
-            <div className="bg-[#002D5B] text-white p-6 shadow-2xl border-t-4 border-emerald-500 min-w-[320px] flex items-center gap-5">
-               <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center shrink-0">
-                  <CheckCircle2 size={20} className="text-emerald-400" />
+            <div className="bg-[#002D5B] text-white p-6 rounded-2xl shadow-2xl border-t-4 border-emerald-500 min-w-[320px] flex items-center gap-5">
+               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={24} className="text-emerald-400" />
                </div>
                <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-1">Stream Updated</h5>
-                  <p className="text-xs font-medium text-slate-200">Deliverable submitted & status synced.</p>
+                  <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">Upload Successful</h5>
+                  <p className="text-xs font-bold text-slate-200">Asset synced to repository.</p>
                </div>
-               <button 
-                onClick={() => setShowSuccess(false)}
-                className="ml-auto text-slate-400 hover:text-white"
-               >
-                 <span className="text-xl">×</span>
-               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* PDF PREVIEW MODAL */}
       <AnimatePresence>
         {previewUrl && (
           <motion.div 
@@ -525,29 +564,22 @@ export default function SpecialistConsole() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full h-full rounded-sm shadow-2xl flex flex-col overflow-hidden"
+              className="bg-white w-full h-full rounded-3xl shadow-2xl flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="h-14 border-b border-slate-200 flex items-center justify-between px-8 bg-slate-50 shrink-0">
-                <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 bg-red-50 text-red-500 rounded-sm flex items-center justify-center">
-                      <FileText size={16} />
+              <div className="h-20 border-b border-slate-200 flex items-center justify-between px-10 bg-slate-50 shrink-0">
+                <div className="flex items-center gap-4">
+                   <div className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shadow-sm">
+                      <FileText size={20} />
                    </div>
-                   <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Academic Document Preview</h3>
+                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Academic Node Preview</h3>
                 </div>
-                <button 
-                  onClick={() => setPreviewUrl(null)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-200 rounded-sm transition-all"
-                >
-                  <span className="text-xl font-light">×</span>
+                <button onClick={() => setPreviewUrl(null)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-200 rounded-xl transition-all">
+                  <span className="text-2xl font-light">×</span>
                 </button>
               </div>
-              <div className="flex-1 bg-slate-100 p-4">
-                <iframe 
-                   src={previewUrl} 
-                   className="w-full h-full rounded-sm border-none shadow-lg"
-                   title="PDF Preview"
-                />
+              <div className="flex-1 bg-slate-100 p-8">
+                <iframe src={previewUrl} className="w-full h-full rounded-2xl border-none shadow-2xl" title="PDF Preview" />
               </div>
             </motion.div>
           </motion.div>
@@ -556,3 +588,5 @@ export default function SpecialistConsole() {
     </div>
   );
 }
+
+import { PlayCircle } from 'lucide-react';

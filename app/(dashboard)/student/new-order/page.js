@@ -94,8 +94,9 @@ export default function NewOrderPage() {
         body: JSON.stringify({
           title: `${selectedService.name} Order`,
           description: formData.description,
-          deadline: formData.deadline ? new Date(formData.deadline) : null,
+          deadline: formData.deadline, // Handled as string, backend will parse
           serviceType: selectedService.id,
+          amount: selectedService.price,
           attachments: formData.attachments
         }),
       });

@@ -9,20 +9,25 @@ export const createProject = async (data) => {
     data: {
       title: data.title,
       description: data.description,
-      deadline: data.deadline,
+      deadline: data.deadline ? new Date(data.deadline) : null,
       studentId: data.studentId,
       serviceType: data.serviceType,
+      amount: data.amount ? parseFloat(data.amount) : 0,
       attachments: data.attachments || [],
       status: data.status || 'CREATED',
     },
   });
 
-  // Automated Background Job: Notify student of project creation
-  await notificationQueue.add('project_created', {
-    projectId: project.id,
-    userId: project.studentId,
-    type: 'EMAIL_CONFIRMATION',
-  });
+  // Automated Background Job: Notify student of project creation (Non-blocking)
+  try {
+    await notificationQueue.add('project_created', {
+      projectId: project.id,
+      userId: project.studentId,
+      type: 'EMAIL_CONFIRMATION',
+    });
+  } catch (error) {
+    console.warn('Notification queue error (ignored):', error);
+  }
 
   return project;
 };

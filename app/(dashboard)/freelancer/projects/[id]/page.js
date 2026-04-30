@@ -139,7 +139,7 @@ export default function SpecialistConsole() {
   }, [id, user?.id]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!newMessage.trim()) return;
 
     const userId = user?.id || session?.user?.id;
@@ -179,6 +179,13 @@ export default function SpecialistConsole() {
       console.error("Message delivery failed:", error);
       setErrorAlert("Failed to send message.");
       setTimeout(() => setErrorAlert(null), 5000);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      if (e) e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -570,6 +577,7 @@ export default function SpecialistConsole() {
                     <textarea 
                         rows={3}
                         value={newMessage}
+                        onKeyDown={handleKeyDown}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type secure transmit packet..."
                         className="w-full bg-slate-50 border-2 border-transparent group-hover:bg-white group-hover:border-slate-100 rounded-2xl p-5 pr-14 text-xs font-medium focus:bg-white focus:border-[#0067B8]/20 focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none shadow-inner"

@@ -10,7 +10,7 @@ import {
   User, MessageSquare, Download, AlertCircle,
   Loader2, FileText, Info, ExternalLink, Calendar,
   CreditCard, ShieldCheck, Zap, Edit3, X, Save,
-  Plus, Trash2, LayoutGrid
+  Plus, Trash2, LayoutGrid, Mic
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useRazorpay } from '@/hooks/useRazorpay';
@@ -44,6 +44,35 @@ export default function OrderDetailsPage() {
   const scrollRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [errorAlert, setErrorAlert] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Voice input is not supported in your browser. Try Chrome or Safari.");
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setNewMessage(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+    
+    recognition.onerror = (event) => {
+      console.error("Speech error:", event.error);
+      setIsListening(false);
+    };
+    
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.start();
+  };
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -69,7 +98,11 @@ export default function OrderDetailsPage() {
           setProject(data);
           setEditDescription(data.description || "");
         }
-        if (msgRes.ok) setMessages(await msgRes.json());
+        if (msgRes.ok) {
+          const fetchedMessages = await msgRes.json();
+          // Map createdAt to timestamp to match new standard
+          setMessages(fetchedMessages.map(m => ({ ...m, timestamp: new Date(m.createdAt) })));
+        }
       } catch (error) {
         console.error("Fetch error:", error);
       } finally {
@@ -88,22 +121,28 @@ export default function OrderDetailsPage() {
 
   // Socket.io Real-time Logic
   useEffect(() => {
+    if (!id || !user?.id) return;
+    
     const socket = io();
     socketRef.current = socket;
 
-    socket.on('connect', () => {
-      socket.emit('join_project', id);
+    socket.emit('join_chat', { 
+      projectId: id, 
+      userId: user.id, 
+      role: 'STUDENT' 
     });
 
     socket.on('receive_message', (data) => {
-      if (data.projectId === id) {
-        // Prevent duplicate messages if already in local state
-        setMessages((prev) => {
-           const exists = prev.some(m => m.id === data.id && data.id);
-           if (exists) return prev;
-           return [...prev, data];
-        });
-      }
+      setMessages((prev) => {
+        // Prevent duplicate messages
+        if (prev.some(m => m.id === data.id)) return prev;
+        return [...prev, { ...data, timestamp: new Date(data.timestamp) }];
+      });
+    });
+
+    socket.on('error_alert', (alert) => {
+      setErrorAlert(alert.message);
+      setTimeout(() => setErrorAlert(null), 5000);
     });
 
     socket.on('project_status_changed', (data) => {
@@ -115,7 +154,7 @@ export default function OrderDetailsPage() {
     return () => {
       socket.disconnect();
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   const handleUpdateProject = async (data) => {
     setUpdating(true);
@@ -243,6 +282,52 @@ export default function OrderDetailsPage() {
     }
   };
 
+  const handleRevisionRequest = async () => {
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'REVISION' }),
+      });
+
+      if (res.ok) {
+        if (socketRef.current) {
+          socketRef.current.emit('status_update', { projectId: id, status: 'REVISION' });
+        }
+        setProject(prev => ({ ...prev, status: 'REVISION' }));
+        
+        // Auto-send a message in chat about the revision
+        const userId = user?.id || session?.user?.id;
+        const msgRes = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: "⚠️ I have requested a revision for this draft. Please check the requirements again.",
+            senderId: userId,
+            senderRole: 'STUDENT',
+            chatType: 'CLIENT_CHAT',
+            projectId: id,
+          }),
+        });
+
+        if (msgRes.ok) {
+           const savedMsg = await msgRes.json();
+           if (socketRef.current) {
+              socketRef.current.emit('send_message', {
+                  id: savedMsg.id,
+                  content: savedMsg.content,
+                  projectId: id,
+                  senderId: userId,
+                  senderRole: 'STUDENT'
+              });
+           }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to request revision:", error);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -253,34 +338,37 @@ export default function OrderDetailsPage() {
     const tmpMsg = {
       content: newMessage,
       senderId: userId,
+      senderRole: 'STUDENT',
       chatType: 'CLIENT_CHAT',
       projectId: id,
-      createdAt: new Date(),
-      sender: { name: user?.name || 'You' }
     };
 
-    // Emit via socket for instant UI update on other side
-    if (socketRef.current) {
-        socketRef.current.emit('send_message', tmpMsg);
-    }
-
-    // Add locally immediately for the sender
-    setMessages((prev) => [...prev, tmpMsg]);
     setNewMessage("");
 
     try {
-      const res = await fetch('/api/chat', {
+      // 1. Save to database first via messages API
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tmpMsg),
       });
-      if (res.ok) {
-        const savedMsg = await res.json();
-        // Update the last message with the real DB ID if needed
-        setMessages(prev => prev.map(m => m.createdAt === tmpMsg.createdAt ? savedMsg : m));
+      
+      const savedMessage = await res.json();
+      
+      // 2. Emit via socket
+      if (socketRef.current) {
+          socketRef.current.emit('send_message', {
+              id: savedMessage.id,
+              content: savedMessage.content,
+              projectId: id,
+              senderId: userId,
+              senderRole: 'STUDENT'
+          });
       }
     } catch (error) {
       console.error("Message send failed:", error);
+      setErrorAlert("Failed to send message.");
+      setTimeout(() => setErrorAlert(null), 5000);
     }
   };
 
@@ -389,7 +477,7 @@ export default function OrderDetailsPage() {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="bg-[#002D5B] rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-900/20"
+                  className="bg-[#002D5B] rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-900/20 shrink-0"
                 >
                   <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                     <CreditCard size={120} />
@@ -477,7 +565,7 @@ export default function OrderDetailsPage() {
             </AnimatePresence>
 
             {/* Premium Stepper Section */}
-            <div className="bg-white p-10 border border-[#E5E5E5] rounded-2xl shadow-sm relative overflow-hidden">
+            <div className="bg-white p-10 border border-[#E5E5E5] rounded-2xl shadow-sm relative overflow-hidden shrink-0">
                <div className="flex items-center justify-between mb-10 px-4 relative z-10">
                   {statusSteps.map((step, idx) => {
                     const isPast = currentStepIndex >= idx;
@@ -564,7 +652,7 @@ export default function OrderDetailsPage() {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-emerald-500 rounded-2xl p-10 text-white flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl shadow-emerald-500/20 border border-emerald-400"
+                className="bg-emerald-500 rounded-2xl p-10 text-white flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl shadow-emerald-500/20 border border-emerald-400 shrink-0"
               >
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-white/20 text-white rounded-2xl flex items-center justify-center backdrop-blur-md shadow-xl border border-white/20">
@@ -576,7 +664,10 @@ export default function OrderDetailsPage() {
                   </div>
                 </div>
                 <div className="flex gap-4 w-full md:w-auto">
-                  <button className="flex-1 md:flex-none h-14 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all backdrop-blur-md">
+                  <button 
+                    onClick={handleRevisionRequest}
+                    className="flex-1 md:flex-none h-14 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all backdrop-blur-md"
+                  >
                     REVISION REQUEST
                   </button>
                   <button 
@@ -590,7 +681,7 @@ export default function OrderDetailsPage() {
             )}
 
             {/* Grid Layout for Requirements & Files */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 shrink-0">
                 {/* Requirements Card */}
                 <div className="bg-white p-8 border border-[#E5E5E5] rounded-2xl shadow-sm flex flex-col">
                     <div className="flex items-center justify-between mb-6">
@@ -748,7 +839,7 @@ export default function OrderDetailsPage() {
                                         {msg.content}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'CLIENT CONSOLE' : (project.freelancerId && msg.senderId === project.freelancerId ? 'SPECIALIST NODE' : 'OPERATOR')} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {isMe ? 'CLIENT CONSOLE' : (project.freelancerId && msg.senderId === project.freelancerId ? 'SPECIALIST NODE' : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
                                     </span>
                                 </div>
                             </motion.div>
@@ -770,6 +861,19 @@ export default function OrderDetailsPage() {
                     </p>
                  </div>
                )}
+                <AnimatePresence>
+                 {errorAlert && (
+                   <motion.div 
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     exit={{ opacity: 0 }}
+                     className="absolute -top-12 left-8 right-8 p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-start gap-2 text-xs font-bold z-50 shadow-sm"
+                   >
+                     <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                     <p>{errorAlert}</p>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
                
                <form onSubmit={handleSendMessage} className="space-y-6">
                   <div className="relative group">
@@ -782,6 +886,13 @@ export default function OrderDetailsPage() {
                         className="w-full bg-slate-50 border-2 border-transparent group-hover:bg-white group-hover:border-slate-100 rounded-2xl p-5 pr-14 text-xs font-medium focus:bg-white focus:border-[#0067B8]/20 focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none shadow-inner disabled:opacity-50"
                     />
                     <div className="absolute right-4 bottom-4 flex items-center gap-3 text-slate-300">
+                        <button 
+                          type="button" 
+                          onClick={startListening}
+                          className={`transition-all ${isListening ? 'text-red-500 animate-pulse' : 'hover:text-[#0067B8]'}`}
+                        >
+                           <Mic size={18} />
+                        </button>
                         <Paperclip size={18} className="cursor-pointer hover:text-[#0067B8] transition-colors" />
                     </div>
                   </div>

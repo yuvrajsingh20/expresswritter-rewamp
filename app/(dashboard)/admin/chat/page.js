@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -11,22 +11,31 @@ import {
 
 const AdminChatHub = () => {
   const [activeChannel, setActiveChannel] = useState({ id: 'global', name: 'Global Expert Team', type: 'group' });
+  const [freelancers, setFreelancers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      try {
+        const res = await fetch('/api/admin/freelancers');
+        const data = await res.json();
+        setFreelancers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch freelancers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFreelancers();
+  }, []);
 
   const channels = [
-    { id: 'global', name: 'Global Expert Team', unread: 12, type: 'group' },
+    { id: 'global', name: 'Global Expert Team', unread: 0, type: 'group' },
     { id: 'strategy', name: 'Admin Strategy', unread: 0, type: 'group' },
   ];
 
-  const directMessages = [
-    { id: 1, name: 'Rahul Kumar', status: 'Online', avatar: 'RK' },
-    { id: 2, name: 'Sneha Gupta', status: 'Away', avatar: 'SG' },
-    { id: 3, name: 'Vikram Singh', status: 'Offline', avatar: 'VS' },
-  ];
-
   const messages = [
-    { id: 1, sender: 'Rahul Kumar', text: 'Hey Admin, I just uploaded the draft for Project #882.', time: '10:42 AM', type: 'incoming' },
-    { id: 2, sender: 'Admin', text: 'Excellent. Please ensure the bibliography follows the new guidelines.', time: '10:45 AM', type: 'outgoing' },
-    { id: 3, sender: 'Sneha Gupta', text: 'Joining the global pool for technical analysis tasks.', font: 'italic', time: '11:02 AM', type: 'incoming' },
+    { id: 1, sender: 'System', text: 'Welcome to the Secure Communication Bridge.', time: 'System', type: 'incoming' },
   ];
 
   return (
@@ -74,18 +83,18 @@ const AdminChatHub = () => {
                  <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 flex justify-between items-center">
                     Direct Feedback <MessageCircle size={12} />
                  </p>
-                 <div className="space-y-1">
-                    {directMessages.map(dm => (
+                  <div className="space-y-1">
+                    {freelancers.map(dm => (
                        <button 
-                        key={dm.id} 
-                        onClick={() => setActiveChannel({ ...dm, type: 'direct' })}
-                        className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${activeChannel.id === dm.id ? 'bg-white shadow-xl shadow-slate-200/50 text-blue-600' : 'text-slate-500 hover:bg-white/50'}`}
+                         key={dm.id} 
+                         onClick={() => setActiveChannel({ ...dm, type: 'direct' })}
+                         className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${activeChannel.id === dm.id ? 'bg-white shadow-xl shadow-slate-200/50 text-blue-600' : 'text-slate-500 hover:bg-white/50'}`}
                        >
                           <div className="relative">
                              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center font-black text-[10px] text-slate-400 italic">
-                                {dm.avatar}
+                                {(dm.name || 'U')[0]}
                              </div>
-                             <div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full ${dm.status === 'Online' ? 'bg-green-500' : 'bg-slate-300'}`} />
+                             <div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full ${dm.freelancerProfile?.availability ? 'bg-green-500' : 'bg-slate-300'}`} />
                           </div>
                           <span className="text-[11px] font-black uppercase tracking-wider">{dm.name}</span>
                        </button>

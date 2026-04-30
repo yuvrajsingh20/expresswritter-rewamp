@@ -1,38 +1,64 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, Shield, Lock, Send, 
   Paperclip, Users, Zap, Bell, Eye, EyeOff
 } from 'lucide-react';
 
-const ChatInterface = ({ role = 'ADMIN' }) => {
+const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
   const [activeBridge, setActiveBridge] = useState('CLIENT'); // CLIENT, INTERNAL, ADMIN
   const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const bridges = [
-    { id: 'CLIENT', name: 'Client Chat', icon: MessageCircle, color: 'text-blue-500', bg: 'bg-blue-50', access: 'Everywhere' },
-    { id: 'INTERNAL', name: 'Internal Strategy', icon: Shield, color: 'text-amber-500', bg: 'bg-amber-50', access: 'No Student' },
-    { id: 'ADMIN', name: 'Admin mission control', icon: Lock, color: 'text-purple-500', bg: 'bg-purple-50', access: 'Admin only' },
+    { id: 'CLIENT', name: 'Client Chat', icon: MessageCircle, color: 'text-blue-500', bg: 'bg-blue-50', access: 'Everywhere', type: 'CLIENT_CHAT' },
+    { id: 'INTERNAL', name: 'Internal Strategy', icon: Shield, color: 'text-amber-500', bg: 'bg-amber-50', access: 'No Student', type: 'INTERNAL_CHAT' },
+    { id: 'ADMIN', name: 'Admin mission control', icon: Lock, color: 'text-purple-500', bg: 'bg-purple-50', access: 'Admin only', type: 'ADMIN_CHAT' },
   ];
 
-  const getBridgeMessages = () => {
-    switch(activeBridge) {
-      case 'CLIENT':
-        return [
-          { sender: 'Student (Client)', text: 'Hello, what is the status of my research paper?', time: '10:45 AM', type: 'incoming' },
-          { sender: 'Rahul (Expert)', text: 'We are currently working on the literature review section.', time: '11:02 AM', type: 'outgoing' }
-        ];
-      case 'INTERNAL':
-        return [
-          { sender: 'Admin', text: 'Rahul, the student seems anxious. Prioritize this draft.', time: '11:10 AM', type: 'outgoing' },
-          { sender: 'Rahul (Expert)', text: 'On it. Need Sneha to double-check the citations.', time: '11:12 AM', type: 'incoming' }
-        ];
-      case 'ADMIN':
-        return [
-          { sender: 'Admin', text: 'Should we assign a bonus to Rahul for this projects complexity?', time: '11:20 AM', type: 'outgoing' },
-          { sender: 'Sub-Admin Sarah', text: 'Yes, he handled the client well. Proceed.', time: '11:25 AM', type: 'incoming' }
-        ];
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!projectId) return;
+      setLoading(true);
+      try {
+        const type = bridges.find(b => b.id === activeBridge).type;
+        const res = await fetch(`/api/messages?projectId=${projectId}&type=${type}`);
+        const data = await res.json();
+        setMessages(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000); // Poll every 5s
+    return () => clearInterval(interval);
+  }, [projectId, activeBridge]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !projectId) return;
+    try {
+      const type = bridges.find(b => b.id === activeBridge).type;
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          content: message,
+          chatType: type
+        })
+      });
+      if (res.ok) {
+        setMessage('');
+        // Refresh messages
+        const data = await res.json();
+        setMessages(prev => [...prev, data]);
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
     }
   };
 
@@ -95,32 +121,42 @@ const ChatInterface = ({ role = 'ADMIN' }) => {
 
          {/* Message Stream */}
          <div className="flex-1 overflow-y-auto p-12 space-y-10 bg-slate-50/20">
-            {getBridgeMessages().map((msg, i) => (
-               <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                key={i} 
-                className={`flex ${msg.type === 'outgoing' ? 'justify-end' : 'justify-start'}`}
-               >
-                  <div className={`max-w-[80%] ${msg.type === 'outgoing' ? 'text-right' : 'text-left'}`}>
-                     <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest px-2">{msg.sender}</p>
-                     <div className={`p-6 rounded-[2.5rem] text-sm font-bold shadow-sm ${
-                        msg.type === 'outgoing' 
-                        ? 'bg-[#1d1d1f] text-white rounded-tr-none' 
-                        : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
-                     }`}>
-                        {msg.text}
-                     </div>
-                     <p className="text-[8px] font-black text-slate-300 uppercase mt-2 px-2 tracking-widest">{msg.time}</p>
-                  </div>
-               </motion.div>
-            ))}
+            {messages.map((msg, i) => {
+               const isOutgoing = msg.senderId === currentUserId;
+               return (
+                <motion.div 
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 key={msg.id || i} 
+                 className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}
+                >
+                   <div className={`max-w-[80%] ${isOutgoing ? 'text-right' : 'text-left'}`}>
+                      <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest px-2">
+                        {msg.sender?.name || 'User'}
+                      </p>
+                      <div className={`p-6 rounded-[2.5rem] text-sm font-bold shadow-sm ${
+                         isOutgoing 
+                         ? 'bg-[#1d1d1f] text-white rounded-tr-none' 
+                         : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
+                      }`}>
+                         {msg.content}
+                      </div>
+                      <p className="text-[8px] font-black text-slate-300 uppercase mt-2 px-2 tracking-widest">
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                   </div>
+                </motion.div>
+               )
+            })}
          </div>
 
          {/* Input Box */}
          <div className="p-10 border-t border-slate-50">
-            <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] px-10 py-5 flex items-center gap-6 group focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-blue-200 transition-all shadow-inner">
-               <button className="text-slate-300 hover:text-blue-500 transition-colors">
+            <form 
+              onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+              className="bg-slate-50 border border-slate-100 rounded-[2.5rem] px-10 py-5 flex items-center gap-6 group focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-blue-200 transition-all shadow-inner"
+            >
+               <button type="button" className="text-slate-300 hover:text-blue-500 transition-colors">
                   <Paperclip size={20} />
                </button>
                <input 
@@ -130,10 +166,13 @@ const ChatInterface = ({ role = 'ADMIN' }) => {
                  placeholder={`Type in ${activeBridge.toLowerCase()} bridge...`} 
                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-black placeholder:text-slate-300 italic"
                />
-               <button className="bg-[#0071e3] text-white p-4 rounded-ful rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-110 active:scale-95 transition-all">
+               <button 
+                 type="submit"
+                 className="bg-[#0071e3] text-white p-4 rounded-ful rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-110 active:scale-95 transition-all"
+               >
                   <Send size={20} />
                </button>
-            </div>
+            </form>
          </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { motion } from 'framer-motion';
@@ -10,11 +10,23 @@ import {
 } from 'lucide-react';
 
 const WorkforcePortal = () => {
-  const freelancers = [
-    { id: 1, name: 'Rahul Kumar', specialty: 'Academic Writing', projects: 8, onboarding: 100, billing: '$2,450', status: 'Active' },
-    { id: 2, name: 'Sneha Gupta', specialty: 'Technical Analysis', projects: 3, onboarding: 75, billing: '$890', status: 'Reviewing' },
-    { id: 3, name: 'Vikram Singh', specialty: 'UX Research', projects: 0, onboarding: 25, billing: '$0', status: 'Onboarding' },
-  ];
+  const [freelancers, setFreelancers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      try {
+        const res = await fetch('/api/admin/freelancers');
+        const data = await res.json();
+        setFreelancers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch freelancers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFreelancers();
+  }, []);
 
   return (
     <div className="flex bg-[#f8f9fa] min-h-screen text-[#1d1d1f]">
@@ -56,9 +68,9 @@ const WorkforcePortal = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            {[
-             { label: 'Active Experts', value: '24', icon: Users, color: 'text-blue-500' },
-             { label: 'Pending Billings', value: '$8,240', icon: DollarSign, color: 'text-green-500' },
-             { label: 'Avg Quality', value: '9.8/10', icon: UserCheck, color: 'text-amber-500' }
+             { label: 'Active Experts', value: freelancers.length.toString(), icon: Users, color: 'text-blue-500' },
+             { label: 'Pending Billings', value: '₹0', icon: DollarSign, color: 'text-green-500' },
+             { label: 'Avg Quality', value: '5.0/5.0', icon: UserCheck, color: 'text-amber-500' }
            ].map((stat) => (
              <div key={stat.label} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-8 group hover:shadow-xl transition-all">
                 <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-all">
@@ -100,30 +112,32 @@ const WorkforcePortal = () => {
                       <td className="px-12 py-8">
                          <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-[#0071e3] text-white flex items-center justify-center font-black text-xs shadow-lg shadow-blue-100 italic">
-                               {f.name.split(' ').map(n=>n[0]).join('')}
+                               {(f.name || 'U').split(' ').map(n=>n[0]).join('')}
                             </div>
                             <div>
                                <p className="text-sm font-black text-slate-900">{f.name}</p>
-                               <p className="text-[10px] font-bold text-slate-400 uppercase">{f.specialty}</p>
+                               <p className="text-[10px] font-bold text-slate-400 uppercase">{f.freelancerProfile?.skills?.join(', ') || 'Generalist'}</p>
                             </div>
                          </div>
                       </td>
                       <td className="px-6 py-8">
                          <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden mb-2 shadow-inner">
-                            <div className="bg-green-500 h-full rounded-full" style={{ width: `${f.onboarding}%` }} />
+                            <div className={`h-full rounded-full ${f.freelancerProfile?.isVerified ? 'bg-green-500' : 'bg-amber-500'}`} style={{ width: f.freelancerProfile?.isVerified ? '100%' : '50%' }} />
                          </div>
-                         <p className="text-[9px] font-black text-green-600 uppercase tracking-tighter">{f.onboarding}% VERIFIED</p>
+                         <p className={`text-[9px] font-black uppercase tracking-tighter ${f.freelancerProfile?.isVerified ? 'text-green-600' : 'text-amber-600'}`}>
+                           {f.freelancerProfile?.isVerified ? '100% VERIFIED' : 'PENDING REVIEW'}
+                         </p>
                       </td>
                       <td className="px-6 py-8">
-                         <p className="text-sm font-black text-slate-900">{f.billing}</p>
+                         <p className="text-sm font-black text-slate-900">₹0</p>
                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Payout</p>
                       </td>
                       <td className="px-6 py-8 text-center">
-                         <span className="bg-blue-50 text-[#0071e3] px-4 py-1.5 rounded-xl font-black text-xs border border-blue-100">{f.projects}</span>
+                         <span className="bg-blue-50 text-[#0071e3] px-4 py-1.5 rounded-xl font-black text-xs border border-blue-100">{f.freelancerProfile?.totalProjects || 0}</span>
                       </td>
                       <td className="px-12 py-8 text-right">
                          <div className="flex justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
-                            <Link href="/admin/chat" className="p-3 bg-blue-50 text-[#0071e3] rounded-2xl hover:bg-[#0071e3] hover:text-white transition-all shadow-inner" title="Separate Chat">
+                            <Link href={`/admin/chat?user=${f.id}`} className="p-3 bg-blue-50 text-[#0071e3] rounded-2xl hover:bg-[#0071e3] hover:text-white transition-all shadow-inner" title="Separate Chat">
                                <MessageCircle size={18} />
                             </Link>
                             <button className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-200" title="Assign Helper Tasks">

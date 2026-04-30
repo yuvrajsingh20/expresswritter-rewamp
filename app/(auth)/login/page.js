@@ -6,7 +6,7 @@ import Link from "next/link";
 import { 
   ChevronRight, Lock, 
   Mail, ShieldCheck, Zap, 
-  Loader2
+  Loader2, Eye, EyeOff
 } from "lucide-react";
 
 function LoginForm() {
@@ -17,6 +17,7 @@ function LoginForm() {
   const [socialLoading, setSocialLoading] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("verified")) {
@@ -130,13 +131,22 @@ function LoginForm() {
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Security Key</label>
                  <button type="button" className="text-[10px] font-black text-slate-300 hover:text-black uppercase tracking-widest">Recovery</button>
                </div>
-               <input
-                 name="password"
-                 type="password"
-                 placeholder="••••••••"
-                 required
-                 className="w-full bg-slate-50 border border-slate-200 py-4 px-6 text-sm font-bold focus:bg-white focus:border-black transition-all outline-none rounded-none"
-               />
+               <div className="relative group">
+                 <input
+                   name="password"
+                   type={showPassword ? "text" : "password"}
+                   placeholder="••••••••"
+                   required
+                   className="w-full bg-slate-50 border border-slate-200 py-4 px-6 pr-12 text-sm font-bold focus:bg-white focus:border-black transition-all outline-none rounded-none"
+                 />
+                 <button
+                   type="button"
+                   onClick={() => setShowPassword(!showPassword)}
+                   className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-black transition-colors"
+                 >
+                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                 </button>
+               </div>
             </div>
           </div>
 

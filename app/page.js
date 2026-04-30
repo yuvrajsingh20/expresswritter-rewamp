@@ -8,7 +8,8 @@ import {
   Globe, FileText, Target,
   Users, DollarSign, Calendar,
   GraduationCap, Feather, Laptop,
-  Library, BookOpen, PenTool, Briefcase
+  Library, BookOpen, PenTool, Briefcase,
+  Eye, EyeOff
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
@@ -46,6 +47,8 @@ export default function LandingPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [showStudentPassword, setShowStudentPassword] = useState(false);
+  const [showWriterPassword, setShowWriterPassword] = useState(false);
 
   const selectedService = SERVICES.find(s => s.id === formData.serviceId);
 

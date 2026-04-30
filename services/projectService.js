@@ -46,9 +46,10 @@ export const getProjectsByUser = async (userId, role) => {
   return await prisma.project.findMany({
     where: whereClause,
     include: {
-      freelancer: { select: { name: true, role: true, email: true } },
+      freelancer: { select: { id: true, name: true, role: true, email: true } },
       subAdmin: { select: { name: true, role: true, email: true } },
-      student: { select: { name: true, role: true, email: true } },
+      student: { select: { id: true, name: true, role: true, email: true } },
+      orders: { select: { paymentStatus: true } },
       logs: { orderBy: { timestamp: 'desc' }, take: 5 },
     },
     orderBy: { createdAt: 'desc' },

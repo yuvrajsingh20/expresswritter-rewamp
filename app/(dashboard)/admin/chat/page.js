@@ -13,6 +13,10 @@ const AdminChatHub = () => {
   const [activeChannel, setActiveChannel] = useState({ id: 'global', name: 'Global Expert Team', type: 'group' });
   const [freelancers, setFreelancers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState([
+    { id: 1, sender: 'System', text: 'Welcome to the Secure Communication Bridge.', time: 'System', type: 'incoming' },
+  ]);
+  const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
     const fetchFreelancers = async () => {
@@ -34,9 +38,25 @@ const AdminChatHub = () => {
     { id: 'strategy', name: 'Admin Strategy', unread: 0, type: 'group' },
   ];
 
-  const messages = [
-    { id: 1, sender: 'System', text: 'Welcome to the Secure Communication Bridge.', time: 'System', type: 'incoming' },
-  ];
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+    const msg = {
+      id: Date.now(),
+      sender: 'Admin',
+      text: newMessage,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'outgoing'
+    };
+    setMessages([...messages, msg]);
+    setNewMessage("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="flex bg-[#f8f9fa] min-h-screen text-[#1d1d1f]">
@@ -153,10 +173,16 @@ const AdminChatHub = () => {
                  </button>
                  <input 
                   type="text" 
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder={`Speak to ${activeChannel.name}...`} 
                   className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-bold placeholder:text-slate-300"
                  />
-                 <button className="w-12 h-12 bg-[#0071e3] text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20 hover:scale-110 active:scale-95 transition-all">
+                 <button 
+                  onClick={handleSendMessage}
+                  className="w-12 h-12 bg-[#0071e3] text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20 hover:scale-110 active:scale-95 transition-all"
+                 >
                     <Send size={20} />
                  </button>
               </div>

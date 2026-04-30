@@ -27,19 +27,6 @@ export async function POST(req) {
         select: { serviceType: true, title: true, studentId: true }
       });
 
-      // 2. Auto-Assignment Logic (Phase 1: Simple Skill Match)
-      // Look for a freelancer who has the matching serviceType in their skills
-      const matchedFreelancer = await prisma.freelancerProfile.findFirst({
-        where: {
-          skills: { has: project.serviceType || 'Academic' },
-          availability: true,
-          isVerified: true
-        },
-        include: { user: true }
-      });
-
-      const freelancerId = matchedFreelancer ? matchedFreelancer.userId : null;
-
       await prisma.$transaction(async (tx) => {
         // 3. Update Order status
         await tx.order.update({
@@ -47,39 +34,22 @@ export async function POST(req) {
           data: { paymentStatus: "PAID" },
         });
 
-        // 4. Update Project status and assign freelancer
+        // 4. Update Project status
         await tx.project.update({
           where: { id: projectId },
           data: { 
-            status: freelancerId ? "ASSIGNED" : "CREATED",
-            freelancerId: freelancerId
+            status: "CREATED",
           },
         });
 
         // 5. Create Project Log
         await tx.projectLog.create({
           data: { 
-            action: freelancerId 
-              ? `Payment Completed & Auto-Assigned to ${matchedFreelancer.user.name}` 
-              : "Payment Completed - Dynamic Assignment Pending",
+            action: "Payment Completed - Awaiting Admin Assignment",
             projectId: projectId,
-            userId: project.studentId // Action logged against student's payment
+            userId: project.studentId
           }
         });
-
-        // 6. Initialize Chat Room (Step 3 & 5)
-        if (freelancerId) {
-          const serviceName = project.serviceType || "Project";
-          await tx.message.create({
-            data: {
-              content: `Hello! I am ${matchedFreelancer.user.name}, your assigned specialist for this ${serviceName} project. I've reviewed your brief and will begin the draft immediately. Feel free to share any additional context here.`,
-              chatType: "CLIENT_CHAT",
-              senderId: freelancerId,
-              receiverId: project.studentId,
-              projectId: projectId
-            }
-          });
-        }
       });
 
       return NextResponse.json({ 

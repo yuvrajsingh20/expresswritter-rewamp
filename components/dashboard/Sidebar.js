@@ -70,7 +70,8 @@ const Sidebar = ({ role = 'ADMIN' }) => {
           <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Institutional Core</p>
         </div>
         {currentMenu.map((item) => {
-          const isActive = pathname === item.path || (item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path));
+          const isActive = pathname === item.path || 
+            (item.path !== '/admin' && item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path));
           return (
             <Link 
               key={item.name} 

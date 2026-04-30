@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import ProjectTable from '@/components/dashboard/ProjectTable';
+import Link from 'next/link';
 import { 
   Users, Briefcase, TrendingUp, 
   Search, Bell, Plus, 
@@ -28,11 +29,17 @@ export default function AdminDashboard() {
     fetchProjects();
   }, []);
 
+  const activeProjectsCount = projects.filter(p => p.status !== 'COMPLETED').length;
+  const totalVolume = projects.reduce((acc, p) => acc + (p.amount || 0), 0);
+  const successRate = projects.length > 0 
+    ? ((projects.filter(p => p.status === 'COMPLETED').length / projects.length) * 100).toFixed(1) 
+    : '100';
+
   const stats = [
-    { label: 'Total Volume', value: '₹1.2M', growth: '+12.5%', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Projects', value: '42', growth: '+3', icon: Activity, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Staff Online', value: '18', growth: 'Live', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Success Rate', value: '99.4%', growth: '+0.2%', icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Total Volume', value: `₹${(totalVolume / 1000).toFixed(1)}k`, growth: '+12.5%', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Active Projects', value: activeProjectsCount.toString(), growth: `+${projects.filter(p => p.status === 'CREATED').length}`, icon: Activity, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Staff Online', value: '1', growth: 'Live', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Success Rate', value: `${successRate}%`, growth: '+0.2%', icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
   return (
     <div className="flex bg-[#FBFBFB] min-h-screen">
@@ -71,7 +78,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <main className="p-10 max-w-7xl mx-auto w-full space-y-10">
+        <main className="p-10 max-w-[1600px] mx-auto w-full space-y-10">
           {/* Dashboard Summary Title */}
           <div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Platform Pulse</h2>
@@ -98,11 +105,14 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Main Table Area */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-lg font-bold text-slate-800">Operational Queue</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Main Table Area - Expanded for better visibility */}
+            <div className="lg:col-span-3 space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">Operational Mapping Pipeline</h2>
+                  <p className="text-sm text-slate-400 mt-1">Real-time queue of purchased services awaiting expert allocation.</p>
+                </div>
                 <div className="flex gap-3">
                    <button className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors">Export CSV</button>
                    <div className="w-[1px] h-4 bg-slate-200" />
@@ -117,11 +127,11 @@ export default function AdminDashboard() {
                <h3 className="text-lg font-bold text-slate-800 px-1">Quick Actions</h3>
                <div className="grid grid-cols-1 gap-4">
                    {[
-                    { title: 'Add SubAdmin', desc: 'Board a new manager', icon: Users, path: '#' },
-                    { title: 'New Freelancer', desc: 'Onboard writing expert', icon: Briefcase, path: '#' },
-                    { title: 'System Reports', desc: 'Download pdf audit', icon: BarChart3, path: '#' },
+                    { title: 'Add SubAdmin', desc: 'Board a new manager', icon: Users, path: '/admin/subadmins' },
+                    { title: 'New Freelancer', desc: 'Onboard writing expert', icon: Briefcase, path: '/admin/freelancers' },
+                    { title: 'System Reports', desc: 'Download pdf audit', icon: BarChart3, path: '/admin/reports' },
                   ].map((item, i) => (
-                    <button key={i} className="card-subtle p-6 flex items-center justify-between hover:bg-slate-50 transition-all group">
+                    <Link href={item.path} key={i} className="card-subtle p-6 flex items-center justify-between hover:bg-slate-50 transition-all group">
                        <div className="flex items-center gap-4 text-left">
                           <div className="w-10 h-10 bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-primary rounded-sm">
                              <item.icon size={18} />
@@ -132,7 +142,7 @@ export default function AdminDashboard() {
                           </div>
                        </div>
                        <ArrowRight size={16} className="text-slate-300 group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
-                    </button>
+                    </Link>
                   ))}
                </div>
 

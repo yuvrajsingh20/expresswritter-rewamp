@@ -23,7 +23,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
     ADMIN: [
       { name: 'Mission Control', icon: LayoutGrid, path: '/admin' },
       { name: 'Elite Workforce', icon: Zap, path: '/admin/freelancers' },
-      { name: 'Global Projects', icon: Briefcase, path: '/admin/projects' },
+      { name: 'Global Projects', icon: Briefcase, path: '/admin' },
       { name: 'Secure Comms', icon: MessageSquare, path: '/admin/chat' },
     ],
     SUB_ADMIN: [
@@ -33,7 +33,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
     ],
     FREELANCER: [
       { name: 'Project Hub', icon: LayoutGrid, path: '/freelancer' },
-      { name: 'Active Tasks', icon: Briefcase, path: '/freelancer/projects' },
+      { name: 'Active Tasks', icon: Briefcase, path: '/freelancer' },
       { name: 'Secure Inbox', icon: MessageSquare, path: '/freelancer/chat' },
       { name: 'Financials', icon: CreditCard, path: '/freelancer/earnings' },
     ],
@@ -70,7 +70,8 @@ const Sidebar = ({ role = 'ADMIN' }) => {
           <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Institutional Core</p>
         </div>
         {currentMenu.map((item) => {
-          const isActive = pathname === item.path || (item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path));
+          const isActive = pathname === item.path || 
+            (item.path !== '/admin' && item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path));
           return (
             <Link 
               key={item.name} 

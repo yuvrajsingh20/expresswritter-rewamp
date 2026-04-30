@@ -9,7 +9,7 @@ import {
   Upload, CheckCircle, CheckCircle2, AlertCircle, 
   ExternalLink, Zap, Paperclip, Loader2,
   LayoutGrid, Calendar, Target, ShieldCheck,
-  Search, ArrowRight, Download
+  Search, ArrowRight, Download, Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
@@ -28,8 +28,37 @@ export default function SpecialistConsole() {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorAlert, setErrorAlert] = useState(null);
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef(null);
   const socketRef = useRef(null);
+
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Voice input is not supported in your browser. Try Chrome or Safari.");
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setNewMessage(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+    
+    recognition.onerror = (event) => {
+      console.error("Speech error:", event.error);
+      setIsListening(false);
+    };
+    
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.start();
+  };
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -51,7 +80,11 @@ export default function SpecialistConsole() {
         ]);
 
         if (projRes.ok) setProject(await projRes.json());
-        if (msgRes.ok) setMessages(await msgRes.json());
+        if (msgRes.ok) {
+          const fetchedMessages = await msgRes.json();
+          // Map createdAt to timestamp to match new standard
+          setMessages(fetchedMessages.map(m => ({ ...m, timestamp: new Date(m.createdAt) })));
+        }
       } catch (error) {
         console.error("Failed to fetch project details:", error);
       } finally {
@@ -70,17 +103,28 @@ export default function SpecialistConsole() {
 
   // Socket.io Real-time Logic
   useEffect(() => {
+    if (!id || !user?.id) return;
+    
     const socket = io();
     socketRef.current = socket;
 
-    socket.on('connect', () => {
-      socket.emit('join_project', id);
+    socket.emit('join_chat', { 
+      projectId: id, 
+      userId: user.id, 
+      role: 'FREELANCER' 
     });
 
     socket.on('receive_message', (data) => {
-      if (data.projectId === id) {
-        setMessages((prev) => [...prev, data]);
-      }
+      setMessages((prev) => {
+        // Prevent duplicates
+        if (prev.some(m => m.id === data.id)) return prev;
+        return [...prev, { ...data, timestamp: new Date(data.timestamp) }];
+      });
+    });
+
+    socket.on('error_alert', (alert) => {
+      setErrorAlert(alert.message);
+      setTimeout(() => setErrorAlert(null), 5000);
     });
 
     socket.on('project_status_changed', (data) => {
@@ -92,10 +136,10 @@ export default function SpecialistConsole() {
     return () => {
       socket.disconnect();
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!newMessage.trim()) return;
 
     const userId = user?.id || session?.user?.id;
@@ -104,28 +148,44 @@ export default function SpecialistConsole() {
     const tmpMsg = {
       content: newMessage,
       senderId: userId,
+      senderRole: 'FREELANCER',
       chatType: 'CLIENT_CHAT',
       projectId: id,
-      createdAt: new Date()
     };
-
-    if (socketRef.current) {
-        socketRef.current.emit('send_message', {
-            ...tmpMsg,
-            projectId: id
-        });
-    }
 
     setNewMessage("");
 
     try {
-      await fetch('/api/chat', {
+      // 1. Save to database first via messages API
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tmpMsg)
       });
+      
+      const savedMessage = await res.json();
+
+      // 2. Emit via socket
+      if (socketRef.current) {
+          socketRef.current.emit('send_message', {
+              id: savedMessage.id,
+              content: savedMessage.content,
+              projectId: id,
+              senderId: userId,
+              senderRole: 'FREELANCER'
+          });
+      }
     } catch (error) {
       console.error("Message delivery failed:", error);
+      setErrorAlert("Failed to send message.");
+      setTimeout(() => setErrorAlert(null), 5000);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      if (e) e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -273,7 +333,7 @@ export default function SpecialistConsole() {
           <main className="flex-1 flex flex-col p-8 overflow-y-auto space-y-8 bg-slate-50/30">
             
             {/* Workflow Tracker Card */}
-            <div className="bg-[#002D5B] rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl shadow-blue-900/20">
+            <div className="bg-[#002D5B] rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl shadow-blue-900/20 shrink-0">
                <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none rotate-12">
                  <Target size={140} />
                </div>
@@ -324,7 +384,7 @@ export default function SpecialistConsole() {
             </div>
 
             {/* Console Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 shrink-0">
                {/* Controls & Briefing */}
                <div className="space-y-8">
                   <div className="bg-white p-8 border border-[#E5E5E5] rounded-3xl shadow-sm space-y-8">
@@ -488,7 +548,7 @@ export default function SpecialistConsole() {
                                         {msg.content}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'SPECIALIST CONSOLE' : 'STUDENT NODE'} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {isMe ? 'SPECIALIST CONSOLE' : 'STUDENT NODE'} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
                                     </span>
                                 </div>
                             </motion.div>
@@ -499,16 +559,37 @@ export default function SpecialistConsole() {
             </div>
 
             <div className="p-8 border-t border-[#E5E5E5] bg-white">
+               <AnimatePresence>
+                 {errorAlert && (
+                   <motion.div 
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     exit={{ opacity: 0 }}
+                     className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-start gap-2 text-xs font-bold"
+                   >
+                     <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                     <p>{errorAlert}</p>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
                <form onSubmit={handleSendMessage} className="space-y-6">
                   <div className="relative group">
                     <textarea 
                         rows={3}
                         value={newMessage}
+                        onKeyDown={handleKeyDown}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type secure transmit packet..."
                         className="w-full bg-slate-50 border-2 border-transparent group-hover:bg-white group-hover:border-slate-100 rounded-2xl p-5 pr-14 text-xs font-medium focus:bg-white focus:border-[#0067B8]/20 focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none shadow-inner"
                     />
                     <div className="absolute right-4 bottom-4 flex items-center gap-3 text-slate-300">
+                        <button 
+                          type="button" 
+                          onClick={startListening}
+                          className={`transition-all ${isListening ? 'text-red-500 animate-pulse' : 'hover:text-[#0067B8]'}`}
+                        >
+                           <Mic size={18} />
+                        </button>
                         <Paperclip size={18} className="cursor-pointer hover:text-[#0067B8] transition-colors" />
                     </div>
                   </div>

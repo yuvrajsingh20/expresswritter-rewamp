@@ -279,7 +279,7 @@ export default function FreelancerEarnings() {
                  <button 
                    type="submit"
                    disabled={submitting || parseFloat(payoutData.amount) <= 0}
-                   className="w-full h-12 bg-[#002D5B] text-white rounded-sm text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#001D3D] disabled:opacity-50 transition-all shadow-lg"
+                   className="w-full h-12 bg-[#002D5B] text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-[#001D3D] disabled:opacity-50 transition-all shadow-lg"
                  >
                    {submitting ? 'Processing...' : 'Confirm Withdrawal'}
                  </button>

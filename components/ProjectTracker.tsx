@@ -16,7 +16,7 @@ const steps = [
 
 export default function ProjectTracker({ currentStatusIndex }: { currentStatusIndex: number }) {
   return (
-    <div className="bg-secondary/40 border border-border rounded-[2.5rem] p-8 mb-8">
+    <div className="bg-secondary/40 border border-border rounded-none p-8 mb-8">
       <h2 className="text-lg font-bold text-foreground mb-8">Project Progress</h2>
       <div className="relative flex justify-between">
         {/* Line */}
@@ -29,7 +29,7 @@ export default function ProjectTracker({ currentStatusIndex }: { currentStatusIn
         {steps.map((step, i) => (
           <div key={step} className="flex flex-col items-center relative z-10">
             <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500",
+              "w-8 h-8 rounded-none flex items-center justify-center transition-all duration-500",
               i <= currentStatusIndex 
                 ? "bg-primary text-white shadow-xl shadow-primary/30" 
                 : "bg-white border border-border text-muted-foreground/30"

@@ -58,7 +58,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
             <span className="text-xs font-black tracking-tight uppercase text-[#002D5B] leading-none block">Express Writer</span>
             <div className="flex items-center gap-1.5 mt-1">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{role.replace('_', ' ')} NODE</p>
+               <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{role.replace('_', ' ')} NODE</p>
             </div>
           </div>
         </Link>
@@ -67,7 +67,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1.5">
         <div className="px-4 mb-4">
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Institutional Core</p>
+          <p className="text-[9px] font-black text-slate-300 uppercase tracking-wider">Institutional Core</p>
         </div>
         {currentMenu.map((item) => {
           const isActive = pathname === item.path || 
@@ -84,7 +84,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
             >
               <div className="flex items-center gap-3.5">
                 <item.icon size={18} className={isActive ? "text-white" : "text-slate-400 group-hover:text-[#002D5B] transition-colors"} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{item.name}</span>
+                <span className="text-[10px] font-black uppercase tracking-wider">{item.name}</span>
               </div>
               {isActive && (
                 <motion.div layoutId="activePill" className="w-1.5 h-1.5 bg-white rounded-full" />
@@ -101,14 +101,14 @@ const Sidebar = ({ role = 'ADMIN' }) => {
               <Activity size={14} />
            </div>
            <div>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Session Status</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none">Session Status</p>
               <p className="text-[10px] font-bold text-slate-900 mt-1">Encrypted Stream</p>
            </div>
         </div>
         
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-4 px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+          className="w-full flex items-center gap-4 px-4 py-3.5 text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
         >
           <LogOut size={16} />
           <span>Terminate Access</span>

@@ -166,7 +166,7 @@ export default function LandingPage() {
                
                <button 
                  onClick={() => setActiveFlow('STUDENT')}
-                 className="bg-[#b89150] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-widest hover:bg-[#a67d40] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-black/30 active:scale-95"
+                 className="bg-[#b89150] text-white px-14 py-6 rounded-none font-black text-xs uppercase tracking-widest hover:bg-[#a67d40] transition-all flex items-center justify-center gap-4 shadow-xl shadow-black/30 active:scale-95"
                >
                  Start My Project <ArrowRight size={18} strokeWidth={3} />
                </button>
@@ -174,8 +174,8 @@ export default function LandingPage() {
              
              {/* Decorative Elements */}
              <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none overflow-hidden">
-                <div className="absolute -top-10 -left-10 w-96 h-96 border border-white rounded-full" />
-                <div className="absolute -bottom-20 -right-20 w-80 h-80 border border-white rounded-full opacity-50" />
+                <div className="absolute -top-10 -left-10 w-96 h-96 border border-white rounded-none rotate-45" />
+                <div className="absolute -bottom-20 -right-20 w-80 h-80 border border-white rounded-none rotate-12 opacity-50" />
              </div>
           </div>
 
@@ -189,7 +189,7 @@ export default function LandingPage() {
                       <div className="flex gap-1 mb-1">
                         {[1,2,3,4,5].map(i => <Star key={i} size={10} fill="currentColor" />)}
                       </div>
-                      <div className="w-10 h-6 bg-current rounded-sm opacity-50" />
+                      <div className="w-10 h-6 bg-current rounded-none opacity-50" />
                    </div>
                 </div>
 
@@ -203,7 +203,7 @@ export default function LandingPage() {
                 
                 <button 
                   onClick={() => setActiveFlow('FREELANCER')}
-                  className="bg-[#0a192f] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/10 active:scale-95"
+                  className="bg-[#0a192f] text-white px-14 py-6 rounded-none font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-4 shadow-xl shadow-blue-900/10 active:scale-95"
                 >
                   Apply to Write <ArrowRight size={18} strokeWidth={3} />
                 </button>
@@ -229,7 +229,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  className="relative w-full max-w-4xl bg-white shadow-[0_50px_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col border border-white/10"
+                  className="relative w-full max-w-4xl bg-white shadow-2xl overflow-hidden flex flex-col border border-slate-100"
                 >
                   {/* Minimal Header */}
                   <div className="h-20 border-b border-slate-100 flex items-center justify-between px-10 md:px-16 shrink-0 bg-white">
@@ -359,7 +359,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  className="relative w-full max-w-5xl max-h-[90vh] bg-white shadow-[0_50px_100px_rgba(0,0,0,0.5)] overflow-y-auto flex flex-col border border-white/10"
+                  className="relative w-full max-w-5xl max-h-[90vh] bg-white shadow-2xl overflow-y-auto flex flex-col border border-slate-100"
                 >
                   {/* Minimal Header */}
                   <div className="h-20 border-b border-slate-100 flex items-center justify-between px-10 md:px-16 shrink-0 sticky top-0 bg-white z-10">
@@ -544,9 +544,9 @@ export default function LandingPage() {
                    { name: 'UNIVERSITY OF LAICHORD', icon: <GraduationCap size={24} /> },
                    { name: 'UNINSORN', icon: <GraduationCap size={24} /> }
                  ].map((uni, i) => (
-                   <div key={i} className="flex items-center gap-4 group cursor-default">
-                      {uni.icon}
-                      <span className="text-xl font-black tracking-tighter">{uni.name}</span>
+                   <div key={i} className="flex items-center gap-3 group cursor-default">
+                      <div className="opacity-40">{uni.icon}</div>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{uni.name}</span>
                    </div>
                  ))}
               </div>
@@ -556,21 +556,21 @@ export default function LandingPage() {
         {/* Services Section */}
         <section id="services" className="py-40 px-10 md:px-24 bg-[#fbfbfb]">
            <div className="max-w-7xl mx-auto space-y-24">
-              <div className="text-center space-y-6">
-                 <p className="text-blue-600 font-black uppercase tracking-[0.15em] text-[10px]">What we do</p>
-                 <h2 className="text-5xl md:text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f]">Specialized Domains.</h2>
+              <div className="text-center space-y-4">
+                 <p className="text-blue-600 font-black uppercase tracking-[0.2em] text-[9px]">The Arsenal</p>
+                 <h2 className="text-4xl md:text-5xl font-[900] tracking-tighter uppercase text-[#0a192f]">Specialized Domains.</h2>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                  {servicesData.categories.map((service, i) => {
                    const IconComponent = ICON_MAP[service.icon_name] || FileText;
                    return (
-                     <div key={i} className="bg-white p-10 rounded-[3rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group">
-                        <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mb-8 flex items-center justify-center group-hover:rotate-6 transition-transform">
-                           <IconComponent size={24} />
+                     <div key={i} className="bg-white p-6 shadow-sm hover:shadow-lg transition-all border border-slate-100 group flex flex-col items-start">
+                        <div className="w-9 h-9 bg-blue-50 text-blue-600 mb-5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                           <IconComponent size={16} />
                         </div>
-                        <h4 className="font-[900] text-lg uppercase tracking-tight mb-4">{service.name}</h4>
-                        <p className="text-slate-400 text-sm font-medium leading-relaxed uppercase tracking-tighter italic">{service.description}</p>
+                        <h4 className="font-black text-[12px] uppercase tracking-wider mb-2 text-slate-900">{service.name}</h4>
+                        <p className="text-slate-400 text-[10px] font-bold leading-relaxed uppercase tracking-tight">{service.description}</p>
                      </div>
                    );
                  })}
@@ -595,11 +595,11 @@ export default function LandingPage() {
                       { t: 'Real-time Drafting', d: 'Collaborate directly with your writer through integrated chat and feedback loops.' },
                       { t: 'Quality Protocol', d: 'Final verified draft delivered with full plagiarism clearance and quality audit.' }
                     ].map((step, i) => (
-                      <div key={i} className="flex gap-10 group translate-x-0 hover:translate-x-4 transition-transform">
-                         <div className="text-4xl font-[900] text-slate-100 italic">0{i+1}</div>
-                         <div className="space-y-2">
-                            <h4 className="font-black text-sm uppercase tracking-widest text-[#0a192f]">{step.t}</h4>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-tight leading-relaxed max-w-md">{step.d}</p>
+                      <div key={i} className="flex gap-8 group translate-x-0 hover:translate-x-2 transition-transform">
+                         <div className="text-3xl font-[900] text-slate-100 italic transition-colors group-hover:text-blue-100">0{i+1}</div>
+                         <div className="space-y-1">
+                            <h4 className="font-black text-[12px] uppercase tracking-[0.1em] text-[#0a192f]">{step.t}</h4>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight leading-relaxed max-w-md">{step.d}</p>
                          </div>
                       </div>
                     ))}
@@ -609,11 +609,11 @@ export default function LandingPage() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-40 px-10 md:px-24 bg-[#0a192f] text-white overflow-hidden relative">
-           <div className="max-w-7xl mx-auto space-y-24 relative z-10">
-              <div className="text-center space-y-6">
-                 <p className="text-blue-400 font-black uppercase tracking-[0.15em] text-[10px]">Investment</p>
-                 <h2 className="text-5xl md:text-6xl font-[900] tracking-tighter italic uppercase">Transparent Pricing.</h2>
+        <section id="pricing" className="py-40 px-10 md:px-24 bg-[#F4F7FA] text-[#0a192f] overflow-hidden relative">
+           <div className="max-w-7xl mx-auto space-y-20 relative z-10">
+              <div className="text-center space-y-4">
+                 <p className="text-blue-600 font-black uppercase tracking-[0.2em] text-[9px]">Resource Allocation</p>
+                 <h2 className="text-4xl md:text-5xl font-[900] tracking-tighter uppercase text-[#0a192f]">Transparent Pricing.</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -622,42 +622,44 @@ export default function LandingPage() {
                    { t: 'Premium', p: '4,999', d: 'High-stake documents for Ivy League tiers.', features: ['Subject specialist', 'Unlimited Revisions', 'Direct Chat', 'Priority Support'], featured: true },
                    { t: 'Institutional', p: '9,999', d: 'Bulk support and long-term academic partnerships.', features: ['Managerial support', 'Custom Workflows', 'Bulk Pricing', 'API Access'] }
                  ].map((plan, i) => (
-                   <div key={i} className={`p-16 rounded-[4rem] flex flex-col items-center text-center space-y-10 transition-all ${plan.featured ? 'bg-blue-600 shadow-[0_50px_100px_rgba(37,99,235,0.3)] scale-105' : 'bg-white/5 border border-white/10'}`}>
-                      <div>
-                         <h4 className="font-black text-xs uppercase tracking-widest text-blue-300 mb-4">{plan.t}</h4>
-                         <p className="text-6xl font-[900] italic tracking-tighter">₹{plan.p}</p>
+                   <div key={i} className={`p-10 flex flex-col items-center text-center space-y-8 transition-all bg-white border ${plan.featured ? 'border-blue-600 border-t-[6px] shadow-2xl shadow-blue-100 scale-105 z-20' : 'border-slate-100 shadow-sm z-10'}`}>
+                      <div className="space-y-4">
+                         <h4 className={`font-black text-[10px] uppercase tracking-widest ${plan.featured ? 'text-blue-600' : 'text-slate-400'}`}>{plan.t}</h4>
+                         <p className="text-5xl font-black tracking-tighter text-slate-900">₹{plan.p}</p>
                       </div>
-                      <p className="text-white/40 text-xs font-bold italic uppercase leading-none">{plan.d}</p>
-                      <div className="w-full h-[1px] bg-white/10" />
-                      <ul className="space-y-4">
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-tight leading-relaxed max-w-[200px]">{plan.d}</p>
+                      <div className="w-full h-[1px] bg-slate-100" />
+                      <ul className="space-y-3 flex-1">
                          {plan.features.map(f => (
-                           <li key={f} className="text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center justify-center gap-3">
-                              <ShieldCheck size={14} className="text-blue-400" /> {f}
+                           <li key={f} className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center justify-center gap-2">
+                              <ShieldCheck size={12} className={plan.featured ? "text-blue-600" : "text-slate-300"} /> {f}
                            </li>
                          ))}
                       </ul>
-                      <button className={`w-full py-6 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${plan.featured ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-white/10 hover:bg-white/20'}`}>Select Protocol</button>
+                      <button className={`w-full py-4 text-[9px] font-black uppercase tracking-widest transition-all ${plan.featured ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 hover:bg-blue-700' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+                        Initialize Protocol
+                      </button>
                    </div>
                  ))}
               </div>
            </div>
            
            {/* Decorative Elements */}
-           <div className="absolute top-20 right-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[150px]" />
-           <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-600/10 rounded-full blur-[150px]" />
+           <div className="absolute top-20 right-20 w-96 h-96 bg-blue-600/5 rounded-none blur-[150px] rotate-45" />
+           <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-600/5 rounded-none blur-[150px] -rotate-12" />
         </section>
 
         {/* About Section */}
         <section id="about" className="py-40 px-10 md:px-24 bg-white">
            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
               <div className="relative">
-                 <div className="aspect-square bg-slate-50 rounded-[4rem] overflow-hidden">
+                 <div className="aspect-square bg-slate-50 overflow-hidden border border-slate-100">
                     <div className="absolute inset-0 flex items-center justify-center text-[#0a192f] opacity-5 font-[900] text-[20rem] tracking-tighter leading-none italic select-none">
                        EW
                     </div>
-                    <div className="absolute inset-20 border-2 border-slate-100 rounded-[3rem] border-dashed" />
+                    <div className="absolute inset-20 border-2 border-slate-100 border-dashed" />
                  </div>
-                 <div className="absolute -bottom-10 -right-10 bg-[#0a192f] p-12 rounded-[3.5rem] text-white shadow-2xl">
+                 <div className="absolute -bottom-10 -right-10 bg-[#0a192f] p-12 text-white shadow-2xl">
                     <p className="text-4xl font-[900] tracking-tighter italic">100%</p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Quality Guarantee</p>
                  </div>
@@ -679,7 +681,7 @@ export default function LandingPage() {
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verified Specialists</p>
                     </div>
                  </div>
-                 <button className="bg-[#0a192f] text-white px-12 py-6 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-blue-900/10">Read Our Manifesto</button>
+                 <button className="bg-[#0a192f] text-white px-12 py-6 text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-blue-900/10">Read Our Manifesto</button>
               </div>
            </div>
         </section>
@@ -690,7 +692,7 @@ export default function LandingPage() {
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-16 relative z-10">
             <div className="flex flex-col items-center md:items-start gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white text-[#0a192f] rounded-xl flex items-center justify-center font-bold text-lg">E</div>
+                <div className="w-10 h-10 bg-white text-[#0a192f] rounded-none flex items-center justify-center font-bold text-lg">E</div>
                 <span className="text-2xl font-[900] tracking-tighter italic">Express Writer</span>
               </div>
               <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Institutional-Grade Academic Services</p>
@@ -716,7 +718,7 @@ export default function LandingPage() {
          </div>
          
          {/* Decorative Blur */}
-         <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px]" />
+         <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-600/10 rounded-none blur-[120px] rotate-45" />
       </footer>
     </div>
   );

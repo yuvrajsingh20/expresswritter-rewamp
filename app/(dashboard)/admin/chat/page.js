@@ -206,7 +206,7 @@ const AdminChatHub = () => {
                  </div>
                  <div className="text-left">
                     <h2 className="text-lg font-black tracking-tight italic uppercase">{activeChannel.name}</h2>
-                    <p className="text-[10px] font-black text-green-500 tracking-[0.2em]">{activeChannel.type === 'group' ? '24 Experts Connected' : 'End-to-End Encrypted'}</p>
+                    <p className="text-[10px] font-black text-green-500 tracking-widest">{activeChannel.type === 'group' ? '24 Experts Connected' : 'End-to-End Encrypted'}</p>
                  </div>
               </div>
               <div className="hidden lg:flex gap-3 text-slate-400">

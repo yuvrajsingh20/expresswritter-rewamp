@@ -1,11 +1,14 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, Shield, Lock, Send, 
   Paperclip, Users, Zap, Bell, Eye, EyeOff
 } from 'lucide-react';
 import { io } from 'socket.io-client';
+
+// Ref for auto‑scrolling to latest message
+const messagesEndRef = typeof window !== 'undefined' ? React.createRef() : null;
 
 const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
   const [activeBridge, setActiveBridge] = useState('CLIENT'); // CLIENT, INTERNAL, ADMIN
@@ -46,6 +49,13 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
       socket.disconnect();
     };
   }, [projectId, currentUserId, activeBridge]);
+
+  // Auto‑scroll whenever messages change
+  useEffect(() => {
+    if (messagesEndRef && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -187,6 +197,7 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
                 </motion.div>
                )
             })}
+            <div ref={messagesEndRef} />
          </div>
 
          {/* Input Box */}

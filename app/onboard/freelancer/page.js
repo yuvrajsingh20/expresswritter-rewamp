@@ -27,7 +27,7 @@ const FreelancerOnboarding = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-4xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-10 border border-slate-100">
+          <div className="inline-flex items-center gap-2 bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-10 border border-slate-100">
             <Globe size={12} /> Join a Global Network of Experts
           </div>
           <h1 className="text-5xl md:text-7xl font-[900] tracking-tighter leading-[1] mb-10 text-[#0a192f]">
@@ -134,7 +134,7 @@ const FreelancerOnboarding = () => {
           <div className="w-8 h-8 bg-[#0a192f] rounded-lg flex items-center justify-center text-white font-bold text-sm">E</div>
           <span className="text-sm font-extrabold tracking-tight">Express Writer</span>
         </div>
-        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Built for Professionals.</p>
+        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Built for Professionals.</p>
       </footer>
     </div>
   );

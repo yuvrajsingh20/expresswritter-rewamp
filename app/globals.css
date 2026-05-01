@@ -20,10 +20,17 @@
 @layer base {
   body {
     @apply bg-[#FBFBFB] text-[#111111] antialiased font-sans;
+    /* Industry standard letter spacing for Inter */
+    letter-spacing: -0.011em;
+    /* Professional Inter features: single-story 'a', open 'g', serif 'I' */
+    font-feature-settings: "cv02", "cv05", "cv08", "cv09", "cv11", "ss01";
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight;
+    /* Tighter heading tracking for that premium "Google/Apple" look */
+    letter-spacing: -0.022em;
+    font-feature-settings: "cv11", "ss01";
   }
 }
 

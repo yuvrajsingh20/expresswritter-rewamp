@@ -136,7 +136,7 @@ export default function StudentOrdersPage() {
              {loading ? (
                 <div className="py-40 flex flex-col items-center justify-center gap-6">
                     <div className="w-12 h-12 border-4 border-slate-100 border-t-[#002D5B] rounded-full animate-spin" />
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] animate-pulse">Syncing Database...</p>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-wider animate-pulse">Syncing Database...</p>
                 </div>
              ) : filteredProjects.length > 0 ? (
                 <motion.table 
@@ -146,7 +146,7 @@ export default function StudentOrdersPage() {
                   className="w-full text-left"
                 >
                    <thead>
-                     <tr className="bg-slate-50/50 border-b border-[#E5E5E5] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                     <tr className="bg-slate-50/50 border-b border-[#E5E5E5] text-[10px] font-black text-slate-400 uppercase tracking-widest">
                        <th className="px-10 py-6">Project Parameters</th>
                        <th className="px-10 py-6">Operational Status</th>
                        <th className="px-10 py-6">Deadline Vector</th>
@@ -227,7 +227,7 @@ export default function StudentOrdersPage() {
                   <ShieldCheck size={20} className="text-blue-200" />
                </div>
                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Security & Integrity Protocol</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Security & Integrity Protocol</p>
                   <p className="text-xs font-medium text-blue-50/80 mt-1">All academic streams are encrypted. Drafts are held in secure escrow for 24h post-delivery for your review.</p>
                </div>
                <div className="absolute right-[-20px] top-[-20px] opacity-10 rotate-12">

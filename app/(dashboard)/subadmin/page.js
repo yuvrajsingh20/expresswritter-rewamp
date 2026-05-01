@@ -100,7 +100,7 @@ export default function SubAdminDashboard() {
                <h3 className="text-lg font-bold text-slate-800 px-1">Manager Toolkit</h3>
                <div className="card-subtle p-6 space-y-8">
                   <div className="space-y-4">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">System Health</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">System Health</p>
                      <div className="space-y-6">
                         <div className="space-y-2">
                            <div className="flex justify-between text-[11px] font-bold text-slate-700">

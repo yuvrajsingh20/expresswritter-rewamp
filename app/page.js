@@ -123,12 +123,12 @@ export default function LandingPage() {
         
         <div className="hidden lg:flex items-center gap-12">
           {['Services', 'How it Works', 'Pricing', 'About'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(' ', '-')}`} className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-black transition-colors">{item}</a>
+            <a key={item} href={`#${item.toLowerCase().replace(' ', '-')}`} className="text-[11px] font-black uppercase tracking-wider text-slate-400 hover:text-black transition-colors">{item}</a>
           ))}
         </div>
 
         <div className="flex items-center gap-8">
-           <Link href="/login" className="bg-black text-white px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.4em] hover:bg-slate-800 transition-all rounded-none">
+           <Link href="/login" className="bg-black text-white px-8 py-3.5 text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all rounded-none">
               Authorized Login
            </Link>
         </div>
@@ -157,7 +157,7 @@ export default function LandingPage() {
                
                <button 
                  onClick={() => setActiveFlow('STUDENT')}
-                 className="bg-[#b89150] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-[0.4em] hover:bg-[#a67d40] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-black/30 active:scale-95"
+                 className="bg-[#b89150] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-widest hover:bg-[#a67d40] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-black/30 active:scale-95"
                >
                  Start My Project <ArrowRight size={18} strokeWidth={3} />
                </button>
@@ -194,7 +194,7 @@ export default function LandingPage() {
                 
                 <button 
                   onClick={() => setActiveFlow('FREELANCER')}
-                  className="bg-[#0a192f] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-[0.4em] hover:bg-black transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/10 active:scale-95"
+                  className="bg-[#0a192f] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/10 active:scale-95"
                 >
                   Apply to Write <ArrowRight size={18} strokeWidth={3} />
                 </button>
@@ -228,7 +228,7 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-black flex items-center justify-center text-white font-bold text-sm">E</div>
                         <span className="text-lg font-[900] tracking-tighter italic uppercase text-black">Student Registration</span>
                      </div>
-                     <button onClick={() => { setActiveFlow(null); setStudentStep(1); }} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
+                     <button onClick={() => { setActiveFlow(null); setStudentStep(1); }} className="text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
                         Close <ChevronRight size={14} />
                      </button>
                   </div>
@@ -247,7 +247,7 @@ export default function LandingPage() {
                               {/* Google Auth Integration */}
                               <button 
                                 onClick={() => signIn('google', { callbackUrl: '/student' })}
-                                className="w-full flex items-center justify-center gap-4 bg-white border border-slate-200 py-5 font-black text-xs uppercase tracking-[0.3em] hover:bg-slate-50 transition-all rounded-none"
+                                className="w-full flex items-center justify-center gap-4 bg-white border border-slate-200 py-5 font-black text-xs uppercase tracking-wider hover:bg-slate-50 transition-all rounded-none"
                               >
                                  <svg viewBox="0 0 24 24" className="w-5 h-5">
                                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -260,7 +260,7 @@ export default function LandingPage() {
 
                               <div className="relative flex items-center justify-center py-4">
                                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                                 <span className="relative bg-white px-4 text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Or Manual Registration</span>
+                                 <span className="relative bg-white px-4 text-[9px] font-black uppercase tracking-widest text-slate-300">Or Manual Registration</span>
                               </div>
 
                               <div className="space-y-4">
@@ -308,7 +308,7 @@ export default function LandingPage() {
                                <button 
                                  onClick={handleStudentNext}
                                  disabled={isSubmitting || !formData.email || !formData.name || !formData.password}
-                                 className="w-full md:w-auto bg-black text-white px-24 py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none flex items-center justify-center gap-4"
+                                 className="w-full md:w-auto bg-black text-white px-24 py-6 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none flex items-center justify-center gap-4"
                                >
                                  {isSubmitting ? 'CREATING ACCOUNT...' : 'REGISTER & CONTINUE'} <ChevronRight size={16} />
                                </button>
@@ -344,7 +344,7 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-black flex items-center justify-center text-white font-bold text-sm">E</div>
                         <span className="text-lg font-[900] tracking-tighter italic uppercase text-black">Writer Application</span>
                      </div>
-                     <button onClick={() => setActiveFlow(null)} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
+                     <button onClick={() => setActiveFlow(null)} className="text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
                         Close <ChevronRight size={14} />
                      </button>
                   </div>
@@ -363,7 +363,7 @@ export default function LandingPage() {
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                               {/* Group 1: Identity */}
                               <div className="space-y-8">
-                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 border-l-4 border-blue-600 pl-4">Account Information</h4>
+                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 border-l-4 border-blue-600 pl-4">Account Information</h4>
                                  
                                  <div className="space-y-4">
                                     <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</label>
@@ -401,7 +401,7 @@ export default function LandingPage() {
 
                               {/* Group 2: Professional Details */}
                               <div className="space-y-8">
-                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 border-l-4 border-blue-600 pl-4">Expertise Profile</h4>
+                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 border-l-4 border-blue-600 pl-4">Expertise Profile</h4>
                                  
                                  <div className="space-y-4">
                                     <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Primary Domain</label>
@@ -446,7 +446,7 @@ export default function LandingPage() {
 
                            {/* Verification Links */}
                            <div className="space-y-8 pt-6 border-t border-slate-100">
-                              <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 border-l-4 border-blue-600 pl-4">Verification Artifacts</h4>
+                              <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 border-l-4 border-blue-600 pl-4">Verification Artifacts</h4>
                               
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                  <div className="space-y-4">
@@ -495,7 +495,7 @@ export default function LandingPage() {
                                <button 
                                  onClick={handleWriterSubmit}
                                  disabled={isSubmitting || !writerFormData.email || !writerFormData.name || !writerFormData.domainId}
-                                 className="bg-black text-white px-16 py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none shrink-0"
+                                 className="bg-black text-white px-16 py-6 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none shrink-0"
                                >
                                  {isSubmitting ? 'PROCESSING DOSSIER...' : 'SUBMIT APPLICATION'}
                                </button>
@@ -512,7 +512,7 @@ export default function LandingPage() {
         {/* Trusted By Bar - Mockup Style */}
         <section className="py-24 px-10 border-b border-slate-50">
            <div className="max-w-7xl mx-auto flex flex-col items-center gap-16">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.8em] text-slate-300">Trusted by Thousands</h4>
+              <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-300">Trusted by Thousands</h4>
               <div className="flex flex-wrap justify-center items-center gap-16 md:gap-24 opacity-20 grayscale">
                  {[
                    { name: 'UNIVERSITY OF MLOBORE', icon: <Library size={24} /> },
@@ -534,7 +534,7 @@ export default function LandingPage() {
         <section id="services" className="py-40 px-10 md:px-24 bg-[#fbfbfb]">
            <div className="max-w-7xl mx-auto space-y-24">
               <div className="text-center space-y-6">
-                 <p className="text-blue-600 font-black uppercase tracking-[0.8em] text-[10px]">What we do</p>
+                 <p className="text-blue-600 font-black uppercase tracking-[0.15em] text-[10px]">What we do</p>
                  <h2 className="text-5xl md:text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f]">Specialized Domains.</h2>
               </div>
               
@@ -562,7 +562,7 @@ export default function LandingPage() {
            <div className="max-w-7xl mx-auto space-y-24">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
                  <div className="space-y-8">
-                    <p className="text-blue-600 font-black uppercase tracking-[0.6em] text-[10px]">The Protocol</p>
+                    <p className="text-blue-600 font-black uppercase tracking-[0.15em] text-[10px]">The Protocol</p>
                     <h2 className="text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f] leading-[0.9]">High-Performance <br /> Workflow.</h2>
                     <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-sm italic">We sync elite writing talent with your milestones to ensure institutional-grade results.</p>
                  </div>
@@ -591,7 +591,7 @@ export default function LandingPage() {
         <section id="pricing" className="py-40 px-10 md:px-24 bg-[#0a192f] text-white overflow-hidden relative">
            <div className="max-w-7xl mx-auto space-y-24 relative z-10">
               <div className="text-center space-y-6">
-                 <p className="text-blue-400 font-black uppercase tracking-[0.8em] text-[10px]">Investment</p>
+                 <p className="text-blue-400 font-black uppercase tracking-[0.15em] text-[10px]">Investment</p>
                  <h2 className="text-5xl md:text-6xl font-[900] tracking-tighter italic uppercase">Transparent Pricing.</h2>
               </div>
 
@@ -603,7 +603,7 @@ export default function LandingPage() {
                  ].map((plan, i) => (
                    <div key={i} className={`p-16 rounded-[4rem] flex flex-col items-center text-center space-y-10 transition-all ${plan.featured ? 'bg-blue-600 shadow-[0_50px_100px_rgba(37,99,235,0.3)] scale-105' : 'bg-white/5 border border-white/10'}`}>
                       <div>
-                         <h4 className="font-black text-xs uppercase tracking-[0.4em] text-blue-300 mb-4">{plan.t}</h4>
+                         <h4 className="font-black text-xs uppercase tracking-widest text-blue-300 mb-4">{plan.t}</h4>
                          <p className="text-6xl font-[900] italic tracking-tighter">₹{plan.p}</p>
                       </div>
                       <p className="text-white/40 text-xs font-bold italic uppercase leading-none">{plan.d}</p>
@@ -638,13 +638,13 @@ export default function LandingPage() {
                  </div>
                  <div className="absolute -bottom-10 -right-10 bg-[#0a192f] p-12 rounded-[3.5rem] text-white shadow-2xl">
                     <p className="text-4xl font-[900] tracking-tighter italic">100%</p>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Quality Guarantee</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Quality Guarantee</p>
                  </div>
               </div>
 
               <div className="space-y-12">
                  <div className="space-y-6">
-                    <p className="text-blue-600 font-black uppercase tracking-[0.6em] text-[10px]">The Ethos</p>
+                    <p className="text-blue-600 font-black uppercase tracking-[0.15em] text-[10px]">The Ethos</p>
                     <h2 className="text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f] leading-[0.9]">Bridging the <br /> Expertise Gap.</h2>
                  </div>
                  <p className="text-slate-400 text-lg font-medium leading-relaxed italic">Express Writer was built to eliminate the friction between elite academic talent and students pursuing global education goals. We are more than a marketplace; we are a specialized writing panel committed to institutional excellence.</p>
@@ -672,24 +672,24 @@ export default function LandingPage() {
                 <div className="w-10 h-10 bg-white text-[#0a192f] rounded-xl flex items-center justify-center font-bold text-lg">E</div>
                 <span className="text-2xl font-[900] tracking-tighter italic">Express Writer</span>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">Institutional-Grade Academic Services</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Institutional-Grade Academic Services</p>
             </div>
             
             <div className="flex flex-wrap justify-center gap-12">
                {['Expertise', 'Stream', 'Writers', 'Legal'].map(item => (
                  <div key={item} className="flex flex-col gap-4">
-                    <span className="text-[10px] font-black uppercase tracking-[0.6em] text-white/20 mb-2">{item}</span>
-                    <a href="#" className="text-xs font-bold uppercase tracking-[0.2em] hover:text-blue-400 transition-colors">Protocol</a>
+                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20 mb-2">{item}</span>
+                    <a href="#" className="text-xs font-bold uppercase tracking-widest hover:text-blue-400 transition-colors">Protocol</a>
                  </div>
                ))}
             </div>
          </div>
          
          <div className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-30 relative z-10">
-            <p className="text-[9px] font-black uppercase tracking-[0.3em]">© 2026 Admino Education Hub. All Rights Reserved.</p>
+            <p className="text-[9px] font-black uppercase tracking-wider">© 2026 Admino Education Hub. All Rights Reserved.</p>
             <div className="flex gap-8">
                {['Terms', 'Privacy', 'Security'].map(item => (
-                 <a key={item} href="#" className="text-[9px] font-black uppercase tracking-[0.5em] hover:text-white transition-colors">{item}</a>
+                 <a key={item} href="#" className="text-[9px] font-black uppercase tracking-widest hover:text-white transition-colors">{item}</a>
                ))}
             </div>
          </div>

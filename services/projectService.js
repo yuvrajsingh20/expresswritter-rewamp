@@ -38,7 +38,12 @@ export const createProject = async (data) => {
 export const getProjectsByUser = async (userId, role) => {
   const whereClause = {
     STUDENT: { studentId: userId },
-    FREELANCER: { freelancerId: userId },
+    FREELANCER: { 
+      OR: [
+        { freelancerId: userId },
+        { collaboratorIds: { has: userId } }
+      ]
+    },
     SUB_ADMIN: { subAdminId: userId },
     ADMIN: {}, // Admins see everything
   }[role] || {};
@@ -47,6 +52,7 @@ export const getProjectsByUser = async (userId, role) => {
     where: whereClause,
     include: {
       freelancer: { select: { id: true, name: true, role: true, email: true } },
+      collaborators: { select: { id: true, name: true, role: true, email: true } },
       subAdmin: { select: { name: true, role: true, email: true } },
       student: { select: { id: true, name: true, role: true, email: true } },
       orders: { select: { paymentStatus: true } },
@@ -101,7 +107,8 @@ export const getProjectById = async (projectId) => {
   return await prisma.project.findUnique({
     where: { id: projectId },
     include: {
-      freelancer: { select: { name: true, role: true, email: true } },
+      freelancer: { select: { id: true, name: true, role: true, email: true } },
+      collaborators: { select: { id: true, name: true, role: true, email: true } },
       subAdmin: { select: { name: true, role: true, email: true } },
       student: { select: { name: true, role: true, email: true } },
       logs: { orderBy: { timestamp: 'desc' }, take: 5 },

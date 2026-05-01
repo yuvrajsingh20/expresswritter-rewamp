@@ -263,7 +263,7 @@ export default function SpecialistConsole() {
             <Zap className="text-[#002D5B] animate-pulse" size={20} />
           </div>
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Synchronizing Secure Console...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider animate-pulse">Synchronizing Secure Console...</p>
       </div>
     </div>
   );
@@ -340,7 +340,7 @@ export default function SpecialistConsole() {
                <div className="relative z-10 space-y-10">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     <div className="space-y-2">
-                       <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.3em]">Operational Phase</p>
+                       <p className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">Operational Phase</p>
                        <h2 className="text-2xl font-black tracking-tight">Active Specialization Sequence</h2>
                     </div>
                     <div className="flex items-center gap-6 bg-white/10 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 shadow-inner">
@@ -389,7 +389,7 @@ export default function SpecialistConsole() {
                <div className="space-y-8">
                   <div className="bg-white p-8 border border-[#E5E5E5] rounded-3xl shadow-sm space-y-8">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Console Controls</h3>
+                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Console Controls</h3>
                         <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
                            <LayoutGrid size={16} />
                         </div>
@@ -398,7 +398,7 @@ export default function SpecialistConsole() {
                         {project.status === 'ASSIGNED' && (
                           <button 
                             onClick={() => updateStatus('IN_PROGRESS')}
-                            className="w-full h-16 bg-[#0067B8] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-900/10 active:scale-95"
+                            className="w-full h-16 bg-[#0067B8] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-900/10 active:scale-95"
                           >
                              <PlayCircle size={20} /> INITIALIZE PRODUCTION
                           </button>
@@ -422,7 +422,7 @@ export default function SpecialistConsole() {
 
                   <div className="bg-white p-8 border border-[#E5E5E5] rounded-3xl shadow-sm">
                       <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Briefing Observation</h3>
+                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Briefing Observation</h3>
                         <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
                            <Info size={16} />
                         </div>
@@ -436,7 +436,7 @@ export default function SpecialistConsole() {
                {/* Asset Management */}
                <div className="bg-white border border-[#E5E5E5] rounded-3xl shadow-sm flex flex-col p-8 space-y-8">
                   <div className="flex items-center justify-between">
-                     <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Asset Management</h3>
+                     <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Asset Management</h3>
                      <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
                         <Paperclip size={16} />
                      </div>
@@ -467,7 +467,7 @@ export default function SpecialistConsole() {
 
                   {/* Artifact List */}
                   <div className="space-y-3">
-                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Registry Artifacts</p>
+                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-wider mb-4">Registry Artifacts</p>
                      {project.attachments?.length > 0 ? project.attachments.map((file, idx) => (
                         <div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-[#0067B8] hover:shadow-lg hover:shadow-blue-900/5 transition-all">
                            <div className="flex items-center gap-4">
@@ -528,7 +528,7 @@ export default function SpecialistConsole() {
                     <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300">
                       <Info size={28} />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">Direct communication node standby. Secure transmission authorized.</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">Direct communication node standby. Secure transmission authorized.</p>
                  </div>
                ) : (
                   <div className="space-y-8">
@@ -596,7 +596,7 @@ export default function SpecialistConsole() {
                   <button 
                     disabled={!newMessage.trim()}
                     type="submit" 
-                    className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
+                    className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
                   >
                     SEND MESSAGE <Send size={16} />
                   </button>
@@ -624,7 +624,7 @@ export default function SpecialistConsole() {
                   <CheckCircle2 size={24} className="text-emerald-400" />
                </div>
                <div>
-                  <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">Upload Successful</h5>
+                  <h5 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">Upload Successful</h5>
                   <p className="text-xs font-bold text-slate-200">Asset synced to repository.</p>
                </div>
             </div>

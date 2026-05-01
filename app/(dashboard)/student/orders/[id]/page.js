@@ -15,11 +15,14 @@ import {
 import { io } from 'socket.io-client';
 import { useRazorpay } from '@/hooks/useRazorpay';
 
-const SERVICES = [
-  { id: 'SOP', name: 'Statement of Purpose', price: 2499, description: 'Academic & Professional SOPs' },
-  { id: 'LOR', name: 'Letter of Recommendation', price: 1499, description: 'Mentor & Supervisor LORs' },
-  { id: 'RESUME', name: 'Professional Resume', price: 1999, description: 'ATS-friendly & Multi-page' },
-];
+import servicesData from '@/data/services_data.json';
+
+const SERVICES = Object.values(servicesData.individualServices).flat().map(s => {
+  const priceNum = typeof s.price === 'string' 
+    ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
+    : (s.price || 0);
+  return { ...s, price: priceNum || 0 };
+});
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -552,9 +555,7 @@ export default function OrderDetailsPage() {
                                }`}
                              >
                                 <div className={`w-8 h-8 rounded-lg mb-3 flex items-center justify-center ${project.serviceType === s.id ? 'bg-[#002D5B] text-white' : 'bg-white/10 text-white'}`}>
-                                   {s.id === 'SOP' && <FileText size={16} />}
-                                   {s.id === 'LOR' && <CheckCircle2 size={16} />}
-                                   {s.id === 'RESUME' && <Zap size={16} />}
+                                   <FileText size={16} />
                                 </div>
                                 <h4 className={`text-xs font-black uppercase tracking-tight ${project.serviceType === s.id ? 'text-[#002D5B]' : 'text-white'}`}>{s.name}</h4>
                                 <p className={`text-[9px] font-bold mt-1 ${project.serviceType === s.id ? 'text-slate-500' : 'text-blue-200'}`}>₹{s.price}</p>

@@ -33,6 +33,7 @@ export default function OrderDetailsPage() {
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -85,6 +86,12 @@ export default function OrderDetailsPage() {
     
     recognition.start();
   };
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   useEffect(() => {
     const fetchSession = async () => {

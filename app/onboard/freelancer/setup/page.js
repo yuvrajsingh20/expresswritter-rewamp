@@ -8,11 +8,9 @@ import {
   Upload, Info 
 } from 'lucide-react';
 
-const SKILLS_OPTIONS = [
-  "SOP", "LOR", "Statement of Purpose", "Letter of Recommendation", 
-  "Personal Statement", "Admission Essay", "Resume Writing", 
-  "Academic Research", "Technical Writing", "STEM", "Business & Finance"
-];
+import servicesData from '@/data/services_data.json';
+
+const SKILLS_OPTIONS = servicesData.categories.map(c => c.name);
 
 const FreelancerSetupPage = () => {
   const router = useRouter();

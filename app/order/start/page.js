@@ -9,11 +9,14 @@ import {
   ShieldCheck, Zap, Star 
 } from 'lucide-react';
 
-const SERVICES = [
-  { id: 'SOP', name: 'Statement of Purpose', price: 2499, description: 'Academic & Professional SOPs' },
-  { id: 'LOR', name: 'Letter of Recommendation', price: 1499, description: 'Mentor & Supervisor LORs' },
-  { id: 'RESUME', name: 'Professional Resume', price: 1999, description: 'ATS-friendly & Multi-page' },
-];
+import servicesData from '@/data/services_data.json';
+
+const SERVICES = Object.values(servicesData.individualServices).flat().map(s => {
+  const priceNum = typeof s.price === 'string' 
+    ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
+    : (s.price || 0);
+  return { ...s, price: priceNum || 0 };
+});
 
 export default function StartProjectPage() {
   const router = useRouter();
@@ -78,7 +81,7 @@ export default function StartProjectPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
             >
               {SERVICES.map((s) => (
                 <div 
@@ -93,9 +96,7 @@ export default function StartProjectPage() {
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
                     formData.serviceId === s.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-blue-600'
                   }`}>
-                    {s.id === 'SOP' && <FileText size={20} />}
-                    {s.id === 'LOR' && <Target size={20} />}
-                    {s.id === 'RESUME' && <Zap size={20} />}
+                    <FileText size={20} />
                   </div>
                   <div>
                     <h3 className="font-black text-sm mb-1 uppercase tracking-widest">{s.name}</h3>

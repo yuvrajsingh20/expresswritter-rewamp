@@ -94,7 +94,7 @@ const FreelancerSetupPage = () => {
            </div>
            
            <div className="z-10 mt-20 opacity-40">
-              <p className="text-[10px] font-bold uppercase tracking-[0.4em] leading-relaxed">Protocol v1.0.4 <br /> Institutional Verification Suite</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Protocol v1.0.4 <br /> Institutional Verification Suite</p>
            </div>
            
            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]" />
@@ -140,7 +140,7 @@ const FreelancerSetupPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                 <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 ml-4">Years Exp.</label>
+                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 ml-4">Years Exp.</label>
                  <input 
                    type="number"
                    className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-2xl font-black text-sm outline-none focus:bg-white focus:border-blue-600 transition-all"
@@ -150,7 +150,7 @@ const FreelancerSetupPage = () => {
                  />
               </div>
               <div className="space-y-4">
-                 <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 ml-4">Portfolio Link</label>
+                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 ml-4">Portfolio Link</label>
                  <input 
                    type="url"
                    className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-2xl font-black text-sm outline-none focus:bg-white focus:border-blue-600 transition-all"
@@ -175,7 +175,7 @@ const FreelancerSetupPage = () => {
                <button 
                  type="submit"
                  disabled={loading}
-                 className="bg-[#0a192f] text-white px-12 py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] hover:bg-black transition-all flex items-center gap-4 shadow-2xl shadow-blue-900/10 active:scale-95"
+                 className="bg-[#0a192f] text-white px-12 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-4 shadow-2xl shadow-blue-900/10 active:scale-95"
                >
                  {loading ? "INITIALIZING..." : "SUBMIT PORTFOLIO"} <ChevronRight size={16} strokeWidth={4} />
                </button>

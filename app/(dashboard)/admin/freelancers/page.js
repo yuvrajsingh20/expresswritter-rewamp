@@ -56,7 +56,7 @@ const WorkforcePortal = () => {
                 </div>
                 <h3 className="text-xl font-black italic tracking-tight">Broadcast Command</h3>
               </div>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-6">Global reach: Current active workforce (24 Experts)</p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Global reach: Current active workforce (24 Experts)</p>
               <div className="flex gap-4">
                  <input type="text" placeholder="Type an announcement to all experts..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-sm font-bold outline-none focus:bg-white/10 transition-all" />
                  <button className="bg-[#0071e3] px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20">

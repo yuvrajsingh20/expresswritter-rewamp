@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from "next-auth/react";
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { 
   ChevronRight, ArrowLeft, Send, Paperclip, 
   CheckCircle2, Clock, PlayCircle, Package,
@@ -33,11 +33,21 @@ export default function OrderDetailsPage() {
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  
   // Edit States
+  const searchParams = useSearchParams();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      setShowSuccessModal(true);
+      router.replace(`/student/orders/${id}`);
+    }
+  }, [searchParams, id, router]);
+
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editDescription, setEditDescription] = useState("");
   const [isEditingPackage, setIsEditingPackage] = useState(false);
@@ -78,6 +88,12 @@ export default function OrderDetailsPage() {
   };
 
   useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  useEffect(() => {
     const fetchSession = async () => {
         const res = await fetch('/api/auth-session');
         if (res.ok) {
@@ -103,7 +119,6 @@ export default function OrderDetailsPage() {
         }
         if (msgRes.ok) {
           const fetchedMessages = await msgRes.json();
-          // Map createdAt to timestamp to match new standard
           setMessages(fetchedMessages.map(m => ({ ...m, timestamp: new Date(m.createdAt) })));
         }
       } catch (error) {
@@ -148,9 +163,19 @@ export default function OrderDetailsPage() {
       setTimeout(() => setErrorAlert(null), 5000);
     });
 
-    socket.on('project_status_changed', (data) => {
+    socket.on('project_status_changed', async (data) => {
       if (data.projectId === id) {
-        setProject(prev => ({ ...prev, status: data.status }));
+        // Re-fetch project data to get updated relations (like assigned freelancer)
+        try {
+          const res = await fetch(`/api/projects/${id}`);
+          if (res.ok) {
+            const updatedProject = await res.json();
+            setProject(updatedProject);
+          }
+        } catch (error) {
+          console.error("Failed to re-fetch project on status change:", error);
+          setProject(prev => ({ ...prev, status: data.status }));
+        }
       }
     });
 
@@ -254,6 +279,7 @@ export default function OrderDetailsPage() {
             }
           }
           setPaymentLoading(false);
+          setShowSuccessModal(true);
         },
         onError: (err) => {
           console.error("Payment failed:", err);
@@ -365,7 +391,8 @@ export default function OrderDetailsPage() {
               content: savedMessage.content,
               projectId: id,
               senderId: userId,
-              senderRole: 'STUDENT'
+              senderRole: 'STUDENT',
+              chatType: 'CLIENT_CHAT'
           });
       }
     } catch (error) {
@@ -442,6 +469,39 @@ export default function OrderDetailsPage() {
     <div className="flex bg-[#FBFBFB] min-h-screen text-[#111111] font-sans overflow-hidden">
       <Sidebar role="STUDENT" />
       
+      {/* Success Modal Overlay */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden"
+            >
+               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 to-[#0a192f]" />
+               
+               <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                 <CheckCircle2 size={40} />
+               </div>
+               
+               <h2 className="text-3xl font-black text-center text-[#0a192f] mb-4 tracking-tight uppercase italic">Payment Successful!</h2>
+               
+               <p className="text-slate-500 text-center font-medium leading-relaxed mb-8">
+                 Congratulations! Your order is secured and we are now processing your request. Please wait a short while as our system assigns the perfect specialist for your domain. We will notify you in the chat once an expert is allocated.
+               </p>
+               
+               <button 
+                 onClick={() => setShowSuccessModal(false)}
+                 className="w-full bg-[#0a192f] text-white py-5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95"
+               >
+                 Go to Order Chat
+               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
         {/* Premium Header */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#E5E5E5] flex items-center justify-between px-10 shrink-0 z-20">
@@ -615,14 +675,29 @@ export default function OrderDetailsPage() {
                
                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-8 border-t border-slate-50">
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Expert</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-50 rounded-md flex items-center justify-center text-[#0067B8]">
-                        <User size={12} />
-                      </div>
-                      <p className="text-xs font-bold text-slate-800">
-                        {project.freelancer?.name || (project.status === 'CREATED' ? 'WAITING FOR PAYMENT' : 'ALLOCATING SPECIALIST...')}
-                      </p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specialist Team</p>
+                    <div className="flex flex-col gap-2">
+                      {project.freelancer && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-50 rounded-md flex items-center justify-center text-[#0067B8]">
+                            <ShieldCheck size={12} />
+                          </div>
+                          <p className="text-xs font-bold text-slate-800">{project.freelancer.name} (Lead)</p>
+                        </div>
+                      )}
+                      {project.collaborators?.map(collab => (
+                        <div key={collab.id} className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-slate-50 rounded-md flex items-center justify-center text-slate-400">
+                            <User size={12} />
+                          </div>
+                          <p className="text-xs font-bold text-slate-600">{collab.name}</p>
+                        </div>
+                      ))}
+                      {!project.freelancer && (
+                        <p className="text-xs font-bold text-amber-500 uppercase tracking-tight">
+                          {project.status === 'CREATED' ? 'WAITING FOR PAYMENT' : 'ALLOCATING TEAM...'}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -847,7 +922,7 @@ export default function OrderDetailsPage() {
                                         {msg.content}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'CLIENT CONSOLE' : (project.freelancerId && msg.senderId === project.freelancerId ? 'SPECIALIST NODE' : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
+                                        {isMe ? 'CLIENT CONSOLE' : (msg.sender?.role === 'FREELANCER' ? `SPECIALIST: ${msg.sender.name}` : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
                                     </span>
                                 </div>
                             </motion.div>

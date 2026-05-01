@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, CheckCircle, Clock, 
   DollarSign, Star, Zap, ChevronRight,
@@ -8,39 +8,60 @@ import {
 } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+import servicesData from '@/data/services_data.json';
+
+const SERVICES = Object.values(servicesData.individualServices).flat();
+const getServiceName = (id) => SERVICES.find(s => s.id === id)?.name || id;
 
 export default function FreelancerDashboardClient({ session, profile }) {
   const [tasks, setTasks] = useState([]);
   const [availableTasks, setAvailableTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ACTIVE'); // 'ACTIVE' or 'AVAILABLE'
+  const [newAssignmentNotification, setNewAssignmentNotification] = useState(null);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [activeRes, availableRes] = await Promise.all([
+        fetch('/api/projects'),
+        fetch('/api/projects/available')
+      ]);
+      
+      const activeData = await activeRes.json();
+      const availableData = await availableRes.json();
+
+      if (Array.isArray(activeData)) setTasks(activeData);
+      if (Array.isArray(availableData)) setAvailableTasks(availableData);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (profile.isVerified) {
-      const fetchAllData = async () => {
-        setLoading(true);
-        try {
-          const [activeRes, availableRes] = await Promise.all([
-            fetch('/api/projects'),
-            fetch('/api/projects/available')
-          ]);
-          
-          const activeData = await activeRes.json();
-          const availableData = await availableRes.json();
-
-          if (Array.isArray(activeData)) setTasks(activeData);
-          if (Array.isArray(availableData)) setAvailableTasks(availableData);
-        } catch (error) {
-          console.error("Failed to fetch dashboard data:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
       fetchAllData();
     } else {
       setLoading(false);
     }
   }, [profile.isVerified]);
+
+  useEffect(() => {
+    if (session?.user?.id && profile.isVerified) {
+      const socket = io();
+      socket.emit('join_chat', { userId: session.user.id, role: 'FREELANCER' });
+      
+      socket.on('new_assignment', (data) => {
+        setNewAssignmentNotification(data);
+        fetchAllData(); // Refresh the list
+      });
+      
+      return () => socket.disconnect();
+    }
+  }, [session?.user?.id, profile.isVerified]);
 
   const handleClaim = async (projectId) => {
     try {
@@ -114,8 +135,8 @@ export default function FreelancerDashboardClient({ session, profile }) {
             <p className="text-sm text-slate-500 mt-1">Here is what is happening with your projects today.</p>
           </div>
           <div className="flex gap-3">
-             <button className="flex items-center gap-2 px-4 py-2 border border-[#CCCCCC] rounded-sm text-xs font-semibold hover:bg-white hover:border-slate-400 transition-all">
-                <Filter size={14} /> Filter View
+             <button onClick={() => window.location.reload()} className="flex items-center gap-2 px-4 py-2 border border-[#CCCCCC] rounded-sm text-xs font-semibold hover:bg-white hover:border-slate-400 transition-all">
+                <Clock size={14} /> Refresh Sync
              </button>
              <button className="flex items-center gap-2 px-6 py-2 bg-[#002D5B] text-white rounded-sm text-sm font-semibold hover:bg-[#001D3D] transition-all">
                 Withdraw Funds
@@ -180,10 +201,14 @@ export default function FreelancerDashboardClient({ session, profile }) {
                                 </span>
                              </div>
                              <div className="flex gap-4 mt-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{task.serviceType}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{getServiceName(task.serviceType)}</p>
                                 <span className="text-[10px] text-slate-200">|</span>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                  <Clock size={10} /> {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
+                                  <Clock size={10} /> INITIATED: {new Date(task.createdAt).toLocaleDateString()}
+                                </p>
+                                <span className="text-[10px] text-slate-200">|</span>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                  <Clock size={10} /> DL: {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
                                 </p>
                              </div>
                           </div>
@@ -214,7 +239,11 @@ export default function FreelancerDashboardClient({ session, profile }) {
                           <div>
                              <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
                              <div className="flex gap-4 mt-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{task.serviceType}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{getServiceName(task.serviceType)}</p>
+                                <span className="text-[10px] text-slate-200">|</span>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                  INITIATED: {new Date(task.createdAt).toLocaleDateString()}
+                                </p>
                                 <span className="text-[10px] text-slate-200">|</span>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Client: {task.student?.name}</p>
                              </div>
@@ -276,6 +305,45 @@ export default function FreelancerDashboardClient({ session, profile }) {
            </div>
         </div>
       </main>
+
+      {/* New Assignment Notification Modal */}
+      <AnimatePresence>
+        {newAssignmentNotification && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed bottom-12 right-12 z-[110]"
+          >
+            <div className="bg-[#002D5B] text-white p-6 rounded-2xl shadow-2xl border-t-4 border-blue-400 min-w-[340px] flex flex-col gap-4">
+               <div className="flex items-start gap-4">
+                 <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+                    <Zap size={24} className="text-blue-400" />
+                 </div>
+                 <div>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-1">New Allocation</h5>
+                    <p className="text-sm font-bold text-slate-100">{newAssignmentNotification.message}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{newAssignmentNotification.projectName}</p>
+                 </div>
+               </div>
+               <div className="flex items-center gap-3 pt-2">
+                 <a 
+                   href={`/freelancer/projects/${newAssignmentNotification.projectId}`}
+                   className="flex-1 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-all"
+                 >
+                   Open Console
+                 </a>
+                 <button 
+                   onClick={() => setNewAssignmentNotification(null)}
+                   className="flex-1 h-10 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-all"
+                 >
+                   Dismiss
+                 </button>
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

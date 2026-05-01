@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { 
   FileText, Clock, ExternalLink, 
   MoreHorizontal, Eye, User,
-  AlertCircle, Plus, Check, X, UserPlus, ChevronRight
+  AlertCircle, Plus, Check, X, UserPlus, ChevronRight, ShieldCheck
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
   const [assigningId, setAssigningId] = useState(null);
@@ -27,10 +28,34 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
         body: JSON.stringify({ freelancerId })
       });
       if (res.ok) {
-        window.location.reload(); // Refresh to show changes
+        const socket = io();
+        socket.emit("admin_assigned_freelancer", {
+          projectId,
+          freelancerId,
+          projectName: projects.find(p => p.id === projectId)?.title || "Academic Node"
+        });
+
+        alert("Success: Specialist mapped to project node.");
+        window.location.reload(); 
       }
     } catch (error) {
       console.error("Assignment failed:", error);
+    }
+  };
+
+  const handleCollaborator = async (projectId, freelancerId, action) => {
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/collaborators`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freelancerId, action })
+      });
+      if (res.ok) {
+        alert(`Success: Collaborator ${action === 'ADD' ? 'added to' : 'removed from'} node.`);
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Collaborator operation failed:", error);
     }
   };
   
@@ -72,6 +97,32 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
     );
   }
 
+  const handlePayout = async (project) => {
+    const amount = prompt(`Enter payout amount for ${project.freelancer.name}:`);
+    if (!amount || isNaN(amount)) return;
+    
+    const description = prompt("Enter payout description (optional):");
+    
+    try {
+      const res = await fetch('/api/admin/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: project.id,
+          freelancerId: project.freelancer.id,
+          amount,
+          description
+        })
+      });
+      if (res.ok) {
+        alert("Payout logged successfully.");
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Payout failed:", error);
+    }
+  };
+
   return (
     <div className="card-subtle overflow-hidden border-t-4 border-blue-600">
       <div className="overflow-x-auto">
@@ -81,7 +132,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
               <th className="px-4 py-4">Service</th>
               <th className="px-4 py-4">Student</th>
               <th className="px-4 py-4">Purchase</th>
-              <th className="px-4 py-4">Mapping</th>
+              <th className="px-4 py-4">Specialists (Team)</th>
               <th className="px-4 py-4 text-right">Operational Link</th>
             </tr>
           </thead>
@@ -122,30 +173,81 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                 </td>
                 
                 <td className="px-4 py-5">
-                  {project.freelancer ? (
-                    <div className="flex items-center gap-2 text-indigo-700 font-bold text-[11px]">
-                      <Check size={14} /> {project.freelancer.name}
-                    </div>
-                  ) : (
-                    <select 
-                      onChange={(e) => handleAssign(project.id, e.target.value)}
-                      className="bg-orange-600 text-white text-[10px] font-bold rounded-none px-2 py-1.5 cursor-pointer hover:bg-orange-700 transition-all border-none w-full max-w-[120px]"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>➜ ALLOCATE</option>
-                      {freelancers.map(f => (
-                        <option key={f.id} value={f.id} className="text-slate-900 bg-white">{f.name}</option>
-                      ))}
-                    </select>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    {/* Lead Writer */}
+                    {project.freelancer ? (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-indigo-700 font-bold text-[11px]">
+                          <ShieldCheck size={14} className="shrink-0" /> {project.freelancer.name} (Lead)
+                        </div>
+                        {role === 'ADMIN' && (
+                          <button 
+                            onClick={() => handlePayout(project)}
+                            className="text-[9px] font-bold text-blue-600 hover:underline text-left ml-5"
+                          >
+                            + ADD PAYOUT
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <select 
+                        onChange={(e) => handleAssign(project.id, e.target.value)}
+                        className="bg-orange-600 text-white text-[10px] font-bold rounded px-2 py-1.5 cursor-pointer hover:bg-orange-700 transition-all border-none w-full max-w-[120px]"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>➜ ALLOCATE LEAD</option>
+                        {freelancers.map(f => (
+                          <option key={f.id} value={f.id} className="text-slate-900 bg-white">{f.name}</option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* Collaborators */}
+                    {project.collaborators?.map(collab => (
+                      <div key={collab.id} className="flex items-center justify-between gap-2 text-slate-600 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <User size={12} className="shrink-0" /> {collab.name}
+                        </div>
+                        {role === 'ADMIN' && (
+                          <button 
+                            onClick={() => handleCollaborator(project.id, collab.id, 'REMOVE')}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Add Collaborator Action */}
+                    {role === 'ADMIN' && project.freelancer && (
+                      <select 
+                        onChange={(e) => {
+                          if (e.target.value) handleCollaborator(project.id, e.target.value, 'ADD');
+                        }}
+                        className="text-[9px] font-bold text-slate-400 bg-white border border-slate-200 rounded px-2 py-1 cursor-pointer hover:border-slate-300 transition-all w-full max-w-[120px]"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>+ ADD WRITER</option>
+                        {freelancers
+                          .filter(f => f.id !== project.freelancerId && !project.collaboratorIds?.includes(f.id))
+                          .map(f => (
+                            <option key={f.id} value={f.id}>{f.name}</option>
+                          ))
+                        }
+                      </select>
+                    )}
+                  </div>
                 </td>
 
                 <td className="px-4 py-5 text-right">
-                  <Link href={`${getRolePrefix()}/${project.id}`}>
-                    <button className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-none hover:bg-slate-800 transition-all">
-                      OPEN BRIDGE
-                    </button>
-                  </Link>
+                  <div className="flex items-center justify-end gap-2">
+                    <Link href={`${getRolePrefix()}/${project.id}`}>
+                      <button className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-800 transition-all">
+                        OPEN BRIDGE
+                      </button>
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

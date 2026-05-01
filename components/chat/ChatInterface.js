@@ -1,22 +1,61 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, Shield, Lock, Send, 
   Paperclip, Users, Zap, Bell, Eye, EyeOff
 } from 'lucide-react';
+import { io } from 'socket.io-client';
+
+// Ref for auto‑scrolling to latest message
+const messagesEndRef = typeof window !== 'undefined' ? React.createRef() : null;
 
 const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
   const [activeBridge, setActiveBridge] = useState('CLIENT'); // CLIENT, INTERNAL, ADMIN
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const socketRef = React.useRef(null);
 
   const bridges = [
     { id: 'CLIENT', name: 'Client Chat', icon: MessageCircle, color: 'text-blue-500', bg: 'bg-blue-50', access: 'Everywhere', type: 'CLIENT_CHAT' },
     { id: 'INTERNAL', name: 'Internal Strategy', icon: Shield, color: 'text-amber-500', bg: 'bg-amber-50', access: 'No Student', type: 'INTERNAL_CHAT' },
     { id: 'ADMIN', name: 'Admin mission control', icon: Lock, color: 'text-purple-500', bg: 'bg-purple-50', access: 'Admin only', type: 'ADMIN_CHAT' },
   ];
+
+  useEffect(() => {
+    if (!projectId || !currentUserId) return;
+
+    const socket = io();
+    socketRef.current = socket;
+
+    socket.emit('join_chat', { 
+      projectId, 
+      userId: currentUserId, 
+      role: 'ADMIN' 
+    });
+
+    socket.on('receive_message', (data) => {
+      const currentType = bridges.find(b => b.id === activeBridge).type;
+      if (data.chatType === currentType) {
+        setMessages((prev) => {
+          if (prev.some(m => m.id === data.id)) return prev;
+          return [...prev, { ...data, createdAt: data.timestamp || new Date() }];
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [projectId, currentUserId, activeBridge]);
+
+  // Auto‑scroll whenever messages change
+  useEffect(() => {
+    if (messagesEndRef && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -34,8 +73,6 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
       }
     };
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000); // Poll every 5s
-    return () => clearInterval(interval);
   }, [projectId, activeBridge]);
 
   const handleSendMessage = async () => {
@@ -52,10 +89,22 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
         })
       });
       if (res.ok) {
+        const savedMessage = await res.json();
         setMessage('');
-        // Refresh messages
-        const data = await res.json();
-        setMessages(prev => [...prev, data]);
+        
+        // Emit via socket
+        if (socketRef.current) {
+          socketRef.current.emit('send_message', {
+            id: savedMessage.id,
+            content: savedMessage.content,
+            projectId: projectId,
+            senderId: currentUserId,
+            senderRole: 'ADMIN',
+            chatType: type
+          });
+        }
+
+        setMessages(prev => [...prev, savedMessage]);
       }
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -148,6 +197,7 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
                 </motion.div>
                )
             })}
+            <div ref={messagesEndRef} />
          </div>
 
          {/* Input Box */}

@@ -43,7 +43,14 @@ export default function StudentOrdersPage() {
     p.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusConfig = (status) => {
+  const getStatusConfig = (project) => {
+    const status = project.status;
+    const isPaid = project.orders?.some(o => o.paymentStatus === 'PAID');
+
+    if (status === 'CREATED' && isPaid) {
+      return { label: 'Paid - Awaiting Expert', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle2 };
+    }
+
     const configs = {
       CREATED: { label: 'Awaiting Payment', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: CreditCard },
       AWAITING_PAYMENT: { label: 'Awaiting Payment', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: CreditCard },
@@ -155,7 +162,7 @@ export default function StudentOrdersPage() {
                    </thead>
                    <tbody className="divide-y divide-slate-50">
                      {filteredProjects.map((project) => {
-                       const config = getStatusConfig(project.status);
+                       const config = getStatusConfig(project);
                        const StatusIcon = config.icon;
                        return (
                         <motion.tr 

@@ -124,6 +124,17 @@ app.prepare().then(() => {
       });
     });
 
+    socket.on("admin_assigned_freelancer", (data) => {
+      const { projectId, freelancerId, projectName } = data;
+      // Notify the specific freelancer
+      io.to(`user_${freelancerId}`).emit("new_assignment", {
+        projectId,
+        projectName,
+        message: "You got new work! A project has been assigned to you."
+      });
+      console.log(`Notified freelancer ${freelancerId} about project ${projectId}`);
+    });
+
     // Keeping project legacy join temporarily
     socket.on("join_project", (projectId) => {
       socket.join(projectId);

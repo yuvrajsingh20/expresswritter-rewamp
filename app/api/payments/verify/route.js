@@ -54,7 +54,6 @@ export async function POST(req) {
 
       return NextResponse.json({ 
         message: "Payment verified and project initialized",
-        assigned: !!freelancerId
       }, { status: 200 });
     } else {
       return NextResponse.json({ message: "Invalid signature" }, { status: 400 });

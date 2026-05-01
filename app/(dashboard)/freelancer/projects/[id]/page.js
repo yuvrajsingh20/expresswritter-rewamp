@@ -7,12 +7,16 @@ import {
   Briefcase, Clock, FileText, Send, 
   ChevronLeft, MessageSquare, Info, 
   Upload, CheckCircle, CheckCircle2, AlertCircle, 
-  ExternalLink, Zap, Paperclip, Loader2,
+  ExternalLink, Zap, Paperclip, Loader2, DollarSign,
   LayoutGrid, Calendar, Target, ShieldCheck,
   Search, ArrowRight, Download, Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
+import servicesData from '@/data/services_data.json';
+
+const SERVICES = Object.values(servicesData.individualServices).flat();
+const getServiceName = (id) => SERVICES.find(s => s.id === id)?.name || id;
 
 export default function SpecialistConsole() {
   const params = useParams();
@@ -24,6 +28,7 @@ export default function SpecialistConsole() {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -74,17 +79,18 @@ export default function SpecialistConsole() {
   useEffect(() => {
     const fetchOrderData = async () => {
       try {
-        const [projRes, msgRes] = await Promise.all([
+        const [projRes, msgRes, invRes] = await Promise.all([
           fetch(`/api/projects/${id}`),
-          fetch(`/api/chat?projectId=${id}&chatType=CLIENT_CHAT`)
+          fetch(`/api/chat?projectId=${id}&chatType=CLIENT_CHAT`),
+          fetch(`/api/admin/invoices?projectId=${id}`)
         ]);
 
         if (projRes.ok) setProject(await projRes.json());
         if (msgRes.ok) {
           const fetchedMessages = await msgRes.json();
-          // Map createdAt to timestamp to match new standard
           setMessages(fetchedMessages.map(m => ({ ...m, timestamp: new Date(m.createdAt) })));
         }
+        if (invRes.ok) setInvoices(await invRes.json());
       } catch (error) {
         console.error("Failed to fetch project details:", error);
       } finally {
@@ -172,7 +178,8 @@ export default function SpecialistConsole() {
               content: savedMessage.content,
               projectId: id,
               senderId: userId,
-              senderRole: 'FREELANCER'
+              senderRole: 'FREELANCER',
+              chatType: 'CLIENT_CHAT'
           });
       }
     } catch (error) {
@@ -313,6 +320,10 @@ export default function SpecialistConsole() {
                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                  <span className="text-[#0067B8]">CASE NODE: #{project.id.slice(-6).toUpperCase()}</span>
                  <span>•</span>
+                 <span className="text-[#0067B8]">{getServiceName(project.serviceType)}</span>
+                 <span>•</span>
+                 <span>INIT: {new Date(project.createdAt).toLocaleDateString()}</span>
+                 <span>•</span>
                  <span>DL: {new Date(project.deadline).toLocaleDateString()}</span>
                </div>
              </div>
@@ -344,12 +355,7 @@ export default function SpecialistConsole() {
                        <h2 className="text-2xl font-black tracking-tight">Active Specialization Sequence</h2>
                     </div>
                     <div className="flex items-center gap-6 bg-white/10 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 shadow-inner">
-                       <div className="text-center">
-                          <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1">Contract Value</p>
-                          <p className="text-xl font-black">₹{project.amount || '---'}</p>
-                       </div>
-                       <div className="w-px h-8 bg-white/20" />
-                       <div className="text-center">
+                       <div className="text-center px-4">
                           <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1">Target DL</p>
                           <p className="text-xl font-black">{new Date(project.deadline).toLocaleDateString([], { day: 'numeric', month: 'short' })}</p>
                        </div>
@@ -432,6 +438,53 @@ export default function SpecialistConsole() {
                       </div>
                   </div>
                </div>
+
+                 {/* Financial Clearance (Freelancer Payouts) */}
+                 <div className="bg-white border border-[#E5E5E5] rounded-3xl shadow-sm flex flex-col p-8 space-y-8 mb-6">
+                    <div className="flex items-center justify-between">
+                       <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Financial Clearance</h3>
+                       <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                          <DollarSign size={16} />
+                       </div>
+                    </div>
+                    
+                    {invoices.length > 0 ? (
+                       <div className="space-y-4">
+                          {invoices.map((inv) => (
+                             <div key={inv.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div>
+                                   <div className="flex items-center gap-2">
+                                      <p className="text-sm font-bold text-slate-900">₹{inv.amount.toLocaleString()}</p>
+                                      <span className="px-2 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest rounded">
+                                         {inv.status}
+                                      </span>
+                                   </div>
+                                   <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                      {inv.description || 'Project Milestone Payout'}
+                                   </p>
+                                </div>
+                                <div className="text-right">
+                                   <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                                      {new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                   </p>
+                                   <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-widest">Invoiced</p>
+                                </div>
+                             </div>
+                          ))}
+                          <div className="pt-4 flex justify-between items-center border-t border-slate-100">
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Accrued</p>
+                             <p className="text-lg font-black text-[#002D5B]">₹{invoices.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</p>
+                          </div>
+                       </div>
+                    ) : (
+                       <div className="flex flex-col items-center justify-center py-6 text-center">
+                          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-4">
+                             <DollarSign size={24} />
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting financial mapping from admin.</p>
+                       </div>
+                    )}
+                 </div>
 
                {/* Asset Management */}
                <div className="bg-white border border-[#E5E5E5] rounded-3xl shadow-sm flex flex-col p-8 space-y-8">
@@ -548,7 +601,7 @@ export default function SpecialistConsole() {
                                         {msg.content}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'SPECIALIST CONSOLE' : 'STUDENT NODE'} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
+                                        {isMe ? 'SPECIALIST CONSOLE' : (msg.sender?.role === 'STUDENT' ? 'STUDENT NODE' : 'TEAM SPECIALIST')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
                                     </span>
                                 </div>
                             </motion.div>

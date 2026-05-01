@@ -102,7 +102,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
                 <td className="px-4 py-5">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[10px] border border-slate-200">
+                    <div className="w-7 h-7 rounded-none bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[10px] border border-slate-200">
                       {project.student?.name?.charAt(0) || <User size={12} />}
                     </div>
                     <div className="text-xs font-bold text-slate-800 truncate max-w-[100px]">{project.student?.name || 'Unknown'}</div>
@@ -111,11 +111,11 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
                 <td className="px-4 py-5">
                   {project.orders?.some(o => o.paymentStatus === 'PAID') ? (
-                    <span className="px-2 py-0.5 rounded-sm text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-none text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
                       PAID: ₹{project.amount}
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-sm text-[9px] font-black bg-amber-400 text-white uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-none text-[9px] font-black bg-amber-400 text-white uppercase tracking-wider">
                       PENDING
                     </span>
                   )}
@@ -129,7 +129,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                   ) : (
                     <select 
                       onChange={(e) => handleAssign(project.id, e.target.value)}
-                      className="bg-orange-600 text-white text-[10px] font-bold rounded px-2 py-1.5 cursor-pointer hover:bg-orange-700 transition-all border-none w-full max-w-[120px]"
+                      className="bg-orange-600 text-white text-[10px] font-bold rounded-none px-2 py-1.5 cursor-pointer hover:bg-orange-700 transition-all border-none w-full max-w-[120px]"
                       defaultValue=""
                     >
                       <option value="" disabled>➜ ALLOCATE</option>
@@ -142,7 +142,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
                 <td className="px-4 py-5 text-right">
                   <Link href={`${getRolePrefix()}/${project.id}`}>
-                    <button className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-800 transition-all">
+                    <button className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-none hover:bg-slate-800 transition-all">
                       OPEN BRIDGE
                     </button>
                   </Link>

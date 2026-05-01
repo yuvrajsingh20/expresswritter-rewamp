@@ -51,13 +51,13 @@ const Sidebar = ({ role = 'ADMIN' }) => {
       {/* Premium Logo Section */}
       <div className="p-8 mb-4">
         <Link href="/" className="group flex items-center gap-4">
-          <div className="w-10 h-10 bg-[#002D5B] text-white flex items-center justify-center font-black text-lg rounded-xl shadow-lg shadow-blue-900/20 group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 bg-[#002D5B] text-white flex items-center justify-center font-black text-lg rounded-none group-hover:scale-110 transition-transform">
             E
           </div>
           <div>
             <span className="text-xs font-black tracking-tight uppercase text-[#002D5B] leading-none block">Express Writer</span>
             <div className="flex items-center gap-1.5 mt-1">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <div className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse" />
                <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{role.replace('_', ' ')} NODE</p>
             </div>
           </div>
@@ -76,9 +76,9 @@ const Sidebar = ({ role = 'ADMIN' }) => {
             <Link 
               key={item.name} 
               href={item.path}
-              className={`group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all ${
+              className={`group flex items-center justify-between px-4 py-3.5 rounded-none transition-all ${
                 isActive 
-                  ? 'bg-[#002D5B] text-white shadow-xl shadow-blue-900/20' 
+                  ? 'bg-[#002D5B] text-white' 
                   : 'text-slate-500 hover:text-[#002D5B] hover:bg-slate-50'
               }`}
             >
@@ -87,7 +87,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
                 <span className="text-[10px] font-black uppercase tracking-wider">{item.name}</span>
               </div>
               {isActive && (
-                <motion.div layoutId="activePill" className="w-1.5 h-1.5 bg-white rounded-full" />
+                <motion.div layoutId="activePill" className="w-1.5 h-1.5 bg-white rounded-none" />
               )}
             </Link>
           );
@@ -96,8 +96,8 @@ const Sidebar = ({ role = 'ADMIN' }) => {
 
       {/* Footer Section */}
       <div className="p-6 border-t border-slate-50 space-y-4">
-        <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4">
-           <div className="w-8 h-8 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-[#002D5B] shadow-sm">
+        <div className="bg-slate-50 rounded-none p-4 flex items-center gap-4 border border-slate-100">
+           <div className="w-8 h-8 bg-white border border-slate-100 rounded-none flex items-center justify-center text-[#002D5B] shadow-sm">
               <Activity size={14} />
            </div>
            <div>
@@ -108,7 +108,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
         
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-4 px-4 py-3.5 text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+          className="w-full flex items-center gap-4 px-4 py-3.5 text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-none transition-all"
         >
           <LogOut size={16} />
           <span>Terminate Access</span>

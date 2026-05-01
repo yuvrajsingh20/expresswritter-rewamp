@@ -144,7 +144,7 @@ const ProjectBridgeManagement = ({ params }) => {
            <aside className="w-96 bg-white border-l border-slate-100 flex flex-col p-8 gap-10 overflow-y-auto shadow-2xl">
               {/* Active Participants */}
               <section>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <Users size={14} /> Active In Bridge
                  </p>
                  <div className="space-y-4">
@@ -181,7 +181,7 @@ const ProjectBridgeManagement = ({ params }) => {
 
               {/* Inject Helper (Inject/Assign Logic) */}
               <section className="mt-4">
-                 <p className="text-[10px] font-black text-[#0071e3] uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+                 <p className="text-[10px] font-black text-[#0071e3] uppercase tracking-wider mb-6 flex items-center gap-2">
                     <UserPlus size={14} /> Assign Specialist
                  </p>
                  <div className="space-y-3">

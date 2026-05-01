@@ -402,7 +402,7 @@ export default function OrderDetailsPage() {
             <Zap className="text-[#002D5B] animate-pulse" size={20} />
           </div>
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Syncing Secure Environment...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider animate-pulse">Syncing Secure Environment...</p>
       </div>
     </div>
   );
@@ -491,7 +491,7 @@ export default function OrderDetailsPage() {
                   </div>
                   <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-amber-400 font-bold text-[10px] uppercase tracking-[0.2em]">
+                      <div className="flex items-center gap-2 text-amber-400 font-bold text-[10px] uppercase tracking-widest">
                         <ShieldCheck size={14} /> Secure Payment Required
                       </div>
                       <h2 className="text-2xl font-black tracking-tight">Finalize Your Order Initiation</h2>
@@ -692,7 +692,7 @@ export default function OrderDetailsPage() {
                 {/* Requirements Card */}
                 <div className="bg-white p-8 border border-[#E5E5E5] rounded-2xl shadow-sm flex flex-col">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Project Parameters</h3>
+                      <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Project Parameters</h3>
                       {needsPayment && (
                         <button 
                           onClick={() => setIsEditingDescription(!isEditingDescription)}
@@ -731,7 +731,7 @@ export default function OrderDetailsPage() {
                 {/* Attachments Card */}
                 <div className="bg-white p-8 border border-[#E5E5E5] rounded-2xl shadow-sm flex flex-col">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Source Artifacts</h3>
+                      <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Source Artifacts</h3>
                       {project.status !== 'COMPLETED' && (
                         <div className="flex items-center gap-2">
                            <input type="file" className="hidden" ref={fileInputRef} multiple onChange={handleFileUpload} />
@@ -826,7 +826,7 @@ export default function OrderDetailsPage() {
                     <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300">
                       <Info size={28} />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">System: Handshake Complete. Secure stream initialized. Waiting for protocol exchange.</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">System: Handshake Complete. Secure stream initialized. Waiting for protocol exchange.</p>
                  </div>
                ) : (
                   <div className="space-y-8">
@@ -907,7 +907,7 @@ export default function OrderDetailsPage() {
                   <button 
                     disabled={!newMessage.trim() || needsPayment}
                     type="submit" 
-                    className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
+                    className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
                   >
                     TRANSMIT PACKET <Send size={16} />
                   </button>

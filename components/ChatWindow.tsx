@@ -97,11 +97,11 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
   const filteredLayers = layers.filter(layer => layer.visibleTo.includes(user?.role || ''));
 
   return (
-    <div className="flex flex-col h-[600px] bg-secondary/30 border border-border rounded-3xl overflow-hidden glass">
+    <div className="flex flex-col h-[600px] bg-secondary/30 border border-border rounded-none overflow-hidden glass">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border bg-secondary/50 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+          <div className="w-10 h-10 rounded-none bg-primary flex items-center justify-center text-white">
             <UserCircle2 size={24} />
           </div>
           <div>
@@ -109,12 +109,12 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">Project ID: #{projectId.slice(-6)}</p>
           </div>
         </div>
-        <div className="flex bg-black/5 p-1 rounded-xl">
+        <div className="flex bg-black/5 p-1 rounded-none">
           {filteredLayers.map(layer => (
             <button
               key={layer.id}
               onClick={() => setActiveLayer(layer.id as any)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-4 py-1.5 rounded-none text-xs font-bold transition-all ${
                 activeLayer === layer.id ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -143,10 +143,10 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
               animate={{ opacity: 1, x: 0 }}
               className={`flex ${msg.sender.name === user?.name ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
+              <div className={`max-w-[70%] rounded-none px-4 py-2 text-sm ${
                 msg.sender.name === user?.name 
-                  ? 'bg-primary text-white rounded-tr-none' 
-                  : 'bg-white text-foreground border border-border rounded-tl-none shadow-sm'
+                  ? 'bg-primary text-white' 
+                  : 'bg-white text-foreground border border-border shadow-sm'
               }`}>
                 {msg.sender.name !== user?.name && (
                    <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-1">{msg.sender.name} • {msg.sender.role}</p>
@@ -163,7 +163,7 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
 
       {/* Input */}
       <div className="p-4 bg-secondary/50 border-t border-border">
-        <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 bg-white p-2 rounded-2xl border border-border shadow-sm">
+        <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 bg-white p-2 rounded-none border border-border shadow-sm">
           <button type="button" className="p-2 text-muted-foreground hover:text-primary transition-colors">
             <Paperclip size={20} />
           </button>
@@ -174,7 +174,7 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-          <button type="submit" className="p-2 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-transform active:scale-95 disabled:opacity-50">
+          <button type="submit" className="p-2 bg-primary text-white rounded-none shadow-lg shadow-primary/10 hover:scale-105 transition-transform active:scale-95 disabled:opacity-50">
             <Send size={18} />
           </button>
         </form>

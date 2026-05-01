@@ -153,7 +153,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
                 <td className="px-4 py-5">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[10px] border border-slate-200">
+                    <div className="w-7 h-7 rounded-none bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[10px] border border-slate-200">
                       {project.student?.name?.charAt(0) || <User size={12} />}
                     </div>
                     <div className="text-xs font-bold text-slate-800 truncate max-w-[100px]">{project.student?.name || 'Unknown'}</div>
@@ -162,11 +162,11 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
                 <td className="px-4 py-5">
                   {project.orders?.some(o => o.paymentStatus === 'PAID') ? (
-                    <span className="px-2 py-0.5 rounded-sm text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-none text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
                       PAID: ₹{project.amount}
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-sm text-[9px] font-black bg-amber-400 text-white uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-none text-[9px] font-black bg-amber-400 text-white uppercase tracking-wider">
                       PENDING
                     </span>
                   )}

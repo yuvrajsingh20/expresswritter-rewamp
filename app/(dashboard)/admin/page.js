@@ -63,7 +63,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-6">
             <button className="relative p-2 text-slate-400 hover:text-blue-600 transition-colors">
               <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-none border-2 border-white" />
             </button>
             <div className="h-8 w-[1px] bg-slate-100" />
             <div className="flex items-center gap-3">
@@ -71,9 +71,9 @@ export default function AdminDashboard() {
                   <p className="text-[10px] font-bold text-slate-900">Yuvraj Singh</p>
                   <p className="text-[9px] font-medium text-slate-400">Master Admin</p>
                </div>
-               <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center text-white font-bold text-xs">
-                 YS
-               </div>
+                <div className="w-10 h-10 bg-primary rounded-none flex items-center justify-center text-white font-bold text-xs">
+                  YS
+                </div>
             </div>
           </div>
         </header>
@@ -89,14 +89,14 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat) => (
               <div key={stat.label} className="card-subtle p-8 space-y-6">
-                <div className="flex justify-between items-start">
-                   <div className={`w-12 h-12 ${stat.bg} ${stat.color} flex items-center justify-center rounded-sm`}>
-                      <stat.icon size={22} />
-                   </div>
-                   <span className={`text-[10px] font-bold px-2 py-1 rounded-sm ${stat.growth.includes('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                      {stat.growth}
-                   </span>
-                </div>
+                 <div className="flex justify-between items-start">
+                    <div className={`w-12 h-12 ${stat.bg} ${stat.color} flex items-center justify-center rounded-none`}>
+                       <stat.icon size={22} />
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-none ${stat.growth.includes('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                       {stat.growth}
+                    </span>
+                 </div>
                 <div>
                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{stat.label}</p>
                    <p className="text-3xl font-extrabold text-slate-900 tracking-tight">{stat.value}</p>
@@ -133,9 +133,9 @@ export default function AdminDashboard() {
                   ].map((item, i) => (
                     <Link href={item.path} key={i} className="card-subtle p-6 flex items-center justify-between hover:bg-slate-50 transition-all group">
                        <div className="flex items-center gap-4 text-left">
-                          <div className="w-10 h-10 bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-primary rounded-sm">
-                             <item.icon size={18} />
-                          </div>
+                           <div className="w-10 h-10 bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-primary rounded-none">
+                              <item.icon size={18} />
+                           </div>
                           <div>
                              <p className="text-sm font-bold text-slate-900">{item.title}</p>
                              <p className="text-[10px] font-medium text-slate-400">{item.desc}</p>
@@ -146,14 +146,14 @@ export default function AdminDashboard() {
                   ))}
                </div>
 
-               <div className="bg-primary rounded-sm p-8 text-white relative overflow-hidden">
-                  <TrendingUp className="text-blue-200 mb-6" size={32} />
-                  <h3 className="text-xl font-bold mb-3">Institutional Scaling</h3>
-                  <p className="text-blue-100/60 text-xs mb-8 leading-relaxed">Your current volume is up 40% this quarter. Consider adding more subject specialists to maintain throughput.</p>
-                  <button className="w-full bg-[#0067B8] py-3 rounded-sm text-xs font-extrabold hover:bg-[#005a9e] transition-all shadow-sm">
-                     Recruitment Portal
-                  </button>
-               </div>
+                <div className="bg-primary rounded-none p-8 text-white relative overflow-hidden">
+                   <TrendingUp className="text-blue-200 mb-6" size={32} />
+                   <h3 className="text-xl font-bold mb-3">Institutional Scaling</h3>
+                   <p className="text-blue-100/60 text-xs mb-8 leading-relaxed">Your current volume is up 40% this quarter. Consider adding more subject specialists to maintain throughput.</p>
+                   <button className="w-full bg-[#0067B8] py-3 rounded-none text-xs font-extrabold hover:bg-[#005a9e] transition-all shadow-sm">
+                      Recruitment Portal
+                   </button>
+                </div>
             </div>
           </div>
         </main>

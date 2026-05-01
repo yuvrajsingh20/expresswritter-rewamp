@@ -9,11 +9,14 @@ import {
   ShieldCheck, Zap, Loader2, Info, X
 } from 'lucide-react';
 
-const SERVICES = [
-  { id: 'SOP', name: 'Statement of Purpose', price: 2499, description: 'Academic & Professional SOPs' },
-  { id: 'LOR', name: 'Letter of Recommendation', price: 1499, description: 'Mentor & Supervisor LORs' },
-  { id: 'RESUME', name: 'Professional Resume', price: 1999, description: 'ATS-friendly & Multi-page' },
-];
+import servicesData from '@/data/services_data.json';
+
+const SERVICES = Object.values(servicesData.individualServices).flat().map(s => {
+  const priceNum = typeof s.price === 'string' 
+    ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
+    : (s.price || 0);
+  return { ...s, price: priceNum || 0 };
+});
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -210,9 +213,7 @@ export default function NewOrderPage() {
                         }`}
                         >
                             <div className={`w-8 h-8 rounded-sm mb-4 flex items-center justify-center ${formData.serviceId === s.id ? 'bg-[#0067B8] text-white' : 'bg-slate-50 text-slate-400'}`}>
-                                {s.id === 'SOP' && <FileText size={16} />}
-                                {s.id === 'LOR' && <Check size={16} />}
-                                {s.id === 'RESUME' && <Zap size={16} />}
+                                <FileText size={16} />
                             </div>
                             <h3 className="font-bold text-sm text-slate-900 mb-1">{s.name}</h3>
                             <p className="text-[11px] text-slate-500 mb-4">{s.description}</p>

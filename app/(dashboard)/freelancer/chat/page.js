@@ -178,7 +178,7 @@ export default function FreelancerChatInbox() {
                                           </div>
                                           <div>
                                               <h4 className="text-sm font-black text-slate-900 tracking-tight">{proj.title}</h4>
-                                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">NODE: #{proj.studentId.slice(-6).toUpperCase()}</p>
+                                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">NODE: #{proj.studentId.slice(-6).toUpperCase()}</p>
                                           </div>
                                       </div>
                                       <div className="col-span-2">
@@ -191,7 +191,7 @@ export default function FreelancerChatInbox() {
                                           <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest italic">Live Stream</span>
                                       </div>
                                       <div className="col-span-2 px-4 flex justify-end">
-                                          <div className="h-10 px-6 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-[#002D5B] flex items-center gap-2 group-hover:bg-[#002D5B] group-hover:text-white transition-all shadow-sm">
+                                          <div className="h-10 px-6 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#002D5B] flex items-center gap-2 group-hover:bg-[#002D5B] group-hover:text-white transition-all shadow-sm">
                                               OPEN <ChevronRight size={14} />
                                           </div>
                                       </div>
@@ -200,7 +200,7 @@ export default function FreelancerChatInbox() {
                           ) : (
                               <div className="h-full flex flex-col items-center justify-center text-center p-20 opacity-40">
                                   <MessageSquare size={48} className="mb-6 text-slate-300" />
-                                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 tracking-[0.3em]">Inbox Empty</h3>
+                                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 tracking-wider">Inbox Empty</h3>
                                   <p className="text-[10px] mt-2 uppercase tracking-widest font-bold max-w-xs">No active conversation nodes detected.</p>
                               </div>
                           )}

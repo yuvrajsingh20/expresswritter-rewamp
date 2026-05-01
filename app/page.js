@@ -9,16 +9,25 @@ import {
   Users, DollarSign, Calendar,
   GraduationCap, Feather, Laptop,
   Library, BookOpen, PenTool, Briefcase,
-  Eye, EyeOff
+  Eye, EyeOff, Award, ShieldCheck as IconShieldCheck
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import servicesData from '../data/services_data.json';
 
-const SERVICES = [
-  { id: 'SOP', name: 'Statement of Purpose', price: 2499, description: 'Academic & Professional SOPs' },
-  { id: 'LOR', name: 'Letter of Recommendation', price: 1499, description: 'Mentor & Supervisor LORs' },
-  { id: 'RESUME', name: 'Professional Resume', price: 1999, description: 'ATS-friendly & Multi-page' },
-];
+const ICON_MAP = {
+  IconFileText: FileText,
+  IconAward: Award,
+  IconBriefcase: Briefcase,
+  IconShieldCheck: IconShieldCheck
+};
+
+const SERVICES = Object.values(servicesData.individualServices).flat().map(s => {
+  const priceNum = typeof s.price === 'string' 
+    ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
+    : (s.price || 0);
+  return { ...s, price: priceNum || 0 };
+});
 
 export default function LandingPage() {
   const router = useRouter();
@@ -264,6 +273,20 @@ export default function LandingPage() {
                               </div>
 
                               <div className="space-y-4">
+                                 <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Target Service</label>
+                                 <select 
+                                   value={formData.serviceId}
+                                   onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
+                                   className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
+                                 >
+                                    <option value="">SELECT SERVICE...</option>
+                                    {SERVICES.map(s => (
+                                      <option key={s.id} value={s.id}>{s.name} - {s.price}</option>
+                                    ))}
+                                 </select>
+                              </div>
+
+                              <div className="space-y-4">
                                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</label>
                                  <input 
                                    type="text" 
@@ -307,8 +330,8 @@ export default function LandingPage() {
                            <div className="pt-10 flex flex-col items-center gap-8 border-t border-slate-100">
                                <button 
                                  onClick={handleStudentNext}
-                                 disabled={isSubmitting || !formData.email || !formData.name || !formData.password}
-                                 className="w-full md:w-auto bg-black text-white px-24 py-6 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none flex items-center justify-center gap-4"
+                                 disabled={isSubmitting || !formData.email || !formData.name || !formData.password || !formData.serviceId}
+                                 className="w-full md:w-auto bg-black text-white px-24 py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none flex items-center justify-center gap-4"
                                >
                                  {isSubmitting ? 'CREATING ACCOUNT...' : 'REGISTER & CONTINUE'} <ChevronRight size={16} />
                                </button>
@@ -411,9 +434,9 @@ export default function LandingPage() {
                                        className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
                                     >
                                        <option value="">SELECT SPECIALIZATION...</option>
-                                       <option value="ACADEMIC">ACADEMIC RESEARCH</option>
-                                       <option value="TECHNICAL">TECHNICAL DOCUMENTATION</option>
-                                       <option value="CREATIVE">CREATIVE & ADMISSIONS</option>
+                                       {servicesData.categories.map(c => (
+                                         <option key={c.id} value={c.id}>{c.name}</option>
+                                       ))}
                                     </select>
                                  </div>
 
@@ -538,21 +561,19 @@ export default function LandingPage() {
                  <h2 className="text-5xl md:text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f]">Specialized Domains.</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                 {[
-                   { t: 'Admissions', d: 'SOPs, LORs, and Personal Statements for global universities.', i: GraduationCap, bg: 'bg-orange-50', c: 'text-orange-600' },
-                   { t: 'Academic', d: 'Technical research papers, assignments, and thesis support.', i: Library, bg: 'bg-blue-50', c: 'text-blue-600' },
-                   { t: 'Career', d: 'Professional resumes, CVs, and LinkedIn profile optimization.', i: Briefcase, bg: 'bg-emerald-50', c: 'text-emerald-600' },
-                   { t: 'Technical', d: 'Documentation, whitepapers, and complex technical writing.', i: Laptop, bg: 'bg-indigo-50', c: 'text-indigo-600' }
-                 ].map((service, i) => (
-                   <div key={i} className="bg-white p-10 rounded-[3rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group">
-                      <div className={`w-14 h-14 ${service.bg} ${service.c} rounded-2xl mb-8 flex items-center justify-center group-hover:rotate-6 transition-transform`}>
-                         <service.i size={24} />
-                      </div>
-                      <h4 className="font-[900] text-lg uppercase tracking-tight mb-4">{service.t}</h4>
-                      <p className="text-slate-400 text-sm font-medium leading-relaxed uppercase tracking-tighter italic">{service.d}</p>
-                   </div>
-                 ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                 {servicesData.categories.map((service, i) => {
+                   const IconComponent = ICON_MAP[service.icon_name] || FileText;
+                   return (
+                     <div key={i} className="bg-white p-10 rounded-[3rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group">
+                        <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mb-8 flex items-center justify-center group-hover:rotate-6 transition-transform">
+                           <IconComponent size={24} />
+                        </div>
+                        <h4 className="font-[900] text-lg uppercase tracking-tight mb-4">{service.name}</h4>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed uppercase tracking-tighter italic">{service.description}</p>
+                     </div>
+                   );
+                 })}
               </div>
            </div>
         </section>

@@ -66,7 +66,7 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
     <div className="flex h-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 italic">
       {/* BRIDGE NAVIGATOR (Left Rail) */}
       <div className="w-64 border-r border-slate-50 flex flex-col bg-slate-50/30 p-6">
-         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8 px-4">Bridge Layers</p>
+         <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-8 px-4">Bridge Layers</p>
          <nav className="space-y-3">
             {bridges.map((bridge) => {
                // Security check: Students cannot see Internal or Admin layers

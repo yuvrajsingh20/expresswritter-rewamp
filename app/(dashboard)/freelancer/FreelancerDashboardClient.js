@@ -75,10 +75,10 @@ export default function FreelancerDashboardClient({ session, profile }) {
               </p>
            </div>
            <div className="bg-white border border-slate-100 p-8 rounded-3xl shadow-sm w-full">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-2">Protocol Timeline</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-2">Protocol Timeline</p>
               <p className="text-lg font-bold text-slate-900">System clearance expected within <span className="text-blue-600 italic">24 Hours</span></p>
            </div>
-           <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-300">You will receive an encrypted notification once verified.</p>
+           <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-300">You will receive an encrypted notification once verified.</p>
         </main>
       </div>
     );

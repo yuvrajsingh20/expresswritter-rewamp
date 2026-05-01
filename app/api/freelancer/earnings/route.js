@@ -9,37 +9,33 @@ export async function GET() {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const projects = await prisma.project.findMany({
+    // Fetch all invoices for this freelancer
+    const invoices = await prisma.freelancerInvoice.findMany({
       where: { freelancerId: authUser.id },
-      orderBy: { updatedAt: 'desc' }
+      include: {
+        project: { select: { title: true, status: true, updatedAt: true } }
+      },
+      orderBy: { createdAt: 'desc' }
     });
-
-    // Mock pricing logic for now (or use real Order data if available)
-    // Let's assume each project has a mock amount for this demonstration
-    const projectPricing = {
-      'SOP': 2500,
-      'LOR': 1500,
-      'RESUME': 1200
-    };
 
     let totalEarned = 0;
     let pending = 0;
     let balance = 0;
 
-    const projectData = projects.map(p => {
-      const amount = projectPricing[p.serviceType] || 1000;
-      if (p.status === 'COMPLETED') {
-        totalEarned += amount;
-        balance += amount;
-      } else if (p.status === 'REVIEW' || p.status === 'IN_PROGRESS') {
-        pending += amount;
+    const projectData = invoices.map(inv => {
+      if (inv.status === 'PAID') {
+        totalEarned += inv.amount;
+        balance += inv.amount;
+      } else if (inv.status === 'PENDING') {
+        pending += inv.amount;
       }
       return {
-        id: p.id,
-        title: p.title,
-        amount: amount,
-        status: p.status,
-        date: p.updatedAt
+        id: inv.projectId,
+        invoiceId: inv.id,
+        title: inv.project.title,
+        amount: inv.amount,
+        status: inv.status,
+        date: inv.createdAt
       };
     });
 
@@ -57,17 +53,12 @@ export async function GET() {
       method: pr.paymentMethod
     }));
 
-    // Add some mock history if empty to show the "classy" UI initially
-    if (history.length === 0) {
-      history.push(
-        { id: 'TXN-8821', amount: 4500, date: '2026-04-20', status: 'COMPLETED', method: 'Bank Transfer' },
-        { id: 'TXN-7732', amount: 3200, date: '2026-04-12', status: 'COMPLETED', method: 'UPI' }
-      );
-    }
-
     // Subtract past payouts from balance
-    const totalPaidOut = history.reduce((acc, curr) => acc + curr.amount, 0);
-    balance = Math.max(0, balance - (totalPaidOut - 7700)); // Subtracting real balance logic
+    const totalPaidOut = payoutRequests
+      .filter(pr => pr.status === 'COMPLETED')
+      .reduce((acc, curr) => acc + curr.amount, 0);
+      
+    balance = Math.max(0, balance - totalPaidOut);
 
     return NextResponse.json({
       balance: Math.max(0, balance),

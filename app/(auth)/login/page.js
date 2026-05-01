@@ -71,7 +71,7 @@ function LoginForm() {
         </div>
         <div className="space-y-1">
           <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black">Authorized Login.</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Secure Access Portal</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Secure Access Portal</p>
         </div>
       </div>
 
@@ -79,7 +79,7 @@ function LoginForm() {
         <button
           onClick={() => { setSocialLoading('google'); signIn('google', { callbackUrl }); }}
           disabled={socialLoading === 'google'}
-          className="w-full border border-slate-200 py-5 flex items-center justify-center gap-4 hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-[0.3em] rounded-none"
+          className="w-full border border-slate-200 py-5 flex items-center justify-center gap-4 hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-wider rounded-none"
         >
           {socialLoading === 'google' ? <Loader2 className="animate-spin" size={16} /> : (
             <>
@@ -152,7 +152,7 @@ function LoginForm() {
 
           <button
             disabled={loading}
-            className="w-full bg-black text-white py-5 font-black text-[10px] uppercase tracking-[0.4em] hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl disabled:opacity-50 active:scale-[0.98] rounded-none"
+            className="w-full bg-black text-white py-5 font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl disabled:opacity-50 active:scale-[0.98] rounded-none"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : "Sign In Portal"}
           </button>

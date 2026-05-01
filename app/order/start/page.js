@@ -55,7 +55,7 @@ export default function StartProjectPage() {
                <ArrowLeft size={18} className="text-slate-400" />
              </button>
            )}
-           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Phase 0{step} <span className="mx-2">/</span> 02</span>
+           <span className="text-[10px] font-black uppercase tracking-wider text-slate-300">Phase 0{step} <span className="mx-2">/</span> 02</span>
         </div>
       </nav>
 
@@ -114,7 +114,7 @@ export default function StartProjectPage() {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block pl-1">Target Deadline</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-1">Target Deadline</label>
                   <input 
                     type="date" 
                     value={formData.deadline}
@@ -124,7 +124,7 @@ export default function StartProjectPage() {
                 </div>
                 <div className="bg-[#0a192f] p-8 rounded-[2rem] text-white flex items-center justify-between">
                    <div>
-                     <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-40 mb-2">Selected Config</p>
+                     <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">Selected Config</p>
                      <p className="font-bold text-sm">{selectedService?.name}</p>
                    </div>
                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400">
@@ -134,7 +134,7 @@ export default function StartProjectPage() {
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block pl-1">Contextual Brief</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-1">Contextual Brief</label>
                 <textarea 
                   rows={6}
                   value={formData.description}

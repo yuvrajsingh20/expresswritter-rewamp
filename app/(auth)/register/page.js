@@ -48,7 +48,7 @@ function RegisterForm() {
         </div>
         <div className="space-y-2">
           <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black">Initialize Account.</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Institutional Access Protocol</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Institutional Access Protocol</p>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ function RegisterForm() {
 
           <button
             disabled={loading}
-            className="w-full bg-black text-white py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all flex items-center justify-center gap-4 shadow-2xl disabled:opacity-50 active:scale-[0.98] rounded-none"
+            className="w-full bg-black text-white py-6 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all flex items-center justify-center gap-4 shadow-2xl disabled:opacity-50 active:scale-[0.98] rounded-none"
           >
             {loading ? "INITIALIZING..." : "CREATE ACCOUNT"} <ChevronRight size={18} />
           </button>
@@ -145,7 +145,7 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#fbfbfb] flex items-center justify-center p-10 font-sans">
-      <Suspense fallback={<div className="font-black text-[10px] uppercase tracking-[1em] text-slate-300 animate-pulse">Loading Protocol...</div>}>
+      <Suspense fallback={<div className="font-black text-[10px] uppercase tracking-[0.15em] text-slate-300 animate-pulse">Loading Protocol...</div>}>
         <RegisterForm />
       </Suspense>
       {/* Decorative Gradients */}

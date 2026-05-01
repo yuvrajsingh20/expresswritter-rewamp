@@ -58,6 +58,9 @@ model User {
   
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  freelancerInvoices FreelancerInvoice[] @relation("FreelancerInvoices")
+  collaboratingProjects Project[] @relation("CollaboratingProjects", fields: [collaboratingProjectIds], references: [id])
+  collaboratingProjectIds String[] @db.ObjectId
   
   studentChats     Chat[]    @relation("StudentChats")
   freelancerChats  Chat[]    @relation("FreelancerChats")
@@ -145,6 +148,9 @@ model Project {
   subAdminId       String?       @db.ObjectId
   subAdmin         User?         @relation("SubAdminProjects", fields: [subAdminId], references: [id])
 
+  collaboratorIds   String[]      @db.ObjectId
+  collaborators     User[]        @relation("CollaboratingProjects", fields: [collaboratorIds], references: [id])
+
   serviceType       String?       // E.g. "SOP", "LOR", "RESUME"
   amount            Float?        @default(0)
   attachments       Json[]        // Array of {url, name}
@@ -152,6 +158,7 @@ model Project {
   messages         Message[]
   orders           Order[]
   logs             ProjectLog[]
+  freelancerInvoices FreelancerInvoice[]
 }
 
 model Message {
@@ -159,6 +166,7 @@ model Message {
   content     String
   chatType    ChatType
   attachments Json[]   // Array of {url, name}
+  isSystem    Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   // Relations
@@ -214,6 +222,22 @@ model ProjectLog {
   
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model FreelancerInvoice {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  amount          Float
+  status          PaymentStatus  @default(PENDING)
+  description     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  projectId       String         @db.ObjectId
+  project         Project        @relation(fields: [projectId], references: [id])
+  
+  freelancerId    String         @db.ObjectId
+  freelancer      User           @relation("FreelancerInvoices", fields: [freelancerId], references: [id])
 }
 
 model PayoutRequest {

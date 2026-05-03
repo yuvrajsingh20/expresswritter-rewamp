@@ -27,6 +27,7 @@ export const useRazorpay = () => {
     onError,
   }: {
     amount: number;
+    projectId: string;
     currency?: string;
     name?: string;
     description?: string;

@@ -23,7 +23,10 @@ import SessionWrapper from "@/components/SessionWrapper";
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable}`}>
-       <body className={`${inter.className} bg-background text-foreground antialiased`}>
+       <body 
+        className={`${inter.className} bg-background text-foreground antialiased`}
+        suppressHydrationWarning={true}
+      >
         <SessionWrapper>
           {children}
         </SessionWrapper>

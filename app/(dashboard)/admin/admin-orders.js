@@ -147,6 +147,17 @@ function AdminProjectChatView({ project, freelancers, onClose, userId }) {
         body: JSON.stringify({ collaboratorIds: [...existingCollabs, collabId] })
       });
       if (res.ok) {
+        const writerName = freelancers.find(f => f.id === collabId)?.name || 'A writer';
+        await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: project.id,
+            content: `${writerName} has joined as a collaborator.`,
+            chatType: 'CLIENT_CHAT',
+            isSystem: true
+          })
+        });
         alert("Collaborator added successfully!");
         window.location.reload();
       } else {

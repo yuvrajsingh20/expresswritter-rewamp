@@ -11,6 +11,7 @@ export const sendMessage = async (data) => {
       senderId: data.senderId,
       projectId: data.projectId,
       attachments: data.attachments || [],
+      isSystem: data.isSystem || false,
     },
   });
 };

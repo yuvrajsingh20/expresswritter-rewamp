@@ -622,6 +622,17 @@ function OrdersView({ projects = [], userId }) {
         body: JSON.stringify({ status: dbStatus })
       });
       if (res.ok) {
+        if (newStatus === 'In Progress') {
+          await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: id,
+              content: "Hello! I am your assigned expert writer for this project. I've reviewed your brief and will begin working on it immediately. Please feel free to share any additional details or requirements here.",
+              chatType: 'CLIENT_CHAT'
+            })
+          });
+        }
         window.location.reload();
       } else {
         console.error("Failed to update status");

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Xpresswriters — Customer Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d1a; --surface: #13132a; --surface2: #1a1a35; --surface3: #1f1f3d;
+    --border: rgba(13,148,136,0.15); --border2: rgba(255,255,255,0.06);
+    --teal: #0d9488; --teal-light: #2dd4bf; --teal-glow: rgba(13,148,136,0.2);
+    --text: #f0fffe; --text-muted: #7a9e9b; --text-dim: #3d5c5a;
+    --gold: #f5c842; --green: #22c55e; --red: #f43f5e; --amber: #f59e0b;
+    --font: 'Google Sans', system-ui, sans-serif;
+  }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 2px; }
+  input, textarea, select { font-family: var(--font); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes slideRight { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .fade-up { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+<div id="root" style="display:flex;width:100%;height:100%;"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ── DATA ── */
+const ORDERS = [
+  { id: 'XW-48291', service: 'Statement of Purpose', writer: 'Dr. Amara Singh', status: 'In Progress', progress: 65, due: 'Apr 24, 2026', words: 800, price: 144, submitted: 'Apr 20', category: 'Academic' },
+  { id: 'XW-47103', service: 'LinkedIn Profile', writer: 'James Whitfield', status: 'Quality Check', progress: 90, due: 'Apr 22, 2026', words: 500, price: 75, submitted: 'Apr 19', category: 'Career' },
+  { id: 'XW-46892', service: 'Blog Post — SEO', writer: 'Priya Nair', status: 'Delivered', progress: 100, due: 'Apr 18, 2026', words: 1500, price: 180, submitted: 'Apr 14', category: 'Content' },
+  { id: 'XW-45771', service: 'Resume (Executive)', writer: 'James Whitfield', status: 'Delivered', progress: 100, due: 'Apr 10, 2026', words: 600, price: 90, submitted: 'Apr 7', category: 'Career' },
+  { id: 'XW-44302', service: 'Research Proposal', writer: 'Rahul Desai', status: 'Revision Requested', progress: 80, due: 'Apr 28, 2026', words: 2000, price: 280, submitted: 'Apr 18', category: 'Academic' },
+  { id: 'XW-43109', service: 'Business Proposal', writer: 'Marcus Chen', status: 'Delivered', progress: 100, due: 'Apr 5, 2026', words: 1200, price: 240, submitted: 'Apr 1', category: 'Business' },
+];
+
+const CONVERSATIONS = [
+  { id: 1, writer: 'Dr. Amara Singh', avatar: 'AS', orderId: 'XW-48291', service: 'Statement of Purpose', lastMsg: 'I\'ve completed the first draft — would you like...', time: '2m ago', unread: 2, online: true,
+    messages: [
+      { from: 'writer', text: 'Hello! I\'ve reviewed your brief for the Stanford SOP. I have a few clarifying questions before I begin drafting.', time: '10:02 AM' },
+      { from: 'user', text: 'Of course, please go ahead! Happy to clarify.', time: '10:15 AM' },
+      { from: 'writer', text: 'Could you share 2-3 specific research experiences that you\'d like highlighted? Also, which professor at Stanford are you most interested in working with?', time: '10:18 AM' },
+      { from: 'user', text: 'I worked on a computational linguistics project under Prof. Chen at NYU — I\'d like that highlighted. And I\'m hoping to work with Prof. Manning at Stanford.', time: '10:45 AM' },
+      { from: 'writer', text: 'Perfect! That\'s a strong connection to draw. I\'ve started drafting and will have the first version ready by tomorrow morning. I\'ll ensure the narrative flows from your NYU work directly into your Stanford research goals.', time: '11:02 AM' },
+      { from: 'writer', text: 'I\'ve completed the first draft — would you like to review it now? I\'m available for a quick call if you\'d like to discuss before finalising.', time: '2:34 PM' },
+    ]
+  },
+  { id: 2, writer: 'James Whitfield', avatar: 'JW', orderId: 'XW-47103', service: 'LinkedIn Profile', lastMsg: 'Your profile is ready for review. I\'ve rewritten...', time: '1h ago', unread: 1, online: true,
+    messages: [
+      { from: 'writer', text: 'Hi! I\'ve done a deep audit of your current LinkedIn. The headline and summary need the most work — they\'re underselling you significantly.', time: 'Yesterday 3:00 PM' },
+      { from: 'user', text: 'That\'s what I figured. Happy to have you take full creative control.', time: 'Yesterday 3:15 PM' },
+      { from: 'writer', text: 'Your profile is ready for review. I\'ve rewritten the headline, about section, and experience bullets. Also optimised for 14 relevant keywords.', time: '9:10 AM' },
+    ]
+  },
+  { id: 3, writer: 'Priya Nair', avatar: 'PN', orderId: 'XW-46892', service: 'Blog Post', lastMsg: 'All done! Hope you love it. Let me know if...', time: '2d ago', unread: 0, online: false,
+    messages: [
+      { from: 'writer', text: 'Delivered! The post is 1,520 words, optimised for the keyword "remote work productivity tools". Readability score is 72 (Flesch-Kincaid).', time: 'Apr 18 4:00 PM' },
+      { from: 'user', text: 'This is excellent! Exactly what I needed. Publishing tomorrow.', time: 'Apr 18 5:30 PM' },
+      { from: 'writer', text: 'All done! Hope you love it. Let me know if you need any tweaks before publishing — happy to help!', time: 'Apr 18 5:45 PM' },
+    ]
+  },
+];
+
+const SAVED_WRITERS = [
+  { name: 'Dr. Amara Singh', avatar: 'AS', specialty: 'Academic & SOP', rating: 4.97, reviews: 312, badge: 'Top Writer', price: 18, online: true },
+  { name: 'James Whitfield', avatar: 'JW', specialty: 'Resume & Career', rating: 4.95, reviews: 487, badge: 'Elite', price: 15, online: true },
+  { name: 'Marcus Chen', avatar: 'MC', specialty: 'Business Writing', rating: 4.98, reviews: 198, badge: 'Top Writer', price: 20, online: false },
+  { name: 'Priya Nair', avatar: 'PN', specialty: 'Content & Blog', rating: 4.92, reviews: 256, badge: 'Rising Star', price: 12, online: false },
+];
+
+/* ── STATUS ── */
+const STATUS_COLORS = {
+  'In Progress': { bg: 'rgba(13,148,136,0.15)', color: '#2dd4bf', dot: '#0d9488' },
+  'Quality Check': { bg: 'rgba(245,158,11,0.12)', color: '#fbbf24', dot: '#f59e0b' },
+  'Delivered': { bg: 'rgba(34,197,94,0.12)', color: '#4ade80', dot: '#22c55e' },
+  'Revision Requested': { bg: 'rgba(244,63,94,0.12)', color: '#fb7185', dot: '#f43f5e' },
+  'Writer Assigned': { bg: 'rgba(124,58,237,0.12)', color: '#a78bfa', dot: '#7c3aed' },
+};
+
+/* ── SIDEBAR ── */
+function Sidebar({ active, setActive }) {
+  const nav = [
+    { id: 'overview', icon: '⊞', label: 'Overview' },
+    { id: 'orders', icon: '📋', label: 'My Orders' },
+    { id: 'messages', icon: '💬', label: 'Messages' },
+    { id: 'writers', icon: '✍️', label: 'My Writers' },
+    { id: 'settings', icon: '⚙️', label: 'Settings' },
+  ];
+
+  const unreadCount = CONVERSATIONS.reduce((a, c) => a + c.unread, 0);
+
+  return (
+    <div style={{ width: 220, flexShrink: 0, background: 'var(--surface)', borderRight: '1px solid var(--border2)', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* Logo */}
+      <div style={{ padding: '22px 20px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <a href="index.html" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff' }}>X</div>
+          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', letterSpacing: '-0.01em' }}>Xpresswriters</span>
+        </a>
+      </div>
+
+      {/* User */}
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>MK</div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>Meera Krishnan</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Pro Member</div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
+        {nav.map(item => (
+          <button key={item.id} onClick={() => setActive(item.id)} style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 14, fontWeight: active === item.id ? 600 : 400, marginBottom: 2, transition: 'all 0.2s', position: 'relative',
+            background: active === item.id ? 'rgba(13,148,136,0.15)' : 'transparent',
+            color: active === item.id ? 'var(--teal-light)' : 'var(--text-muted)',
+          }}>
+            <span style={{ fontSize: 16 }}>{item.icon}</span>
+            {item.label}
+            {item.id === 'messages' && unreadCount > 0 && (
+              <span style={{ marginLeft: 'auto', background: 'var(--teal)', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 100, padding: '1px 6px', minWidth: 18, textAlign: 'center' }}>{unreadCount}</span>
+            )}
+            {active === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3, borderRadius: 2, background: 'var(--teal)' }} />}
+          </button>
+        ))}
+      </nav>
+
+      {/* Bottom */}
+      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border2)' }}>
+        <a href="writer-onboarding.html" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none', padding: '8px 0', transition: 'color 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--teal-light)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          <span>✦</span> Become a Writer
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/* ── OVERVIEW ── */
+function Overview({ setActive, setSelectedOrder }) {
+  const stats = [
+    { label: 'Active Orders', val: 2, icon: '⚡', color: 'var(--teal)', sub: '+1 this week' },
+    { label: 'Completed', val: 4, icon: '✓', color: 'var(--green)', sub: 'All time' },
+    { label: 'Total Spent', val: '$1,009', icon: '💳', color: 'var(--gold)', sub: 'This month: $219' },
+    { label: 'Avg Rating Given', val: '4.9', icon: '★', color: '#f472b6', sub: 'Across all orders' },
+  ];
+
+  const activeOrders = ORDERS.filter(o => o.status !== 'Delivered');
+
+  return (
+    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Good morning, Meera 👋</h1>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Here's what's happening with your orders today.</p>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+        {stats.map((s, i) => (
+          <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '20px 20px', animation: `fadeUp 0.3s ease ${i * 0.06}s both` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{s.label}</span>
+              <span style={{ fontSize: 18 }}>{s.icon}</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 700, color: s.color, marginBottom: 4, letterSpacing: '-0.02em' }}>{s.val}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Active orders */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600 }}>Active Orders</h2>
+          <button onClick={() => setActive('orders')} style={{ fontSize: 13, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>View all →</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {activeOrders.map((order, i) => (
+            <ActiveOrderCard key={order.id} order={order} onClick={() => { setActive('orders'); setSelectedOrder(order.id); }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Recent activity */}
+      <div>
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Recent Activity</h2>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflow: 'hidden' }}>
+          {[
+            { icon: '✓', text: 'Blog Post delivered by Priya Nair', time: '2 days ago', color: 'var(--green)' },
+            { icon: '💬', text: 'New message from Dr. Amara Singh on XW-48291', time: '2 hours ago', color: 'var(--teal)' },
+            { icon: '🔄', text: 'LinkedIn Profile moved to Quality Check', time: '1 hour ago', color: 'var(--gold)' },
+            { icon: '📋', text: 'Research Proposal — revision requested', time: '3 hours ago', color: 'var(--red)' },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < 3 ? '1px solid var(--border2)' : 'none' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{item.icon}</div>
+              <span style={{ fontSize: 13, flex: 1, color: 'var(--text)' }}>{item.text}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>{item.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActiveOrderCard({ order, onClick }) {
+  const sc = STATUS_COLORS[order.status] || STATUS_COLORS['In Progress'];
+  const TRACK = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
+  const stepIdx = order.status === 'Delivered' ? 4 : order.status === 'Quality Check' ? 3 : order.status === 'In Progress' ? 2 : order.status === 'Writer Assigned' ? 1 : 0;
+
+  return (
+    <div onClick={onClick} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '18px 20px', cursor: 'pointer', transition: 'all 0.2s' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; e.currentTarget.style.background = 'var(--surface2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--surface)'; }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{order.service}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.id} · with {order.writer}</div>
+        </div>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: sc.bg, color: sc.color }}>
+          <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: sc.dot, marginRight: 5, verticalAlign: 'middle' }} />
+          {order.status}
+        </span>
+      </div>
+
+      {/* Mini track */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 10 }}>
+        {TRACK.map((step, i) => (
+          <React.Fragment key={i}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}`, flexShrink: 0, transition: 'all 0.3s' }} />
+            {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', transition: 'background 0.3s' }} />}
+          </React.Fragment>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Due: <span style={{ color: 'var(--text)' }}>{order.due}</span></div>
+        <div style={{ width: 100, height: 4, borderRadius: 2, background: 'var(--surface3)', overflow: 'hidden' }}>
+          <div style={{ width: `${order.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--teal), var(--teal-light))', borderRadius: 2, transition: 'width 0.5s' }} />
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--teal-light)', fontWeight: 600 }}>{order.progress}%</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── ORDERS ── */
+function Orders({ selectedOrder, setSelectedOrder }) {
+  const [filter, setFilter] = useState('All');
+  const filters = ['All', 'Active', 'Delivered', 'Revision'];
+  const filtered = ORDERS.filter(o =>
+    filter === 'All' ? true :
+    filter === 'Active' ? ['In Progress', 'Quality Check', 'Writer Assigned'].includes(o.status) :
+    filter === 'Delivered' ? o.status === 'Delivered' :
+    filter === 'Revision' ? o.status === 'Revision Requested' : true
+  );
+
+  return (
+    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700 }}>My Orders</h1>
+        <a href="index.html" style={{ background: 'var(--teal)', color: '#fff', padding: '9px 20px', borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>+ New Order</a>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {filters.map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: '6px 16px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
+            borderColor: filter === f ? 'var(--teal)' : 'var(--border2)',
+            background: filter === f ? 'rgba(13,148,136,0.15)' : 'transparent',
+            color: filter === f ? 'var(--teal-light)' : 'var(--text-muted)',
+            fontWeight: filter === f ? 600 : 400,
+          }}>{f}</button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', padding: '10px 20px', borderBottom: '1px solid var(--border2)', background: 'var(--surface2)' }}>
+          {['Order', 'Service', 'Writer', 'Status', 'Due', 'Price'].map(h => (
+            <div key={h} style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>{h}</div>
+          ))}
+        </div>
+        {filtered.map((order, i) => {
+          const sc = STATUS_COLORS[order.status] || STATUS_COLORS['In Progress'];
+          const isSelected = selectedOrder === order.id;
+          return (
+            <div key={order.id} onClick={() => setSelectedOrder(isSelected ? null : order.id)} style={{
+              display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr',
+              padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '1px solid var(--border2)' : 'none',
+              cursor: 'pointer', transition: 'background 0.15s',
+              background: isSelected ? 'rgba(13,148,136,0.08)' : 'transparent',
+            }}
+            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.id}</div>
+              <div style={{ fontSize: 13, paddingRight: 12 }}>{order.service}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.writer.split(' ').slice(0,2).join(' ')}</div>
+              <div>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 100, background: sc.bg, color: sc.color }}>
+                  {order.status}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.due.replace(', 2026', '')}</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>${order.price}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Expanded detail */}
+      {selectedOrder && (() => {
+        const o = ORDERS.find(x => x.id === selectedOrder);
+        if (!o) return null;
+        const sc = STATUS_COLORS[o.status];
+        const TRACK = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
+        const stepIdx = o.status === 'Delivered' ? 4 : o.status === 'Quality Check' ? 3 : o.status === 'In Progress' ? 2 : 1;
+        return (
+          <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{o.id} · Submitted {o.submitted} · {o.words.toLocaleString()} words</div>
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, background: sc.bg, color: sc.color }}>{o.status}</span>
+            </div>
+            {/* Track */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Progress</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {TRACK.map((step, i) => (
+                  <React.Fragment key={i}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, transition: 'all 0.3s', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', color: i <= stepIdx ? '#fff' : 'var(--text-dim)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}` }}>{i < stepIdx ? '✓' : i + 1}</div>
+                      <div style={{ fontSize: 10, color: i <= stepIdx ? 'var(--text)' : 'var(--text-dim)', textAlign: 'center', maxWidth: 60, lineHeight: 1.3 }}>{step}</div>
+                    </div>
+                    {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', marginBottom: 18, transition: 'background 0.3s' }} />}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button style={{ padding: '9px 18px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Message Writer</button>
+              {o.status === 'Delivered' && <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Request Revision</button>}
+              <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Download Brief</button>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+/* ── MESSAGES ── */
+function Messages() {
+  const [activeConv, setActiveConv] = useState(CONVERSATIONS[0].id);
+  const [input, setInput] = useState('');
+  const [convState, setConvState] = useState(CONVERSATIONS);
+  const endRef = useRef(null);
+  const conv = convState.find(c => c.id === activeConv);
+
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.parentElement.scrollTop = endRef.current.parentElement.scrollHeight;
+    }
+  }, [activeConv, conv?.messages?.length]);
+
+  const send = () => {
+    if (!input.trim()) return;
+    const msg = { from: 'user', text: input, time: 'Just now' };
+    setConvState(cs => cs.map(c => c.id === activeConv ? { ...c, messages: [...c.messages, msg], lastMsg: input, unread: 0 } : c));
+    setInput('');
+    setTimeout(() => {
+      const replies = ['Got it! I\'ll get back to you shortly.', 'That makes sense — I\'ll incorporate that into the draft.', 'Thanks for the feedback! I\'ll revise accordingly.'];
+      const reply = { from: 'writer', text: replies[Math.floor(Math.random() * replies.length)], time: 'Just now' };
+      setConvState(cs => cs.map(c => c.id === activeConv ? { ...c, messages: [...c.messages, reply] } : c));
+    }, 1500);
+  };
+
+  return (
+    <div style={{ display: 'flex', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      {/* Conversation list */}
+      <div style={{ width: 280, flexShrink: 0, borderRight: '1px solid var(--border2)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '20px 16px 12px', borderBottom: '1px solid var(--border2)' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Messages</h2>
+          <div style={{ background: 'var(--surface2)', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: 'var(--text-dim)', fontSize: 14 }}>🔍</span>
+            <input placeholder="Search conversations..." style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, width: '100%' }} />
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {convState.map(c => (
+            <div key={c.id} onClick={() => { setActiveConv(c.id); setConvState(cs => cs.map(x => x.id === c.id ? { ...x, unread: 0 } : x)); }} style={{
+              padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border2)', transition: 'background 0.15s',
+              background: activeConv === c.id ? 'rgba(13,148,136,0.1)' : 'transparent',
+              borderLeft: activeConv === c.id ? '3px solid var(--teal)' : '3px solid transparent',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff' }}>{c.avatar}</div>
+                  {c.online && <div style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', border: '2px solid var(--bg)' }} />}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{c.writer.split(' ')[0]} {c.writer.split(' ')[1]}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{c.time}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 2 }}>{c.orderId}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>{c.lastMsg}</span>
+                    {c.unread > 0 && <span style={{ background: 'var(--teal)', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 100, padding: '1px 6px', flexShrink: 0 }}>{c.unread}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Chat area */}
+      {conv && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* Header */}
+          <div style={{ padding: '14px 24px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff' }}>{conv.avatar}</div>
+              {conv.online && <div style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', border: '2px solid var(--surface)' }} />}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{conv.writer}</div>
+              <div style={{ fontSize: 12, color: conv.online ? 'var(--green)' : 'var(--text-dim)' }}>{conv.online ? '● Online' : '○ Offline'} · {conv.service}</div>
+            </div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 6, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--border)', color: 'var(--teal-light)' }}>{conv.orderId}</div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {conv.messages.map((msg, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: msg.from === 'user' ? 'flex-end' : 'flex-start', animation: 'fadeIn 0.2s ease' }}>
+                {msg.from === 'writer' && (
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginRight: 8, flexShrink: 0, alignSelf: 'flex-end' }}>{conv.avatar}</div>
+                )}
+                <div style={{ maxWidth: '65%' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: msg.from === 'user' ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: msg.from === 'user' ? 'var(--teal)' : 'var(--surface2)', fontSize: 13, lineHeight: 1.55, color: msg.from === 'user' ? '#fff' : 'var(--text)' }}>{msg.text}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4, textAlign: msg.from === 'user' ? 'right' : 'left' }}>{msg.time}</div>
+                </div>
+              </div>
+            ))}
+            <div ref={endRef} />
+          </div>
+
+          {/* Input */}
+          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border2)', display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+            <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder={`Message ${conv.writer.split(' ')[0]}...`} rows={1} style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'var(--font)', lineHeight: 1.5 }} />
+            <button onClick={send} style={{ background: 'var(--teal)', border: 'none', color: '#fff', width: 40, height: 40, borderRadius: 8, cursor: 'pointer', fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── WRITERS ── */
+function SavedWriters() {
+  return (
+    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700 }}>My Writers</h1>
+        <a href="index.html#writers" style={{ fontSize: 13, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Browse more writers →</a>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        {SAVED_WRITERS.map((w, i) => {
+          const badgeColors = { 'Top Writer': 'var(--teal)', 'Elite': 'var(--gold)', 'Rising Star': 'var(--green)' };
+          return (
+            <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: 20, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 12, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>{w.avatar}</div>
+                  {w.online && <div style={{ position: 'absolute', bottom: 1, right: 1, width: 9, height: 9, borderRadius: '50%', background: 'var(--green)', border: '2px solid var(--surface)' }} />}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{w.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{w.specialty}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+                <span style={{ color: 'var(--gold)', fontSize: 13 }}>★ {w.rating}</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>({w.reviews})</span>
+                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100, background: `${badgeColors[w.badge]}18`, color: badgeColors[w.badge] }}>{w.badge}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={{ flex: 1, padding: '8px 0', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>New Order</button>
+                <button style={{ flex: 1, padding: '8px 0', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)' }}>Message</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── SETTINGS ── */
+function Settings() {
+  const [saved, setSaved] = useState(false);
+  return (
+    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 28 }}>Account Settings</h1>
+      <div style={{ maxWidth: 560 }}>
+        {[
+          { label: 'Full Name', val: 'Meera Krishnan' },
+          { label: 'Email', val: 'meera@example.com' },
+          { label: 'Phone', val: '+1 (415) 555-0182' },
+        ].map(f => (
+          <div key={f.label} style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>{f.label.toUpperCase()}</label>
+            <input defaultValue={f.val} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+          </div>
+        ))}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 12 }}>NOTIFICATIONS</div>
+          {['Email me on order updates', 'Email me on new messages', 'Email me on delivery'].map(opt => (
+            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: 'pointer', fontSize: 14, color: 'var(--text)' }}>
+              <input type="checkbox" defaultChecked style={{ accentColor: 'var(--teal)', width: 14, height: 14 }} />
+              {opt}
+            </label>
+          ))}
+        </div>
+        <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }} style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s' }}>
+          {saved ? '✓ Saved!' : 'Save Changes'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── APP ── */
+function App() {
+  const [active, setActive] = useState(() => localStorage.getItem('xw_dash_tab') || 'overview');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  useEffect(() => { localStorage.setItem('xw_dash_tab', active); }, [active]);
+
+  const content = {
+    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} />,
+    orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} />,
+    messages: <Messages />,
+    writers: <SavedWriters />,
+    settings: <Settings />,
+  };
+
+  return (
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar active={active} setActive={setActive} />
+      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* Topbar */}
+        <div style={{ height: 52, borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 36px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ position: 'relative', cursor: 'pointer' }}>
+              <span style={{ fontSize: 18 }}>🔔</span>
+              <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', border: '2px solid var(--bg)' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11, color: '#fff' }}>MK</div>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>Meera</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          {content[active]}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

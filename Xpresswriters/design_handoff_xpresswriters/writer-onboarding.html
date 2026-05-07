@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Xpresswriters — Become a Writer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d1a; --surface: #13132a; --surface2: #1a1a35; --surface3: #1f1f3d;
+    --border: rgba(13,148,136,0.18); --border2: rgba(255,255,255,0.07);
+    --teal: #0d9488; --teal-light: #2dd4bf; --teal-glow: rgba(13,148,136,0.2);
+    --text: #f0fffe; --text-muted: #7a9e9b; --text-dim: #3d5c5a;
+    --gold: #f5c842; --green: #22c55e; --red: #f43f5e;
+    --font: 'Google Sans', system-ui, sans-serif;
+  }
+  html, body { min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); }
+  input, textarea, select { font-family: var(--font); }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 2px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } }
+  @keyframes checkIn { from { transform: scale(0) rotate(-45deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+  .input-field {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border2); border-radius: 8px;
+    padding: 11px 14px; color: var(--text); font-size: 14px; outline: none; transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--teal); }
+  .input-field::placeholder { color: var(--text-dim); }
+  label.field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; color: var(--text-muted); display: block; margin-bottom: 7px; text-transform: uppercase; }
+  .btn-primary { background: var(--teal); color: #fff; border: none; padding: 12px 28px; border-radius: 6px; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary:hover { background: #0f766e; transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border2); padding: 11px 28px; border-radius: 6px; font-family: var(--font); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .btn-outline:hover { border-color: var(--teal); color: var(--teal-light); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const STEPS = [
+  { id: 1, label: 'Profile', icon: '👤' },
+  { id: 2, label: 'Expertise', icon: '🎯' },
+  { id: 3, label: 'Portfolio', icon: '📁' },
+  { id: 4, label: 'Assessment', icon: '✍️' },
+  { id: 5, label: 'Rates', icon: '💰' },
+  { id: 6, label: 'Review', icon: '✓' },
+];
+
+const SKILL_CATEGORIES = [
+  { id: 'sop', label: 'Statement of Purpose', icon: '🎓' },
+  { id: 'essay', label: 'Academic Essay', icon: '📝' },
+  { id: 'lor', label: 'LOR', icon: '📜' },
+  { id: 'resume', label: 'Resume & CV', icon: '📄' },
+  { id: 'linkedin', label: 'LinkedIn Profile', icon: '💼' },
+  { id: 'email', label: 'Professional Emails', icon: '✉️' },
+  { id: 'thesis', label: 'Thesis & Dissertation', icon: '🔬' },
+  { id: 'ppt', label: 'Presentations (PPT)', icon: '📊' },
+  { id: 'research', label: 'Research Proposal', icon: '🧪' },
+  { id: 'article', label: 'Articles', icon: '🗞️' },
+  { id: 'blog', label: 'Blog Posts', icon: '✍️' },
+  { id: 'proposal', label: 'Business Proposals', icon: '📋' },
+];
+
+const LANG_OPTIONS = ['English', 'Spanish', 'French', 'German', 'Mandarin', 'Arabic', 'Hindi', 'Portuguese'];
+const EDU_OPTIONS = ["Bachelor's", "Master's", "PhD", "Professional Degree", "Other"];
+
+/* ── PROGRESS BAR ── */
+function ProgressBar({ step, total }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: 640, margin: '0 auto', padding: '0 16px' }}>
+      {STEPS.map((s, i) => (
+        <React.Fragment key={s.id}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 1 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+              transition: 'all 0.4s',
+              background: s.id < step ? 'var(--teal)' : s.id === step ? 'var(--teal)' : 'var(--surface2)',
+              border: `2px solid ${s.id <= step ? 'var(--teal)' : 'var(--border2)'}`,
+              boxShadow: s.id === step ? '0 0 0 4px rgba(13,148,136,0.2)' : 'none',
+            }}>
+              {s.id < step ? <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>✓</span> : <span style={{ fontSize: s.id === step ? 16 : 14, filter: s.id > step ? 'grayscale(1) opacity(0.4)' : 'none' }}>{s.icon}</span>}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: s.id === step ? 700 : 400, color: s.id <= step ? 'var(--teal-light)' : 'var(--text-dim)', whiteSpace: 'nowrap' }}>{s.label}</div>
+          </div>
+          {i < STEPS.length - 1 && (
+            <div style={{ flex: 1, height: 2, background: s.id < step ? 'var(--teal)' : 'var(--surface2)', transition: 'background 0.4s', marginBottom: 18 }} />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+/* ── STEP 1: PROFILE ── */
+function Step1({ data, onChange }) {
+  return (
+    <div style={{ animation: 'fadeUp 0.35s ease' }}>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Create your writer profile</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 32, fontWeight: 300 }}>This is what clients will see when they browse for writers.</p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label className="field-label">First Name</label>
+          <input className="input-field" value={data.firstName} onChange={e => onChange('firstName', e.target.value)} placeholder="James" />
+        </div>
+        <div>
+          <label className="field-label">Last Name</label>
+          <input className="input-field" value={data.lastName} onChange={e => onChange('lastName', e.target.value)} placeholder="Whitfield" />
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label className="field-label">Professional Title</label>
+        <input className="input-field" value={data.title} onChange={e => onChange('title', e.target.value)} placeholder="e.g. Senior Academic Writer | PhD in English Literature" />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label className="field-label">Email</label>
+          <input className="input-field" type="email" value={data.email} onChange={e => onChange('email', e.target.value)} placeholder="you@example.com" />
+        </div>
+        <div>
+          <label className="field-label">Country</label>
+          <select className="input-field" value={data.country} onChange={e => onChange('country', e.target.value)} style={{ cursor: 'pointer' }}>
+            <option value="">Select country</option>
+            {['United States', 'United Kingdom', 'Canada', 'Australia', 'India', 'Other'].map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label className="field-label">Bio <span style={{ fontWeight: 400, textTransform: 'none', color: 'var(--text-dim)' }}>— tell clients about your background (2-4 sentences)</span></label>
+        <textarea className="input-field" value={data.bio} onChange={e => onChange('bio', e.target.value)} rows={4} placeholder="e.g. PhD in English Literature with 8+ years of academic writing experience. I specialize in SOPs, research proposals, and dissertations, having helped 500+ students gain admission to top universities worldwide..." style={{ resize: 'vertical' }} />
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 6, textAlign: 'right' }}>{data.bio.length}/400 characters</div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
+          <label className="field-label">Education Level</label>
+          <select className="input-field" value={data.education} onChange={e => onChange('education', e.target.value)} style={{ cursor: 'pointer' }}>
+            <option value="">Select level</option>
+            {EDU_OPTIONS.map(o => <option key={o}>{o}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="field-label">Languages</label>
+          <select className="input-field" value={data.language} onChange={e => onChange('language', e.target.value)} style={{ cursor: 'pointer' }}>
+            <option value="">Primary language</option>
+            {LANG_OPTIONS.map(l => <option key={l}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── STEP 2: EXPERTISE ── */
+function Step2({ data, onChange }) {
+  const toggle = (id) => {
+    const set = new Set(data.skills);
+    if (set.has(id)) set.delete(id); else set.add(id);
+    onChange('skills', set);
+  };
+
+  const EXP_LEVELS = [
+    { id: 'new', label: '0–2 years', desc: 'Just starting out' },
+    { id: 'mid', label: '2–5 years', desc: 'Solid experience' },
+    { id: 'senior', label: '5–10 years', desc: 'Expert-level' },
+    { id: 'expert', label: '10+ years', desc: 'Seasoned professional' },
+  ];
+
+  return (
+    <div style={{ animation: 'fadeUp 0.35s ease' }}>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Your expertise</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 28, fontWeight: 300 }}>Select all service categories you can write in. Choose at least 2.</p>
+
+      <div style={{ marginBottom: 28 }}>
+        <label className="field-label" style={{ marginBottom: 12 }}>Service categories <span style={{ color: 'var(--teal-light)' }}>({data.skills.size} selected)</span></label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {SKILL_CATEGORIES.map(s => {
+            const sel = data.skills.has(s.id);
+            return (
+              <div key={s.id} onClick={() => toggle(s.id)} style={{
+                padding: '12px 14px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8,
+                background: sel ? 'rgba(13,148,136,0.15)' : 'var(--surface2)',
+                border: `1.5px solid ${sel ? 'var(--teal)' : 'var(--border2)'}`,
+              }}>
+                <span style={{ fontSize: 18 }}>{s.icon}</span>
+                <span style={{ fontSize: 12, fontWeight: sel ? 600 : 400, color: sel ? 'var(--teal-light)' : 'var(--text-muted)' }}>{s.label}</span>
+                {sel && <span style={{ marginLeft: 'auto', color: 'var(--teal)', fontSize: 14, fontWeight: 700 }}>✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <label className="field-label" style={{ marginBottom: 12 }}>Years of writing experience</label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {EXP_LEVELS.map(e => {
+            const sel = data.experience === e.id;
+            return (
+              <div key={e.id} onClick={() => onChange('experience', e.id)} style={{
+                padding: '14px 12px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center',
+                background: sel ? 'rgba(13,148,136,0.15)' : 'var(--surface2)',
+                border: `1.5px solid ${sel ? 'var(--teal)' : 'var(--border2)'}`,
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: sel ? 'var(--teal-light)' : 'var(--text)' }}>{e.label}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{e.desc}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="field-label">Special credentials or certifications</label>
+        <input className="input-field" value={data.credentials} onChange={e => onChange('credentials', e.target.value)} placeholder="e.g. PhD, MA, CELTA, Google-certified, etc." />
+      </div>
+    </div>
+  );
+}
+
+/* ── STEP 3: PORTFOLIO ── */
+function Step3({ data, onChange }) {
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef();
+
+  const mockFiles = data.files || [];
+
+  const addFile = (name, size) => {
+    onChange('files', [...mockFiles, { name, size, id: Date.now() }]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault(); setDragging(false);
+    const names = ['Academic Essay — Philosophy of Mind.pdf', 'SOP — Stanford MBA 2025.docx', 'LinkedIn Profile Rewrite — Tech Executive.pdf'];
+    addFile(names[Math.floor(Math.random() * names.length)], `${(Math.random() * 3 + 0.5).toFixed(1)} MB`);
+  };
+
+  const FILE_ICONS = { pdf: '📄', docx: '📝', doc: '📝', default: '📎' };
+  const getIcon = (name) => FILE_ICONS[name.split('.').pop().toLowerCase()] || FILE_ICONS.default;
+
+  return (
+    <div style={{ animation: 'fadeUp 0.35s ease' }}>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Upload your portfolio</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 28, fontWeight: 300 }}>Show clients your best work. Upload 2–5 writing samples in PDF or Word format.</p>
+
+      {/* Drop zone */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => addFile(['Research Proposal — ML in Healthcare.pdf', 'Blog Post — Future of Remote Work.docx', 'SOP — UCL PhD Application.pdf'][Math.floor(Math.random()*3)], `${(Math.random()*3+0.5).toFixed(1)} MB`)}
+        style={{
+          border: `2px dashed ${dragging ? 'var(--teal)' : 'var(--border2)'}`,
+          borderRadius: 10, padding: '40px 24px', textAlign: 'center', marginBottom: 24, cursor: 'pointer', transition: 'all 0.2s',
+          background: dragging ? 'rgba(13,148,136,0.08)' : 'var(--surface2)',
+        }}
+      >
+        <div style={{ fontSize: 40, marginBottom: 12 }}>📁</div>
+        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 6 }}>Drop files here or click to upload</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>PDF, DOC, DOCX · Max 10MB per file</div>
+      </div>
+
+      {/* Uploaded files */}
+      {mockFiles.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <label className="field-label" style={{ marginBottom: 10 }}>Uploaded ({mockFiles.length})</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {mockFiles.map((f, i) => (
+              <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '12px 16px', animation: 'fadeUp 0.3s ease' }}>
+                <span style={{ fontSize: 20 }}>{getIcon(f.name)}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{f.size}</div>
+                </div>
+                <span style={{ color: 'var(--green)', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>✓ Uploaded</span>
+                <button onClick={() => onChange('files', mockFiles.filter(x => x.id !== f.id))} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 16, padding: '2px 6px', borderRadius: 4 }}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio URL */}
+      <div>
+        <label className="field-label">Portfolio website or LinkedIn <span style={{ fontWeight: 300, textTransform: 'none', color: 'var(--text-dim)' }}>(optional)</span></label>
+        <input className="input-field" value={data.portfolioUrl} onChange={e => onChange('portfolioUrl', e.target.value)} placeholder="https://yourportfolio.com or linkedin.com/in/yourname" />
+      </div>
+    </div>
+  );
+}
+
+/* ── STEP 4: ASSESSMENT ── */
+function Step4({ data, onChange }) {
+  const [submitted, setSubmitted] = useState(false);
+  const [scoring, setScoring] = useState(false);
+  const [score, setScore] = useState(null);
+
+  const PROMPTS = [
+    { id: 'sop', label: 'Academic', prompt: 'Write a 150-word opening paragraph for a Statement of Purpose for an applicant to a Computer Science PhD program at MIT. The applicant has a background in ML research and published one paper.' },
+    { id: 'blog', label: 'Content', prompt: 'Write a 150-word introduction for a blog post titled "Why Remote Work Is Here to Stay in 2026" — targeted at HR managers at mid-size tech companies.' },
+    { id: 'business', label: 'Business', prompt: 'Write a 150-word executive summary for a business proposal for a B2B SaaS startup seeking to automate payroll processing for SMEs.' },
+  ];
+  const [activePrompt, setActivePrompt] = useState(0);
+
+  const handleSubmit = () => {
+    if (!data.sample || data.sample.length < 80) return;
+    setScoring(true);
+    setTimeout(() => {
+      setScoring(false);
+      setScore({ clarity: 87, tone: 91, structure: 84, originality: 89, overall: 88 });
+      setSubmitted(true);
+    }, 2500);
+  };
+
+  return (
+    <div style={{ animation: 'fadeUp 0.35s ease' }}>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Writing assessment</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 28, fontWeight: 300 }}>Complete one writing prompt. This is evaluated by our editorial team to verify your skill level.</p>
+
+      {/* Prompt selector */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {PROMPTS.map((p, i) => (
+          <button key={p.id} onClick={() => { setActivePrompt(i); setSubmitted(false); setScore(null); }} style={{
+            padding: '7px 18px', borderRadius: 6, border: '1.5px solid', fontFamily: 'var(--font)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
+            borderColor: activePrompt === i ? 'var(--teal)' : 'var(--border2)',
+            background: activePrompt === i ? 'rgba(13,148,136,0.15)' : 'transparent',
+            color: activePrompt === i ? 'var(--teal-light)' : 'var(--text-muted)',
+            fontWeight: activePrompt === i ? 600 : 400,
+          }}>{p.label}</button>
+        ))}
+      </div>
+
+      {/* Prompt box */}
+      <div style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '16px 18px', marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--teal-light)', marginBottom: 8 }}>Your Prompt</div>
+        <p style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--text)' }}>{PROMPTS[activePrompt].prompt}</p>
+      </div>
+
+      {/* Writing area */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <label className="field-label" style={{ marginBottom: 0 }}>Your Response</label>
+          <span style={{ fontSize: 11, color: (data.sample || '').length > 80 ? 'var(--teal-light)' : 'var(--text-dim)' }}>{(data.sample || '').length} / ~150 words</span>
+        </div>
+        <textarea className="input-field" value={data.sample || ''} onChange={e => onChange('sample', e.target.value)} rows={8} placeholder="Write your response here..." style={{ resize: 'vertical', lineHeight: 1.65 }} disabled={submitted} />
+      </div>
+
+      {!submitted && !scoring && (
+        <button className="btn-primary" onClick={handleSubmit} style={{ padding: '11px 28px' }} disabled={!data.sample || data.sample.length < 80}>
+          Submit for Assessment →
+        </button>
+      )}
+
+      {scoring && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'var(--surface2)', borderRadius: 8, border: '1px solid var(--border2)' }}>
+          <div style={{ width: 18, height: 18, border: '2px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Analysing your writing — checking clarity, tone, structure & originality...</span>
+        </div>
+      )}
+
+      {submitted && score && (
+        <div style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '20px 22px', animation: 'fadeUp 0.4s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✓</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Assessment complete — great work!</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Overall Score: <strong style={{ color: 'var(--teal-light)', fontSize: 16 }}>{score.overall}/100</strong></div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            {[['Clarity', score.clarity], ['Tone', score.tone], ['Structure', score.structure], ['Originality', score.originality]].map(([label, val]) => (
+              <div key={label} style={{ textAlign: 'center', background: 'var(--surface)', borderRadius: 8, padding: '10px 8px' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--teal-light)', marginBottom: 2 }}>{val}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── STEP 5: RATES ── */
+function Step5({ data, onChange }) {
+  const AVAIL = ['Full-time (40h+/week)', 'Part-time (20h/week)', 'Flexible (project basis)', 'Weekends only'];
+  const TURN = ['Rush (12h)', 'Express (24h)', 'Standard (72h)', 'Relaxed (7 days)'];
+
+  return (
+    <div style={{ animation: 'fadeUp 0.35s ease' }}>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Set your rates & availability</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 32, fontWeight: 300 }}>You control your pricing. Our top writers earn $2,000–$8,000/month on Xpresswriters.</p>
+
+      {/* Base rate */}
+      <div style={{ background: 'var(--surface2)', borderRadius: 10, padding: '22px 24px', marginBottom: 24, border: '1px solid var(--border2)' }}>
+        <label className="field-label" style={{ marginBottom: 4 }}>Base Rate (per 100 words)</label>
+        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 14 }}>Recommended: $10–$25 based on experience level</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontFamily: 'var(--font)', fontSize: 40, fontWeight: 700, color: 'var(--teal-light)', minWidth: 80 }}>${data.rate || 15}</div>
+          <div style={{ flex: 1 }}>
+            <input type="range" min={5} max={60} step={1} value={data.rate || 15} onChange={e => onChange('rate', +e.target.value)} style={{ width: '100%', accentColor: 'var(--teal)', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+              <span>$5 — Starter</span><span>$60 — Expert</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(13,148,136,0.1)', borderRadius: 6, fontSize: 13 }}>
+          Est. monthly earnings at this rate: <strong style={{ color: 'var(--teal-light)' }}>${((data.rate || 15) * 10 * 40).toLocaleString()}–${((data.rate || 15) * 10 * 80).toLocaleString()}</strong> <span style={{ color: 'var(--text-dim)' }}>(40–80 orders/month)</span>
+        </div>
+      </div>
+
+      {/* Rush rate */}
+      <div style={{ marginBottom: 24 }}>
+        <label className="field-label" style={{ marginBottom: 12 }}>Rush delivery premium</label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {['+20%', '+40%', '+60%', '+80%'].map(pct => (
+            <div key={pct} onClick={() => onChange('rushRate', pct)} style={{
+              padding: '12px 10px', borderRadius: 8, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s',
+              background: data.rushRate === pct ? 'rgba(13,148,136,0.15)' : 'var(--surface2)',
+              border: `1.5px solid ${data.rushRate === pct ? 'var(--teal)' : 'var(--border2)'}`,
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: data.rushRate === pct ? 'var(--teal-light)' : 'var(--text)' }}>{pct}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>of base rate</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Availability */}
+        <div>
+          <label className="field-label" style={{ marginBottom: 10 }}>Availability</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {AVAIL.map(a => (
+              <div key={a} onClick={() => onChange('availability', a)} style={{
+                padding: '10px 14px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s',
+                background: data.availability === a ? 'rgba(13,148,136,0.15)' : 'var(--surface2)',
+                border: `1.5px solid ${data.availability === a ? 'var(--teal)' : 'var(--border2)'}`,
+              }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${data.availability === a ? 'var(--teal)' : 'var(--border2)'}`, background: data.availability === a ? 'var(--teal)' : 'transparent', transition: 'all 0.2s', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: data.availability === a ? 'var(--teal-light)' : 'var(--text-muted)', fontWeight: data.availability === a ? 600 : 400 }}>{a}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Turnaround */}
+        <div>
+          <label className="field-label" style={{ marginBottom: 10 }}>Fastest turnaround offered</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {TURN.map(t => (
+              <div key={t} onClick={() => onChange('fastestTurn', t)} style={{
+                padding: '10px 14px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s',
+                background: data.fastestTurn === t ? 'rgba(13,148,136,0.15)' : 'var(--surface2)',
+                border: `1.5px solid ${data.fastestTurn === t ? 'var(--teal)' : 'var(--border2)'}`,
+              }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${data.fastestTurn === t ? 'var(--teal)' : 'var(--border2)'}`, background: data.fastestTurn === t ? 'var(--teal)' : 'transparent', transition: 'all 0.2s', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: data.fastestTurn === t ? 'var(--teal-light)' : 'var(--text-muted)', fontWeight: data.fastestTurn === t ? 600 : 400 }}>{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── STEP 6: REVIEW ── */
+function Step6({ data }) {
+  const fullName = `${data.firstName} ${data.lastName}`;
+  const sections = [
+    { label: 'Profile', items: [['Name', fullName || '—'], ['Title', data.title || '—'], ['Email', data.email || '—'], ['Country', data.country || '—'], ['Education', data.education || '—']] },
+    { label: 'Expertise', items: [['Skills', data.skills.size > 0 ? `${data.skills.size} categories selected` : '—'], ['Experience', data.experience || '—'], ['Credentials', data.credentials || '—']] },
+    { label: 'Portfolio', items: [['Files uploaded', `${(data.files || []).length} file(s)`], ['Portfolio URL', data.portfolioUrl || 'Not provided']] },
+    { label: 'Rates', items: [['Base rate', data.rate ? `$${data.rate}/100 words` : '—'], ['Rush premium', data.rushRate || '—'], ['Availability', data.availability || '—'], ['Fastest turnaround', data.fastestTurn || '—']] },
+  ];
+
+  return (
+    <div style={{ animation: 'fadeUp 0.35s ease' }}>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Review your application</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 28, fontWeight: 300 }}>Once submitted, our editorial team will review your profile within 48 hours.</p>
+
+      {/* Profile preview card */}
+      <div style={{ background: 'var(--surface2)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '20px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 12, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#fff', flexShrink: 0 }}>
+          {(data.firstName?.[0] || '?')}{(data.lastName?.[0] || '')}
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 17 }}>{fullName || 'Your Name'}</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>{data.title || 'Your Professional Title'}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {data.rate && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.15)', color: 'var(--teal-light)' }}>From ${data.rate}/100w</span>}
+            {data.availability && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(34,197,94,0.12)', color: 'var(--green)' }}>{data.availability.split(' ')[0]}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Sections */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
+        {sections.map(sec => (
+          <div key={sec.label} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '16px 18px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--teal-light)', marginBottom: 12 }}>{sec.label}</div>
+            {sec.items.map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, gap: 10 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{k}</span>
+                <span style={{ fontSize: 12, color: 'var(--text)', textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Terms */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'var(--surface2)', borderRadius: 8, padding: '14px 16px' }}>
+        <input type="checkbox" id="terms" defaultChecked style={{ accentColor: 'var(--teal)', marginTop: 2, flexShrink: 0 }} />
+        <label htmlFor="terms" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, cursor: 'pointer' }}>
+          I confirm that all information provided is accurate. I agree to Xpresswriters' <span style={{ color: 'var(--teal-light)', cursor: 'pointer' }}>Writer Terms of Service</span> and <span style={{ color: 'var(--teal-light)', cursor: 'pointer' }}>Content Quality Policy</span>.
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/* ── SUCCESS ── */
+function Success() {
+  const [dots, setDots] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setDots(d => (d + 1) % 4), 500);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div style={{ textAlign: 'center', padding: '40px 20px', animation: 'fadeUp 0.5s ease' }}>
+      <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: 36, animation: 'float 2.5s ease-in-out infinite' }}>🎉</div>
+      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 10 }}>Application submitted!</h2>
+      <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 480, margin: '0 auto 32px', fontWeight: 300 }}>
+        Thank you for applying to Xpresswriters. Our editorial team will review your profile and writing assessment within <strong style={{ color: 'var(--teal-light)' }}>48 hours</strong>.
+      </p>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '20px 24px', maxWidth: 400, margin: '0 auto 32px', textAlign: 'left' }}>
+        {[
+          { step: '1', text: 'Profile under review', done: true },
+          { step: '2', text: 'Assessment scored by editorial team', done: false },
+          { step: '3', text: 'Background verification', done: false },
+          { step: '4', text: 'Welcome to Xpresswriters!', done: false },
+        ].map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 3 ? 14 : 0 }}>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: item.done ? 'var(--teal)' : 'var(--surface2)', border: `2px solid ${item.done ? 'var(--teal)' : 'var(--border2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: item.done ? '#fff' : 'var(--text-dim)', flexShrink: 0 }}>{item.done ? '✓' : item.step}</div>
+            <span style={{ fontSize: 13, color: item.done ? 'var(--text)' : 'var(--text-dim)' }}>{item.text}</span>
+            {item.done && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--teal-light)', fontWeight: 600 }}>Done</span>}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <a href="index.html" style={{ background: 'var(--teal)', color: '#fff', padding: '11px 24px', borderRadius: 6, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Back to Home</a>
+        <a href="dashboard.html" style={{ background: 'transparent', color: 'var(--text-muted)', padding: '11px 24px', borderRadius: 6, fontSize: 14, border: '1.5px solid var(--border2)', textDecoration: 'none' }}>View Dashboard</a>
+      </div>
+    </div>
+  );
+}
+
+/* ── APP ── */
+function App() {
+  const [step, setStep] = useState(() => parseInt(localStorage.getItem('xw_ob_step') || '1'));
+  const [done, setDone] = useState(false);
+  const [form, setForm] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('xw_ob_form') || 'null') || getDefaultForm(); }
+    catch { return getDefaultForm(); }
+  });
+
+  function getDefaultForm() {
+    return {
+      firstName: '', lastName: '', title: '', email: '', country: '', bio: '', education: '', language: '',
+      skills: new Set(), experience: '', credentials: '',
+      files: [], portfolioUrl: '',
+      sample: '',
+      rate: 15, rushRate: '+40%', availability: '', fastestTurn: '',
+    };
+  }
+
+  const updateForm = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  useEffect(() => {
+    localStorage.setItem('xw_ob_step', step);
+    // Can't JSON.stringify Set easily, so skip skills
+    try {
+      const copy = { ...form, skills: [...form.skills] };
+      localStorage.setItem('xw_ob_form', JSON.stringify(copy));
+    } catch {}
+  }, [step, form]);
+
+  const stepComponents = {
+    1: <Step1 data={form} onChange={updateForm} />,
+    2: <Step2 data={form} onChange={updateForm} />,
+    3: <Step3 data={form} onChange={updateForm} />,
+    4: <Step4 data={form} onChange={updateForm} />,
+    5: <Step5 data={form} onChange={updateForm} />,
+    6: <Step6 data={form} />,
+  };
+
+  const canProceed = {
+    1: form.firstName && form.lastName && form.email,
+    2: form.skills.size >= 2 && form.experience,
+    3: true,
+    4: true,
+    5: form.rate && form.availability,
+    6: true,
+  };
+
+  if (done) return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <Success />
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Top nav */}
+      <div style={{ borderBottom: '1px solid var(--border2)', padding: '16px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <a href="index.html" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <div style={{ width: 30, height: 30, borderRadius: 7, background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff' }}>X</div>
+          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>Xpresswriters</span>
+        </a>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Step {step} of {STEPS.length}</div>
+        <a href="index.html" style={{ fontSize: 13, color: 'var(--text-dim)', textDecoration: 'none' }}>Save & exit</a>
+      </div>
+
+      {/* Progress */}
+      <div style={{ padding: '28px 36px 20px', borderBottom: '1px solid var(--border2)' }}>
+        <ProgressBar step={step} total={STEPS.length} />
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '40px 24px 100px' }}>
+        <div style={{ width: '100%', maxWidth: 640 }}>
+          {stepComponents[step]}
+        </div>
+      </div>
+
+      {/* Bottom nav */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, borderTop: '1px solid var(--border2)', padding: '16px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg)', backdropFilter: 'blur(20px)' }}>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>Your progress is saved automatically</div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {step > 1 && (
+            <button className="btn-outline" onClick={() => setStep(s => s - 1)}>← Back</button>
+          )}
+          {step < STEPS.length ? (
+            <button className="btn-primary" onClick={() => setStep(s => s + 1)} disabled={!canProceed[step]} style={{ opacity: canProceed[step] ? 1 : 0.5, cursor: canProceed[step] ? 'pointer' : 'not-allowed' }}>
+              Continue →
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={() => setDone(true)} style={{ padding: '12px 32px', fontSize: 15 }}>
+              🚀 Submit Application
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

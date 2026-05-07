@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xpresswriters — Auth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f;--surface:#0f0f1e;--surface2:#151528;--surface3:#1c1c34;
+  --border:rgba(255,255,255,0.07);--border-teal:rgba(13,148,136,0.25);
+  --teal:#0d9488;--teal-light:#2dd4bf;
+  --text:#eefcfb;--text-muted:#6b9e9a;--text-dim:#2e4d4a;
+  --green:#22c55e;--red:#f43f5e;--amber:#f59e0b;--gold:#f5c842;
+  --font:'Google Sans',system-ui,sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font)}
+#root{min-height:100vh;display:flex}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--teal);border-radius:2px}
+input{font-family:var(--font)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes checkPop{from{transform:scale(0) rotate(-30deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes orbFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-20px)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ══════════════════════════════════════════
+   SHARED
+══════════════════════════════════════════ */
+function Logo({ size = 1 }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ width: 36 * size, height: 36 * size, borderRadius: 9 * size, background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 17 * size, color: '#fff', flexShrink: 0 }}>X</div>
+      <span style={{ fontWeight: 700, fontSize: 20 * size, letterSpacing: '-0.02em', color: 'var(--text)' }}>Xpresswriters</span>
+    </div>);
+
+}
+
+function Divider({ label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+      <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    </div>);
+
+}
+
+function SocialBtn({ icon, label, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
+      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+      padding: '11px 0', borderRadius: 7, border: `1px solid ${hov ? 'var(--teal)' : 'var(--border)'}`,
+      background: hov ? 'rgba(13,148,136,0.06)' : 'var(--surface3)',
+      color: 'var(--text)', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+      fontFamily: 'var(--font)', transition: 'all .2s'
+    }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>{label}
+    </button>);
+
+}
+
+function InputField({ label, type = 'text', value, onChange, placeholder, error, icon, trailing, autoComplete }) {
+  const [focused, setFocused] = useState(false);
+  const [show, setShow] = useState(false);
+  const isPass = type === 'password';
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {label && <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: focused ? 'var(--teal-light)' : 'var(--text-muted)', display: 'block', marginBottom: 7, textTransform: 'uppercase', transition: 'color .2s' }}>{label}</label>}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        {icon && <span style={{ position: 'absolute', left: 12, fontSize: 16, color: focused ? 'var(--teal-light)' : 'var(--text-dim)', pointerEvents: 'none', transition: 'color .2s' }}>{icon}</span>}
+        <input
+          type={isPass && !show ? 'password' : isPass ? 'text' : type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={{
+            width: '100%', background: 'var(--surface3)',
+            border: `1.5px solid ${error ? 'var(--red)' : focused ? 'var(--teal)' : 'var(--border)'}`,
+            borderRadius: 7, padding: `11px ${isPass || trailing ? '42px' : '14px'} 11px ${icon ? '40px' : '14px'}`,
+            color: 'var(--text)', fontSize: 14, outline: 'none', fontFamily: 'var(--font)',
+            transition: 'border-color .2s'
+          }} />
+        
+        {isPass &&
+        <button type="button" onClick={() => setShow((s) => !s)} style={{ position: 'absolute', right: 12, background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 16, padding: 0, display: 'flex', alignItems: 'center' }}>
+            {show ? '🙈' : '👁'}
+          </button>
+        }
+        {trailing && !isPass && <span style={{ position: 'absolute', right: 12, color: 'var(--text-dim)', fontSize: 14 }}>{trailing}</span>}
+      </div>
+      {error && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4, animation: 'fadeIn .2s ease' }}><span>⚠</span>{error}</div>}
+    </div>);
+
+}
+
+function PasswordStrength({ password }) {
+  if (!password) return null;
+  const checks = [
+  { label: '8+ characters', pass: password.length >= 8 },
+  { label: 'Uppercase letter', pass: /[A-Z]/.test(password) },
+  { label: 'Number', pass: /[0-9]/.test(password) },
+  { label: 'Special character', pass: /[^A-Za-z0-9]/.test(password) }];
+
+  const score = checks.filter((c) => c.pass).length;
+  const levels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['', 'var(--red)', 'var(--amber)', 'var(--teal)', 'var(--green)'];
+  return (
+    <div style={{ marginTop: -8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+        {[1, 2, 3, 4].map((i) =>
+        <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= score ? colors[score] : 'var(--surface3)', transition: 'background .3s' }} />
+        )}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 11, color: colors[score], fontWeight: 600, transition: 'color .3s' }}>{score > 0 ? levels[score] : ''}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {checks.map((c) =>
+        <span key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: c.pass ? 'var(--green)' : 'var(--text-dim)', transition: 'color .3s' }}>
+            <span style={{ fontSize: 12 }}>{c.pass ? '✓' : '○'}</span>{c.label}
+          </span>
+        )}
+      </div>
+    </div>);
+
+}
+
+function PrimaryBtn({ children, onClick, loading, disabled, fullWidth = true, variant = 'primary' }) {
+  const styles = {
+    primary: { background: 'var(--teal)', color: '#fff' },
+    outline: { background: 'transparent', color: 'var(--text-muted)', border: '1.5px solid var(--border)' }
+  };
+  return (
+    <button onClick={onClick} disabled={disabled || loading} style={{
+      ...(styles[variant] || styles.primary),
+      width: fullWidth ? '100%' : 'auto',
+      padding: '13px 24px', borderRadius: 7, border: 'none',
+      fontSize: 15, fontWeight: 600, cursor: disabled || loading ? 'default' : 'pointer',
+      fontFamily: 'var(--font)', transition: 'all .2s',
+      opacity: disabled ? 0.5 : 1,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+    }}
+    onMouseEnter={(e) => {if (!disabled && !loading && variant === 'primary') e.currentTarget.style.background = '#0f766e';}}
+    onMouseLeave={(e) => {if (variant === 'primary') e.currentTarget.style.background = 'var(--teal)';}}>
+      
+      {loading && <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />}
+      {children}
+    </button>);
+
+}
+
+/* ══════════════════════════════════════════
+   LEFT PANEL — decorative
+══════════════════════════════════════════ */
+function AuthPanel() {
+  const features = [
+  { icon: '✍️', text: '1,200+ vetted expert writers' },
+  { icon: '⚡', text: 'Delivery in as fast as 12 hours' },
+  { icon: '🔒', text: 'End-to-end encrypted conversations' },
+  { icon: '🔄', text: 'Unlimited revisions, guaranteed' },
+  { icon: '🌍', text: 'Writers in 40+ countries' }];
+
+  return (
+    <div style={{
+      width: 440, flexShrink: 0, background: 'linear-gradient(160deg,#0a0a18 0%,#0d1a20 60%,#091a18 100%)',
+      borderRight: '1px solid var(--border)',
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      padding: '44px 44px', position: 'relative', overflow: 'hidden'
+    }}>
+      {/* Glow orbs */}
+      <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,0.18) 0%,transparent 70%)', top: -100, left: '50%', transform: 'translateX(-50%)', animation: 'orbFloat 8s ease-in-out infinite', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,0.08) 0%,transparent 70%)', bottom: 50, right: -50, pointerEvents: 'none' }} />
+
+      {/* Grid texture */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(13,148,136,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(13,148,136,0.04) 1px,transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Logo />
+        <div style={{ marginTop: 56 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--teal-light)', marginBottom: 16, margin: "0px 0px 7.98328px", width: "348px", lineHeight: "1.3", letterSpacing: "0.3px" }}>Why Xpresswriters?</div>
+          <h2 style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 12 }}>
+            Expert content,<br />
+            <span style={{ background: 'linear-gradient(135deg,var(--teal-light),var(--teal),var(--gold))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200% auto', animation: 'shimmer 4s linear infinite' }}>on your terms.</span>
+          </h2>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 36, fontWeight: 300, maxWidth: 320 }}>Join 48,000+ students and professionals who trust our writers for SOPs, resumes, theses and more.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {features.map((f, i) =>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, animation: `slideRight .4s ease ${i * .07}s both` }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(13,148,136,0.12)', border: '1px solid var(--border-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{f.icon}</div>
+                <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 400 }}>{f.text}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonial */}
+      <div style={{ position: 'relative', zIndex: 1, background: 'rgba(13,148,136,0.07)', border: '1px solid var(--border-teal)', borderRadius: 12, padding: '18px 20px' }}>
+        <div style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text)', lineHeight: 1.65, marginBottom: 12 }}>"My SOP got me into Stanford. The writer understood my story better than I did."</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11, color: '#fff' }}>MK</div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>Meera Krishnan</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Stanford MBA · Admitted 2025</div>
+          </div>
+          <div style={{ marginLeft: 'auto', color: 'var(--gold)', fontSize: 12, letterSpacing: 2 }}>★★★★★</div>
+        </div>
+      </div>
+    </div>);
+
+}
+
+/* ══════════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════════ */
+function Login({ onNavigate }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('client');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [remember, setRemember] = useState(false);
+
+  const ROLES = [
+  { id: 'client', label: 'Client', icon: '🧑‍💼', desc: 'Place orders' },
+  { id: 'writer', label: 'Writer', icon: '✍️', desc: 'Manage work' },
+  { id: 'admin', label: 'Admin', icon: '⚙️', desc: 'Platform control' }];
+
+
+  const validate = () => {
+    const e = {};
+    if (!email) e.email = 'Email is required';else
+    if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Enter a valid email';
+    if (!password) e.password = 'Password is required';
+    return e;
+  };
+
+  const handleLogin = () => {
+    const e = validate();
+    if (Object.keys(e).length) {setErrors(e);return;}
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      // Navigate based on role
+      if (role === 'admin') window.location.href = 'admin.html';else
+      if (role === 'writer') window.location.href = 'writer-dashboard.html';else
+      window.location.href = 'dashboard.html';
+    }, 1800);
+  };
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 56px', maxWidth: 520, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
+      <div style={{ marginBottom: 36 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 6 }}>Welcome back</h1>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300 }}>Sign in to your Xpresswriters account</p>
+      </div>
+
+      {/* Role selector */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase' }}>I am a</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          {ROLES.map((r) =>
+          <div key={r.id} onClick={() => setRole(r.id)} style={{
+            padding: '10px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'center', transition: 'all .2s',
+            background: role === r.id ? 'rgba(13,148,136,0.12)' : 'var(--surface3)',
+            border: `1.5px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`
+          }}>
+              <div style={{ fontSize: 20, marginBottom: 3 }}>{r.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: role === r.id ? 700 : 500, color: role === r.id ? 'var(--teal-light)' : 'var(--text)' }}>{r.label}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 1 }}>{r.desc}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Social logins */}
+      <SocialBtn icon="🔍" label="Continue with Google" onClick={() => {}} />
+      <Divider label="or sign in with email" />
+
+      {/* Form */}
+      <InputField label="Email address" type="email" value={email} onChange={(v) => {setEmail(v);setErrors((e) => ({ ...e, email: '' }));}} placeholder="you@example.com" icon="✉️" error={errors.email} autoComplete="email" />
+      <InputField label="Password" type="password" value={password} onChange={(v) => {setPassword(v);setErrors((e) => ({ ...e, password: '' }));}} placeholder="Enter your password" error={errors.password} autoComplete="current-password" />
+
+      {/* Remember + Forgot */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, marginTop: -4 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13, color: 'var(--text-muted)' }}>
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ accentColor: 'var(--teal)', width: 14, height: 14 }} />
+          Remember me
+        </label>
+        <button onClick={() => onNavigate('forgot')} style={{ background: 'none', border: 'none', color: 'var(--teal-light)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500 }}>Forgot password?</button>
+      </div>
+
+      <PrimaryBtn onClick={handleLogin} loading={loading}>
+        {!loading && 'Sign In →'}
+      </PrimaryBtn>
+
+      {/* Sign up link */}
+      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--text-muted)' }}>
+        Don't have an account?{' '}
+        <button onClick={() => onNavigate('signup')} style={{ background: 'none', border: 'none', color: 'var(--teal-light)', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 600 }}>Create one →</button>
+      </div>
+
+      {/* Security note */}
+      <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: 'var(--text-dim)' }}>
+        <span>🔒</span> Secured with 256-bit TLS encryption
+      </div>
+    </div>);
+
+}
+
+/* ══════════════════════════════════════════
+   SIGNUP SCREEN
+══════════════════════════════════════════ */
+function Signup({ onNavigate }) {
+  const [step, setStep] = useState(1);
+  const [role, setRole] = useState('client');
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', phone: '', agree: false });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const update = (k, v) => {setForm((f) => ({ ...f, [k]: v }));setErrors((e) => ({ ...e, [k]: '' }));};
+
+  const ROLES = [
+  { id: 'client', label: 'I need content', icon: '🧑‍💼', desc: 'Place orders and work with writers', color: 'var(--teal)' },
+  { id: 'writer', label: 'I am a writer', icon: '✍️', desc: 'Apply to write and earn', color: '#8b5cf6' }];
+
+
+  const validateStep1 = () => {
+    if (!role) return { role: 'Please select a role' };
+    return {};
+  };
+
+  const validateStep2 = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = 'Full name is required';
+    if (!form.email) e.email = 'Email is required';else
+    if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email';
+    if (!form.password) e.password = 'Password is required';else
+    if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
+    if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    if (!form.agree) e.agree = 'Please accept the terms to continue';
+    return e;
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      const e = validateStep1();
+      if (Object.keys(e).length) {setErrors(e);return;}
+      setStep(2);
+    } else {
+      const e = validateStep2();
+      if (Object.keys(e).length) {setErrors(e);return;}
+      setLoading(true);
+      setTimeout(() => {setLoading(false);setDone(true);}, 2000);
+    }
+  };
+
+  if (done) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', animation: 'fadeUp .4s ease', textAlign: 'center' }}>
+      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(13,148,136,0.12)', border: '2px solid var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, marginBottom: 24, animation: 'checkPop .5s ease' }}>✓</div>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>Account created!</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 360, marginBottom: 28 }}>
+        {role === 'writer' ?
+        'Your writer application is under review. We\'ll email you within 48 hours. Meanwhile, complete your onboarding.' :
+        'Welcome to Xpresswriters! Check your email to verify your account, then start placing orders.'}
+      </p>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {role === 'writer' ?
+        <a href="writer-onboarding.html" style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Complete Onboarding →</a> :
+        <a href="dashboard.html" style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Go to Dashboard →</a>
+        }
+        <button onClick={() => onNavigate('login')} style={{ background: 'transparent', border: '1.5px solid var(--border)', color: 'var(--text-muted)', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font)' }}>Sign In</button>
+      </div>
+    </div>);
+
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 56px', maxWidth: 520, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
+      {/* Step progress */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 32 }}>
+        {[1, 2].map((s) =>
+        <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? 'var(--teal)' : 'var(--surface3)', transition: 'background .4s' }} />
+        )}
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 6 }}>Step {step} of 2</div>
+        <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 4 }}>
+          {step === 1 ? 'Create your account' : 'Your details'}
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300 }}>
+          {step === 1 ? 'How will you be using Xpresswriters?' : 'Almost there — just a few more details.'}
+        </p>
+      </div>
+
+      {step === 1 &&
+      <div style={{ animation: 'fadeIn .3s ease' }}>
+          {/* Google */}
+          <SocialBtn icon="🔍" label="Sign up with Google" onClick={() => {}} />
+          <Divider label="or choose your account type" />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {ROLES.map((r) =>
+          <div key={r.id} onClick={() => {setRole(r.id);setErrors({});}} style={{
+            display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 10, cursor: 'pointer', transition: 'all .2s',
+            background: role === r.id ? 'rgba(13,148,136,0.1)' : 'var(--surface3)',
+            border: `1.5px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`
+          }}>
+                <div style={{ width: 44, height: 44, borderRadius: 11, background: `${r.color}15`, border: `1px solid ${r.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{r.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2, color: role === r.id ? 'var(--text)' : 'var(--text)' }}>{r.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>       {r.desc}</div>
+                </div>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`, background: role === r.id ? 'var(--teal)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}>
+                  {role === r.id && <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>✓</span>}
+                </div>
+              </div>
+          )}
+          </div>
+          {errors.role && <div style={{ fontSize: 11, color: 'var(--red)', marginBottom: 12 }}>{errors.role}</div>}
+          <PrimaryBtn onClick={handleNext}>Continue →</PrimaryBtn>
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: 'var(--text-muted)' }}>
+            Already have an account?{' '}
+            <button onClick={() => onNavigate('login')} style={{ background: 'none', border: 'none', color: 'var(--teal-light)', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 600 }}>Sign in →</button>
+          </div>
+        </div>
+      }
+
+      {step === 2 &&
+      <div style={{ animation: 'fadeIn .3s ease' }}>
+          <InputField label="Full Name" value={form.name} onChange={(v) => update('name', v)} placeholder="Dr. Amara Singh" icon="👤" error={errors.name} autoComplete="name" />
+          <InputField label="Email Address" type="email" value={form.email} onChange={(v) => update('email', v)} placeholder="you@example.com" icon="✉️" error={errors.email} autoComplete="email" />
+          <InputField label="Password" type="password" value={form.password} onChange={(v) => update('password', v)} placeholder="Create a strong password" error={errors.password} autoComplete="new-password" />
+          <PasswordStrength password={form.password} />
+          <InputField label="Confirm Password" type="password" value={form.confirmPassword} onChange={(v) => update('confirmPassword', v)} placeholder="Repeat password" error={errors.confirmPassword} autoComplete="new-password" />
+
+          {/* Terms */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.agree} onChange={(e) => update('agree', e.target.checked)} style={{ accentColor: 'var(--teal)', marginTop: 2, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                I agree to Xpresswriters' <span style={{ color: 'var(--teal-light)' }}>Terms of Service</span> and <span style={{ color: 'var(--teal-light)' }}>Privacy Policy</span>. I understand my data is encrypted and never shared.
+              </span>
+            </label>
+            {errors.agree && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 5 }}>{errors.agree}</div>}
+          </div>
+
+          <PrimaryBtn onClick={handleNext} loading={loading}>
+            {!loading && `Create ${role === 'writer' ? 'Writer' : 'Client'} Account →`}
+          </PrimaryBtn>
+
+          <button onClick={() => setStep(1)} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)', padding: '8px 0' }}>← Back</button>
+        </div>
+      }
+    </div>);
+
+}
+
+/* ══════════════════════════════════════════
+   FORGOT PASSWORD
+══════════════════════════════════════════ */
+function ForgotPassword({ onNavigate }) {
+  const [step, setStep] = useState(1); // 1=email, 2=otp, 3=new pass, 4=done
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+  const otpRefs = useRef([]);
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const t = setTimeout(() => setResendTimer((r) => r - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [resendTimer]);
+
+  const handleSendOtp = () => {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {setError('Enter a valid email address');return;}
+    setError('');setLoading(true);
+    setTimeout(() => {setLoading(false);setStep(2);setResendTimer(60);}, 1600);
+  };
+
+  const handleOtpChange = (i, v) => {
+    if (!/^\d*$/.test(v)) return;
+    const next = [...otp];next[i] = v.slice(-1);setOtp(next);
+    if (v && i < 5) otpRefs.current[i + 1]?.focus();
+  };
+
+  const handleOtpKey = (i, e) => {
+    if (e.key === 'Backspace' && !otp[i] && i > 0) otpRefs.current[i - 1]?.focus();
+  };
+
+  const handleVerifyOtp = () => {
+    if (otp.join('').length < 6) {setError('Enter the 6-digit code');return;}
+    setError('');setLoading(true);
+    setTimeout(() => {setLoading(false);setStep(3);}, 1400);
+  };
+
+  const handleResetPass = () => {
+    if (!newPass || newPass.length < 8) {setError('Password must be at least 8 characters');return;}
+    if (newPass !== confirmPass) {setError('Passwords do not match');return;}
+    setError('');setLoading(true);
+    setTimeout(() => {setLoading(false);setStep(4);}, 1600);
+  };
+
+  const stepMeta = [
+  { title: 'Reset your password', sub: 'Enter your email and we\'ll send a verification code.' },
+  { title: 'Check your email', sub: `We sent a 6-digit code to ${email || 'your email'}.` },
+  { title: 'Create new password', sub: 'Choose a strong password for your account.' },
+  { title: 'Password reset!', sub: 'Your password has been updated successfully.' }];
+
+  const meta = stepMeta[step - 1];
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 56px', maxWidth: 480, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
+      {/* Back */}
+      {step < 4 &&
+      <button onClick={() => step === 1 ? onNavigate('login') : setStep((s) => s - 1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13, marginBottom: 32, padding: 0, alignSelf: 'flex-start' }}>
+          <span>←</span> {step === 1 ? 'Back to sign in' : 'Back'}
+        </button>
+      }
+
+      {/* Step indicator */}
+      {step < 4 &&
+      <div style={{ display: 'flex', gap: 5, marginBottom: 32 }}>
+          {[1, 2, 3].map((s) =>
+        <div key={s} style={{ flex: 1, height: 2, borderRadius: 1, background: s <= step ? 'var(--teal)' : 'var(--surface3)', transition: 'background .4s' }} />
+        )}
+        </div>
+      }
+
+      {/* Icon */}
+      <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--border-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 22 }}>
+        {step === 1 ? '✉️' : step === 2 ? '🔢' : step === 3 ? '🔐' : '✅'}
+      </div>
+
+      <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 6 }}>{meta.title}</h1>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 28, fontWeight: 300 }}>{meta.sub}</p>
+
+      {/* Step 1: Email */}
+      {step === 1 &&
+      <>
+          <InputField label="Email Address" type="email" value={email} onChange={(v) => {setEmail(v);setError('');}} placeholder="you@example.com" icon="✉️" error={error} />
+          <PrimaryBtn onClick={handleSendOtp} loading={loading}>{!loading && 'Send Verification Code →'}</PrimaryBtn>
+        </>
+      }
+
+      {/* Step 2: OTP */}
+      {step === 2 &&
+      <>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase' }}>6-Digit Code</div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              {otp.map((digit, i) =>
+            <input key={i} ref={(el) => otpRefs.current[i] = el} type="text" inputMode="numeric" maxLength={1} value={digit}
+            onChange={(e) => handleOtpChange(i, e.target.value)}
+            onKeyDown={(e) => handleOtpKey(i, e)}
+            style={{
+              width: 48, height: 56, textAlign: 'center', fontSize: 22, fontWeight: 700,
+              background: 'var(--surface3)', border: `1.5px solid ${digit ? 'var(--teal)' : 'var(--border)'}`,
+              borderRadius: 8, color: 'var(--text)', outline: 'none', fontFamily: 'var(--font)',
+              transition: 'border-color .2s'
+            }} />
+
+            )}
+            </div>
+            {error && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 10, textAlign: 'center' }}>{error}</div>}
+          </div>
+
+          {/* Resend */}
+          <div style={{ textAlign: 'center', marginBottom: 20, fontSize: 13, color: 'var(--text-muted)' }}>
+            Didn't receive it?{' '}
+            {resendTimer > 0 ?
+          <span style={{ color: 'var(--text-dim)' }}>Resend in {resendTimer}s</span> :
+          <button onClick={() => {setResendTimer(60);}} style={{ background: 'none', border: 'none', color: 'var(--teal-light)', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13, fontWeight: 600 }}>Resend code</button>
+          }
+          </div>
+
+          <PrimaryBtn onClick={handleVerifyOtp} loading={loading}>{!loading && 'Verify Code →'}</PrimaryBtn>
+        </>
+      }
+
+      {/* Step 3: New password */}
+      {step === 3 &&
+      <>
+          <InputField label="New Password" type="password" value={newPass} onChange={(v) => {setNewPass(v);setError('');}} placeholder="Create a strong password" autoComplete="new-password" />
+          <PasswordStrength password={newPass} />
+          <InputField label="Confirm Password" type="password" value={confirmPass} onChange={(v) => {setConfirmPass(v);setError('');}} placeholder="Repeat new password" autoComplete="new-password" />
+          {error && <div style={{ fontSize: 11, color: 'var(--red)', marginBottom: 12, marginTop: -8 }}>{error}</div>}
+          <PrimaryBtn onClick={handleResetPass} loading={loading}>{!loading && 'Reset Password →'}</PrimaryBtn>
+        </>
+      }
+
+      {/* Step 4: Success */}
+      {step === 4 &&
+      <div style={{ textAlign: 'center', animation: 'fadeUp .4s ease' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', border: '2px solid var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, margin: '0 auto 20px', animation: 'checkPop .5s ease' }}>✓</div>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 28 }}>Your password has been reset. You can now sign in with your new password.</p>
+          <PrimaryBtn onClick={() => onNavigate('login')}>Sign In Now →</PrimaryBtn>
+        </div>
+      }
+
+      {step < 4 &&
+      <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: 'var(--text-dim)' }}>
+          <span>🔒</span> Secured with 256-bit TLS · Code expires in 10 minutes
+        </div>
+      }
+    </div>);
+
+}
+
+/* ══════════════════════════════════════════
+   APP
+══════════════════════════════════════════ */
+function App() {
+  const [screen, setScreen] = useState(() => localStorage.getItem('xw_auth_screen') || 'login');
+  useEffect(() => {localStorage.setItem('xw_auth_screen', screen);}, [screen]);
+
+  const RightPanel = {
+    login: <Login onNavigate={setScreen} />,
+    signup: <Signup onNavigate={setScreen} />,
+    forgot: <ForgotPassword onNavigate={setScreen} />
+  };
+
+  return (
+    <div style={{ display: 'flex', width: '100vw', minHeight: '100vh' }}>
+      <AuthPanel />
+      <div style={{ flex: 1, display: 'flex', alignItems: 'stretch', overflowY: 'auto', background: 'var(--bg)' }}>
+        {RightPanel[screen] || RightPanel.login}
+      </div>
+    </div>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

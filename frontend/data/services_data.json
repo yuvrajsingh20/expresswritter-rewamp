@@ -1,0 +1,1084 @@
+{
+  "categories": [
+    {
+      "id": "sop",
+      "name": "SOP Services",
+      "description": "Expertly crafted application documents that help you stand out to elite universities.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "lor",
+      "name": "LOR Services",
+      "description": "Professional letters of recommendation tailored to your academic and professional profile.",
+      "icon_name": "IconAward"
+    },
+    {
+      "id": "resume",
+      "name": "Resume Services",
+      "description": "ATS-optimized resumes and professional support to help you land jobs or admissions.",
+      "icon_name": "IconBriefcase"
+    },
+    {
+      "id": "essays",
+      "name": "Essay Services",
+      "description": "Expertly crafted academic essays tailored to your needs.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "scholarship",
+      "name": "Scholarship Essay [1]",
+      "description": "Compelling essays for securing university scholarships.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "gmat_waiver",
+      "name": "GMAT/GRE Waiver Letter",
+      "description": "Professional waiver application letters for university admissions.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "app_fee_waiver",
+      "name": "Application Fee Waiver Letter",
+      "description": "Request application fee waivers professionally.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "linkedin",
+      "name": "Linkedin Profile Management",
+      "description": "Expert Linkedin profile optimization and management.",
+      "icon_name": "IconBriefcase"
+    },
+    {
+      "id": "email_templates",
+      "name": "Email Templates",
+      "description": "Professional email templates for networking and outreach.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "media_article",
+      "name": "Media Article Write up",
+      "description": "Professional write-ups for media, news, and magazines.",
+      "icon_name": "IconFileText"
+    },
+    {
+      "id": "visa_application",
+      "name": "Visa Application",
+      "description": "Expert guidance and end-to-end support for student and visitor visa applications.",
+      "icon_name": "IconShieldCheck"
+    }
+  ],
+  "individualServices": {
+    "scholarship": [
+      {
+        "id": "essay-scholarship",
+        "name": "Scholarship Essay [1]",
+        "price": "TBD",
+        "description": "Compelling essays for securing university scholarships.",
+        "features": [
+          "Custom written",
+          "Persuasive content"
+        ]
+      }
+    ],
+    "gmat_waiver": [
+      {
+        "id": "sop-gmat-waiver",
+        "name": "GMAT/GRE Waiver Letter",
+        "price": "₹1,499",
+        "description": "Professional waiver application letters for university admissions.",
+        "features": [
+          "Email Template | Essay",
+          "ATS friendly",
+          "Expert design"
+        ]
+      }
+    ],
+    "app_fee_waiver": [
+      {
+        "id": "sop-app-fee-waiver",
+        "name": "Application Fee Waiver Letter",
+        "price": "₹1,499",
+        "description": "Request application fee waivers professionally.",
+        "features": [
+          "Email Template | Essay",
+          "ATS friendly",
+          "Expert design"
+        ]
+      }
+    ],
+    "linkedin": [
+      {
+        "id": "resume-linkedin",
+        "name": "Linkedin Profile Management",
+        "price": "₹999",
+        "description": "Expert Linkedin profile optimization and management.",
+        "features": [
+          "Profile makeover",
+          "ATS friendly"
+        ]
+      }
+    ],
+    "email_templates": [
+      {
+        "id": "resume-email",
+        "name": "Email Templates",
+        "price": "₹399",
+        "description": "Professional email templates for networking and outreach.",
+        "features": [
+          "Ready-to-use templates",
+          "Corporate standard"
+        ]
+      }
+    ],
+    "media_article": [
+      {
+        "id": "essay-media",
+        "name": "Media Article Write up",
+        "price": "TBD",
+        "description": "Professional write-ups for media, news, and magazines.",
+        "features": [
+          "Expert research",
+          "Publish-ready"
+        ]
+      }
+    ],
+    "sop": [
+      {
+        "id": "cv-urgent",
+        "name": "Statement of Purpose: Academic",
+        "price": "₹4,998",
+        "description": "Resume from scratch built around your story and goals",
+        "features": [
+          "24 hours turnaround",
+          "ATS friendly",
+          "Expert design"
+        ]
+      },
+      {
+        "id": "sop-visa",
+        "name": "Statement of Purpose: Visa",
+        "price": "₹3,999",
+        "description": "Visa-focused statement of purpose for high success rate.",
+        "features": [
+          "Persuasive formatting",
+          "Visa officer focus",
+          "Country specific"
+        ]
+      },
+      {
+        "id": "loi-visit",
+        "name": "Letter of Invitation ( Visit Visa)",
+        "price": "₹699",
+        "description": "Professional letter to invite family or friends.",
+        "features": [
+          "Clear structure",
+          "Required details included",
+          "Formal tone"
+        ]
+      },
+      {
+        "id": "ps-academic",
+        "name": "Personal Statement",
+        "price": "₹2,499",
+        "description": "Highlight your achievements for admissions.",
+        "features": [
+          "Personalized narrative",
+          "Impactful storytelling"
+        ]
+      }
+    ],
+    "lor": [
+      {
+        "id": "lor-academic",
+        "name": "Academic Letter of Recommendation(LOR)",
+        "price": "₹1,099",
+        "description": "Letters crafted to highlight academic excellence.",
+        "features": [
+          "Detailed examples",
+          "Professional tone"
+        ]
+      },
+      {
+        "id": "lor-job",
+        "name": "Letter of Recommendation (for Job)",
+        "price": "₹499",
+        "description": "Endorsements focused on professional skills and impact.",
+        "features": [
+          "Action-oriented",
+          "Skill highlighting"
+        ]
+      },
+      {
+        "id": "lor-scholarship",
+        "name": "Letter of Recommendation (for Scholarship)",
+        "price": "₹1,299",
+        "description": "Strong endorsements to win funding.",
+        "features": [
+          "Achievement focus",
+          "Financial need context"
+        ]
+      }
+    ],
+    "resume": [
+      {
+        "id": "resume-admission",
+        "name": "Admission Focussed Resume",
+        "price": "₹999",
+        "description": "Highlighting academic achievements for university apps.",
+        "features": [
+          "Academic formatting",
+          "Research focus"
+        ]
+      },
+      {
+        "id": "resume-job",
+        "name": "Job Focussed Resume",
+        "price": "₹599",
+        "description": "Tailored for industry roles and ATS systems.",
+        "features": [
+          "ATS optimized",
+          "Keyword rich"
+        ]
+      },
+      {
+        "id": "resume-research",
+        "name": "Research Focussed Resume",
+        "price": "₹1,199",
+        "description": "Focus on publications and research experience.",
+        "features": [
+          "Publication formatting",
+          "Lab skills"
+        ]
+      },
+      {
+        "id": "resume-experienced",
+        "name": "Experienced Corporate Resume",
+        "price": "₹1,199",
+        "description": "For mid-level to senior management applications.",
+        "features": [
+          "Leadership focus",
+          "Quantifiable impacts"
+        ]
+      },
+      {
+        "id": "resume-elite",
+        "name": "Elite Resume",
+        "price": "₹1,999",
+        "description": "Executive level CV for top-tier positions.",
+        "features": [
+          "Executive summary",
+          "Board-level presentation"
+        ]
+      }
+    ],
+    "essays": [
+      {
+        "id": "essay-academic",
+        "name": "Academic Essays",
+        "price": "₹2,599",
+        "description": "Well-researched essays for academic coursework.",
+        "features": [
+          "Proper citations",
+          "Original content",
+          "Plagiarism free"
+        ]
+      }
+    ],
+    "visa_application": [
+      {
+        "id": "visa-b1b2",
+        "name": "B1B2 Visa",
+        "price": "₹25,000",
+        "description": "Complete B1/B2 Visitor Visa assistance (Including DS160 Application Fee).",
+        "features": [
+          "DS 160 Fill up",
+          "Documents consulting",
+          "Interview Strategy & Mock Prep",
+          "Slot Booking Support"
+        ]
+      }
+    ]
+  },
+  "sopVariants": {
+    "Statement of Purpose: Academic": [
+      {
+        "label": "For Bachelors",
+        "wordCount": "upto 1000 words",
+        "price": 4499,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 1499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 999,
+        "customisation": "₹499"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "upto 1000 words",
+        "price": 4499,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 1499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 999,
+        "customisation": "₹499"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "upto 1000 words",
+        "price": 7999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 1499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 1199,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For PhD",
+        "wordCount": "upto 1200 words",
+        "price": 7999,
+        "delivery": "9-12 days",
+        "fastTrackPrice": 1499,
+        "fastTrackDelivery": "Based on Case",
+        "addonPrice": 1199,
+        "customisation": "₹599"
+      },
+      {
+        "label": "Personal History Essay",
+        "wordCount": "upto 500 words",
+        "price": 4499,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 1499,
+        "fastTrackDelivery": "Based on Case",
+        "addonPrice": 999,
+        "customisation": "₹499"
+      },
+      {
+        "label": "For Research Assistantship",
+        "wordCount": "upto 1000 words",
+        "price": 7999,
+        "delivery": "9-12 days",
+        "fastTrackPrice": 1499,
+        "fastTrackDelivery": "Based on Case",
+        "addonPrice": 1199,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Letter of Invitation ( Visit Visa)": [
+      {
+        "label": "For Canada",
+        "wordCount": "upto 700 words",
+        "price": 699,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For USA",
+        "wordCount": "upto 700 words",
+        "price": 699,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Australia",
+        "wordCount": "upto 700 words",
+        "price": 699,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Europe",
+        "wordCount": "upto 700 words",
+        "price": 799,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Personal Statement": [
+      {
+        "label": "For Bachelors",
+        "wordCount": "upto 500 words",
+        "price": 2499,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "1-2 days",
+        "addonPrice": 2399,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "upto 500 words",
+        "price": 2499,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "1-2 days",
+        "addonPrice": 2399,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "upto 500 words",
+        "price": 2599,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 599,
+        "fastTrackDelivery": "2 days",
+        "addonPrice": 2399,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For PhD",
+        "wordCount": "upto 500 words",
+        "price": 2599,
+        "delivery": "7-10 days",
+        "fastTrackPrice": 799,
+        "fastTrackDelivery": "3-4 days",
+        "addonPrice": 2999,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research Assistantship",
+        "wordCount": "upto 500 words",
+        "price": 2599,
+        "delivery": "7-10 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "3-4 days",
+        "addonPrice": 2999,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Statement of Purpose: Visa": [
+      {
+        "label": "Canada Student Visa SOP",
+        "wordCount": "upto 700 words",
+        "price": 3999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "1-2 days",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "Australia Student Visa SOP",
+        "wordCount": "upto 700 words",
+        "price": 3999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "1-2 days",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "Germany Student Visa SOP",
+        "wordCount": "upto 700 words",
+        "price": 3999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "1-2 days",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "Rejected Visa SOP + Justification Letter – Canada",
+        "wordCount": "total upto 1500 words",
+        "price": 7500,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "2-3 days",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "Rejected Visa SOP + Justification Letter – Australia",
+        "wordCount": "total upto 1500 words",
+        "price": 7500,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "2-3 days",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Academic Letter of Recommendation(LOR)": [
+      {
+        "label": "For Bachelors",
+        "wordCount": "300-500 Words",
+        "price": 1099,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "300-500 Words",
+        "price": 1099,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "upto 500 Words",
+        "price": 1499,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Phd",
+        "wordCount": "300-500 Words",
+        "price": 1999,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research Assistantship",
+        "wordCount": "300-500 Words",
+        "price": 1999,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Letter of Recommendation (for Job)": [
+      {
+        "label": "Fresher",
+        "wordCount": "300-500 Words",
+        "price": 499,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 99,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "Mid Career",
+        "wordCount": "300-500 Words",
+        "price": 799,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "Experienced",
+        "wordCount": "upto 500 Words",
+        "price": 1499,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Letter of Recommendation (for Scholarship)": [
+      {
+        "label": "For Bachelors",
+        "wordCount": "300-500 Words",
+        "price": 1299,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "300-500 Words",
+        "price": 1299,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 299,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "upto 500 Words",
+        "price": 1499,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 399,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Phd",
+        "wordCount": "300-500 Words",
+        "price": 1999,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research Assistantship",
+        "wordCount": "300-500 Words",
+        "price": 1999,
+        "delivery": "3-5 days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Admission Focussed Resume": [
+      {
+        "label": "For Bachelors",
+        "wordCount": "1 Page",
+        "price": 999,
+        "delivery": "2-3 days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "1 day",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "1-2 Pages",
+        "price": 1499,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "1-2 day",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "1-2 Pages",
+        "price": 2599,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "1-2 day",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Phd",
+        "wordCount": "1-2 Pages",
+        "price": 3999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "2-3 day",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research Assistantship",
+        "wordCount": "1-2 Pages",
+        "price": 3999,
+        "delivery": "4-6 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "2-3 day",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Job Focussed Resume": [
+      {
+        "label": "Fresher/ Beginner",
+        "wordCount": "Standard",
+        "price": 599,
+        "delivery": "1 Day",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "4 Hours",
+        "addonPrice": null,
+        "customisation": "₹99 ATS format (2 Revisions)"
+      },
+      {
+        "label": "Mid Career/ 2-3 years of Exp.",
+        "wordCount": "Standard",
+        "price": 1199,
+        "delivery": "2 Days",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "24 hours",
+        "addonPrice": null,
+        "customisation": "₹99 ATS format (2 Revisions)"
+      },
+      {
+        "label": "Experienced / 3-10 years Exp.",
+        "wordCount": "Standard",
+        "price": 1699,
+        "delivery": "2-4 Days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "₹99 ATS format (2 Revisions)"
+      }
+    ],
+    "Research Focussed Resume": [
+      {
+        "label": "Standard",
+        "wordCount": "1-2 Pages",
+        "price": 1199,
+        "delivery": "2-4 Days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "₹99 ATS format (2 Revisions)"
+      }
+    ],
+    "Experienced Corporate Resume": [
+      {
+        "label": "Standard",
+        "wordCount": "1-2 Pages",
+        "price": 1199,
+        "delivery": "2-4 Days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "₹99 ATS format (2 Revisions)"
+      }
+    ],
+    "Elite Resume": [
+      {
+        "label": "Standard",
+        "wordCount": "1-2 Pages",
+        "price": 1999,
+        "delivery": "2-4 Days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "₹99 ATS format (2 Revisions)"
+      }
+    ],
+    "Academic Essays": [
+      {
+        "label": "Standard",
+        "wordCount": "upto 500 Words",
+        "price": 2599,
+        "delivery": "2-4 Days",
+        "fastTrackPrice": 399,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 1399,
+        "customisation": "2 Revisions (Extra Req. Charged Addtly)"
+      }
+    ],
+    "Scholarship Essay [1]": [
+      {
+        "label": "Scholarship Essay for Bachelors",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For PhD",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "GMAT/GRE Waiver Letter": [
+      {
+        "label": "Email Template | Essay",
+        "wordCount": "upto 500",
+        "price": 1499,
+        "delivery": "3-4 Days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 499,
+        "customisation": "500 Words"
+      }
+    ],
+    "Application Fee Waiver Letter": [
+      {
+        "label": "Email Template | Essay",
+        "wordCount": "upto 500",
+        "price": 1499,
+        "delivery": "3-4 Days",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": 499,
+        "customisation": "500 Words"
+      }
+    ],
+    "Linkedin Profile Management": [
+      {
+        "label": "For Freshers",
+        "wordCount": "Standard",
+        "price": 999,
+        "delivery": "24 Hours",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "2-3 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Experienced",
+        "wordCount": "Standard",
+        "price": 1499,
+        "delivery": "2-3 days",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "24 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Public Figure",
+        "wordCount": "Standard",
+        "price": 7999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "1-3 days",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research and Prospecting",
+        "wordCount": "Standard",
+        "price": 4599,
+        "delivery": "1-4 weeks",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "1 Week",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Email Templates": [
+      {
+        "label": "For University admission Purpose",
+        "wordCount": "100-300 Words",
+        "price": 399,
+        "delivery": "12 Hours",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "3-4 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Job Purpose",
+        "wordCount": "100-300 Words",
+        "price": 399,
+        "delivery": "12 Hours",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "3-4 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Business Operations",
+        "wordCount": "100-300 Words",
+        "price": 399,
+        "delivery": "12 Hours",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "3-4 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For PhD admission Prospecting",
+        "wordCount": "100-300 Words",
+        "price": 499,
+        "delivery": "24 Hours",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "3-4 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Corporate Communication",
+        "wordCount": "100-300 Words",
+        "price": 299,
+        "delivery": "12 Hours",
+        "fastTrackPrice": 199,
+        "fastTrackDelivery": "3-4 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Research and Prospecting",
+        "wordCount": "100-300 Words",
+        "price": 499,
+        "delivery": "24 Hours",
+        "fastTrackPrice": 299,
+        "fastTrackDelivery": "3-4 Hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "Media Article Write up": [
+      {
+        "label": "For Digital Media News Paper",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Social Media",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Magazine",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For News Papers",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Blogs",
+        "wordCount": "Standard",
+        "price": 0,
+        "delivery": "TBD",
+        "fastTrackPrice": 0,
+        "fastTrackDelivery": "TBD",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "B1B2 Visa": [
+      {
+        "label": "USA (B1B2 Visa)",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      },
+      {
+        "label": "Germany",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      },
+      {
+        "label": "South Korea",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      },
+      {
+        "label": "Australia",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      },
+      {
+        "label": "Europe",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      },
+      {
+        "label": "UK",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      },
+      {
+        "label": "Canada",
+        "wordCount": "Standard Application",
+        "price": 25000,
+        "delivery": "Standard",
+        "fastTrackPrice": 7000,
+        "fastTrackDelivery": "Express Slot Booking",
+        "addonPrice": null,
+        "customisation": ""
+      }
+    ]
+  }
+}

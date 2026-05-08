@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, Table } from "./admin-shared";
+import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, Table, Select, Input } from "./admin-shared";
 // ── SECTIONS 3 & 4: PAYMENTS, REVENUE, CURRENCY ──
 
 export function AdminPayments({ projects = [] }) {
@@ -59,15 +59,43 @@ export function AdminPayments({ projects = [] }) {
 
   const STATUS_COLOR = { Paid: 'var(--green)', Pending: 'var(--amber)', Refunded: 'var(--red)', Scheduled: '#3b82f6', Processing: 'var(--teal)' };
 
-  const GATEWAY_SPLIT = [
-    { name: 'Stripe', pct: 68, color: '#635bff', amt: '$18,240' },
-    { name: 'Razorpay', pct: 28, color: '#528ff0', amt: '$7,520' },
-    { name: 'Other', pct: 4, color: 'var(--text-dim)', amt: '$1,080' },
-  ];
+  const gatewayCounts = orders.reduce((acc, o) => {
+    const gateway = o.gateway || 'Razorpay';
+    acc[gateway] = (acc[gateway] || 0) + (o.amount || 0);
+    return acc;
+  }, {});
 
-  const monthlyRevenue = [1240, 1890, 2100, 1750, 2480, 2680];
-  const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
-  const maxRev = Math.max(...monthlyRevenue);
+  const totalAmt = Object.values(gatewayCounts).reduce((a, b) => a + b, 0) || 1;
+
+  let GATEWAY_SPLIT = Object.entries(gatewayCounts).map(([name, amt]) => ({
+    name,
+    pct: Math.round((amt / totalAmt) * 100),
+    color: name === 'Stripe' ? '#635bff' : name === 'Razorpay' ? '#528ff0' : 'var(--text-dim)',
+    amt: `₹${amt.toLocaleString()}`
+  }));
+
+  if (GATEWAY_SPLIT.length === 0) {
+    GATEWAY_SPLIT = [{ name: 'Razorpay', pct: 100, color: '#528ff0', amt: '₹0' }];
+  }
+
+  const monthlyData = orders.reduce((acc, o) => {
+    const date = new Date(o.createdAt);
+    const month = date.toLocaleString('default', { month: 'short' });
+    acc[month] = (acc[month] || 0) + (o.amount || 0);
+    return acc;
+  }, {});
+
+  const last6Months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const month = d.toLocaleString('default', { month: 'short' });
+    last6Months.push({ month, amt: monthlyData[month] || 0 });
+  }
+
+  const monthlyRevenue = last6Months.map(d => d.amt);
+  const months = last6Months.map(d => d.month);
+  const maxRev = Math.max(...monthlyRevenue) || 1;
 
   return (
     <div>
@@ -225,30 +253,66 @@ export function AdminPayments({ projects = [] }) {
 /* ── CURRENCY SETTINGS ── */
 export function AdminCurrency() {
   const [saved, setSaved] = React.useState(false);
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
+  const [loading, setLoading] = React.useState(true);
+  const [config, setConfig] = React.useState({
+    baseCurrency: 'USD',
+    apiKey: 'oxr_...',
+    frequency: 'Daily',
+    showLocal: true,
+    autoConvert: true,
+    currencies: [
+      { region: 'India', currency: 'INR', symbol: '₹', gateway: 'Razorpay', rate: 83.2, writerMin: 5000, enabled: true },
+      { region: 'United Kingdom', currency: 'GBP', symbol: '£', gateway: 'Stripe', rate: 0.79, writerMin: 50, enabled: true },
+      { region: 'United States', currency: 'USD', symbol: '$', gateway: 'Stripe', rate: 1.0, writerMin: 50, enabled: true },
+      { region: 'European Union', currency: 'EUR', symbol: '€', gateway: 'Stripe', rate: 0.92, writerMin: 50, enabled: true },
+      { region: 'Canada', currency: 'CAD', symbol: 'CA$', gateway: 'Stripe', rate: 1.37, writerMin: 65, enabled: false },
+      { region: 'Australia', currency: 'AUD', symbol: 'AU$', gateway: 'Stripe', rate: 1.53, writerMin: 75, enabled: false },
+      { region: 'UAE', currency: 'AED', symbol: 'د.إ', gateway: 'Stripe', rate: 3.67, writerMin: 180, enabled: true },
+      { region: 'Nigeria', currency: 'NGN', symbol: '₦', gateway: 'Stripe', rate: 1620, writerMin: 80000, enabled: false },
+    ]
+  });
 
-  const CURRENCIES = [
-    { region: 'India', currency: 'INR', symbol: '₹', gateway: 'Razorpay', rate: 83.2, writerMin: 5000, enabled: true },
-    { region: 'United Kingdom', currency: 'GBP', symbol: '£', gateway: 'Stripe', rate: 0.79, writerMin: 50, enabled: true },
-    { region: 'United States', currency: 'USD', symbol: '$', gateway: 'Stripe', rate: 1.0, writerMin: 50, enabled: true },
-    { region: 'European Union', currency: 'EUR', symbol: '€', gateway: 'Stripe', rate: 0.92, writerMin: 50, enabled: true },
-    { region: 'Canada', currency: 'CAD', symbol: 'CA$', gateway: 'Stripe', rate: 1.37, writerMin: 65, enabled: false },
-    { region: 'Australia', currency: 'AUD', symbol: 'AU$', gateway: 'Stripe', rate: 1.53, writerMin: 75, enabled: false },
-    { region: 'UAE', currency: 'AED', symbol: 'د.إ', gateway: 'Stripe', rate: 3.67, writerMin: 180, enabled: true },
-    { region: 'Nigeria', currency: 'NGN', symbol: '₦', gateway: 'Stripe', rate: 1620, writerMin: 80000, enabled: false },
-  ];
-  const [currencies, setCurrencies] = React.useState(CURRENCIES);
+  useEffect(() => {
+    fetch('/api/admin/config/currency')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch');
+        return res.json();
+      })
+      .then(data => {
+        if (data && !data.error && data.currencies) {
+          setConfig(data);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Currency fetch error:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const save = () => {
+    setSaved(true);
+    fetch('/api/admin/config/currency', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    }).finally(() => {
+      setTimeout(() => setSaved(false), 2500);
+    });
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)' }}>Loading currency configurations...</div>;
 
   return (
-    <div>
+    <div style={{ animation: 'fadeIn .3s ease' }}>
       <SectionHeader title="Currency Settings" subtitle="Configure currency display and payouts per writer location. Exchange rates auto-update daily from Open Exchange Rates API." />
 
       <Card style={{ marginBottom: 20 }}>
         <CardHeader title="Base Currency" right={<Pill label="Auto-refresh daily" color="var(--teal)" />} />
         <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-          <Select label="Platform Base Currency" value="USD" onChange={() => {}} options={['USD', 'GBP', 'EUR', 'INR']} />
-          <Input label="Exchange Rate API Key" value="oxr_..." onChange={() => {}} mono />
-          <Select label="Rate Update Frequency" value="Daily" onChange={() => {}} options={['Hourly', 'Daily', 'Weekly', 'Manual']} />
+          <Select label="Platform Base Currency" value={config.baseCurrency} onChange={v => setConfig({...config, baseCurrency: v})} options={['USD', 'GBP', 'EUR', 'INR']} />
+          <Input label="Exchange Rate API Key" value={config.apiKey} onChange={v => setConfig({...config, apiKey: v})} mono />
+          <Select label="Rate Update Frequency" value={config.frequency} onChange={v => setConfig({...config, frequency: v})} options={['Hourly', 'Daily', 'Weekly', 'Manual']} />
         </div>
       </Card>
 
@@ -264,14 +328,24 @@ export function AdminCurrency() {
               </tr>
             </thead>
             <tbody>
-              {currencies.map((c, i) => (
+              {config.currencies.map((c, i) => (
                 <tr key={c.region} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600 }}>{c.region}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--teal-light)', fontWeight: 600 }}>{c.symbol} {c.currency}</span>
                   </td>
                   <td style={{ padding: '10px 14px' }}>
-                    <input type="number" value={c.rate} step="0.01" onChange={e => setCurrencies(cs => cs.map((x, j) => j === i ? { ...x, rate: +e.target.value } : x))} style={{ width: 90, background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 5, padding: '4px 8px', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--mono)', outline: 'none' }} />
+                    <input 
+                      type="number" 
+                      value={c.rate} 
+                      step="0.01" 
+                      onChange={e => {
+                        const newCs = [...config.currencies];
+                        newCs[i] = { ...c, rate: parseFloat(e.target.value) };
+                        setConfig({ ...config, currencies: newCs });
+                      }} 
+                      style={{ width: 90, background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 5, padding: '4px 8px', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--mono)', outline: 'none' }} 
+                    />
                   </td>
                   <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-muted)' }}>{c.gateway}</td>
                   <td style={{ padding: '10px 14px' }}>
@@ -282,7 +356,11 @@ export function AdminCurrency() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <Btn small variant={c.enabled ? 'danger' : 'outline'} onClick={() => setCurrencies(cs => cs.map((x, j) => j === i ? { ...x, enabled: !x.enabled } : x))}>
+                      <Btn small variant={c.enabled ? 'danger' : 'outline'} onClick={() => {
+                        const newCs = [...config.currencies];
+                        newCs[i] = { ...c, enabled: !c.enabled };
+                        setConfig({ ...config, currencies: newCs });
+                      }}>
                         {c.enabled ? 'Disable' : 'Enable'}
                       </Btn>
                     </div>
@@ -293,8 +371,8 @@ export function AdminCurrency() {
           </table>
         </div>
         <div style={{ padding: 16 }}>
-          <Toggle label="Show prices in writer's local currency" sublabel="Writers see their earnings in their home currency on the dashboard" value={true} onChange={() => {}} />
-          <Toggle label="Auto-convert client payments to base currency" sublabel="Stripe/Razorpay handle FX conversion automatically" value={true} onChange={() => {}} />
+          <Toggle label="Show prices in writer's local currency" sublabel="Writers see their earnings in their home currency on the dashboard" value={config.showLocal} onChange={v => setConfig({...config, showLocal: v})} />
+          <Toggle label="Auto-convert client payments to base currency" sublabel="Stripe/Razorpay handle FX conversion automatically" value={config.autoConvert} onChange={v => setConfig({...config, autoConvert: v})} />
           <SaveBar onSave={save} saved={saved} />
         </div>
       </Card>

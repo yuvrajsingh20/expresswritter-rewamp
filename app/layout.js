@@ -16,9 +16,12 @@ const outfit = Outfit({
 export const metadata = {
   title: "Express Writer | Production-Ready SaaS",
   description: "Multi-role workflow automation platform",
+  manifest: "/manifest.json",
 };
 
 import SessionWrapper from "@/components/SessionWrapper";
+import CookieBanner from "@/components/CookieBanner";
+import FloatingChat from "@/components/chat/FloatingChat";
 
 export default function RootLayout({ children }) {
   return (
@@ -29,6 +32,8 @@ export default function RootLayout({ children }) {
       >
         <SessionWrapper>
           {children}
+          <CookieBanner />
+          <FloatingChat />
         </SessionWrapper>
       </body>
     </html>

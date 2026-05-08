@@ -4,28 +4,35 @@ import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle } 
 // ── SECTION 2: TICKETING SYSTEM ──
 
 export function AdminTickets() {
-  const [tab, setTab] = React.useState('All Tickets');
-  const [selected, setSelected] = React.useState(null);
-  const [matrix, setMatrix] = React.useState({
+  const [tab, setTab] = useState('All Tickets');
+  const [selected, setSelected] = useState(null);
+  const [matrix, setMatrix] = useState({
     level1: { channel: 'email', delay: 15, aiDraft: true },
     level2: { channel: 'whatsapp', delay: 60, aiDraft: true },
     level3: { channel: 'voice', delay: 180, aiDraft: false },
   });
 
-  const TICKETS = [
-    { id: 'TKT-1042', type: 'Order', subject: 'Delivery delayed — XW-48291', client: 'Client #A204', writer: 'Dr. Amara Singh', priority: 'High', status: 'Open', created: '2h ago', escalation: 'Level 1', aiStatus: 'Draft sent' },
-    { id: 'TKT-1039', type: 'Writer', subject: 'Payment not received — Apr payout', client: '—', writer: 'James Whitfield', priority: 'High', status: 'In Progress', created: '5h ago', escalation: 'None', aiStatus: 'Monitoring' },
-    { id: 'TKT-1036', type: 'Client', subject: 'Refund request — XW-44302', client: 'Client #C056', writer: 'Rahul Desai', priority: 'Medium', status: 'Open', created: '1d ago', escalation: 'Level 2', aiStatus: 'WhatsApp sent' },
-    { id: 'TKT-1031', type: 'Order', subject: 'Revision rejected by writer', client: 'Client #B118', writer: 'James Whitfield', priority: 'Low', status: 'Resolved', created: '2d ago', escalation: 'None', aiStatus: 'Closed' },
-    { id: 'TKT-1028', type: 'Client', subject: 'Account login issue', client: 'Client #D302', writer: '—', priority: 'Low', status: 'Resolved', created: '3d ago', escalation: 'None', aiStatus: 'Auto-resolved' },
-    { id: 'TKT-1021', type: 'Writer', subject: 'Profile verification pending', client: '—', writer: 'Priya Nair', priority: 'Medium', status: 'In Progress', created: '4d ago', escalation: 'Level 1', aiStatus: 'Email sent' },
-  ];
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/tickets')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setTickets(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to fetch tickets:", err);
+        setLoading(false);
+      });
+  }, []);
 
   const PRIORITY_COLORS = { High: 'var(--red)', Medium: 'var(--amber)', Low: 'var(--green)' };
   const STATUS_COLORS = { Open: '#3b82f6', 'In Progress': 'var(--teal)', Resolved: 'var(--green)' };
   const TYPE_COLORS = { Order: 'var(--teal)', Client: '#8b5cf6', Writer: 'var(--amber)' };
 
-  const filtered = tab === 'All Tickets' ? TICKETS : TICKETS.filter(t =>
+  const filtered = tab === 'All Tickets' ? tickets : tickets.filter(t =>
     tab === 'Orders' ? t.type === 'Order' :
     tab === 'Clients' ? t.type === 'Client' :
     tab === 'Writers' ? t.type === 'Writer' :
@@ -33,11 +40,11 @@ export function AdminTickets() {
     tab === 'Resolved' ? t.status === 'Resolved' : true
   );
 
-  const selectedTicket = TICKETS.find(t => t.id === selected);
+  const selectedTicket = tickets.find(t => t.id === selected);
 
-  const [reply, setReply] = React.useState('');
-  const [aiLoading, setAiLoading] = React.useState(false);
-  const [aiDraft, setAiDraft] = React.useState('');
+  const [reply, setReply] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDraft, setAiDraft] = useState('');
 
   const generateAI = () => {
     setAiLoading(true);
@@ -47,6 +54,21 @@ export function AdminTickets() {
     }, 1400);
   };
 
+  const updateTicket = async (id, data) => {
+    try {
+      const res = await fetch('/api/admin/tickets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...data }),
+      });
+      if (res.ok) {
+        setTickets(tickets.map(t => t.id === id ? { ...t, ...data } : t));
+      }
+    } catch (err) {
+      console.error("Failed to update ticket:", err);
+    }
+  };
+
   return (
     <div>
       <SectionHeader title="Ticketing System" subtitle="Unified support queue with AI-powered escalation matrix across email, WhatsApp and voice." />
@@ -54,14 +76,14 @@ export function AdminTickets() {
       {/* Stats bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Open', val: TICKETS.filter(t => t.status === 'Open').length, color: '#3b82f6' },
-          { label: 'In Progress', val: TICKETS.filter(t => t.status === 'In Progress').length, color: 'var(--teal)' },
-          { label: 'Resolved Today', val: 4, color: 'var(--green)' },
-          { label: 'Escalated', val: TICKETS.filter(t => t.escalation !== 'None').length, color: 'var(--red)' },
+          { label: 'Open', val: tickets.filter(t => t.status === 'Open').length, color: '#3b82f6' },
+          { label: 'In Progress', val: tickets.filter(t => t.status === 'In Progress').length, color: 'var(--teal)' },
+          { label: 'Resolved Today', val: tickets.filter(t => t.status === 'Resolved').length, color: 'var(--green)' },
+          { label: 'Escalated', val: tickets.filter(t => t.escalation !== 'None').length, color: 'var(--red)' },
           { label: 'Avg Resolution', val: '2.4h', color: 'var(--gold)' },
         ].map(s => (
           <Card key={s.label} style={{ padding: '12px 14px', textAlign: 'center' }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: s.color, marginBottom: 2 }}>{s.val}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: s.color, marginBottom: 2 }}>{loading ? '...' : s.val}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.label}</div>
           </Card>
         ))}
@@ -82,7 +104,7 @@ export function AdminTickets() {
                 onMouseLeave={e => { if (selected !== t.id) e.currentTarget.style.background = 'transparent'; }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>{t.id}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>{t.ticketId}</span>
                   <Pill label={t.type} color={TYPE_COLORS[t.type]} />
                   <Pill label={t.priority} color={PRIORITY_COLORS[t.priority]} />
                   <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-dim)' }}>{t.created}</span>
@@ -105,16 +127,16 @@ export function AdminTickets() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>{selectedTicket.subject}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>{selectedTicket.id}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>{selectedTicket.ticketId}</span>
                   <Pill label={selectedTicket.type} color={TYPE_COLORS[selectedTicket.type]} />
                   <Pill label={selectedTicket.priority} color={PRIORITY_COLORS[selectedTicket.priority]} />
                   <Pill label={selectedTicket.status} color={STATUS_COLORS[selectedTicket.status]} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <Btn small variant="outline">Assign</Btn>
-                <Btn small variant="danger">Escalate</Btn>
-                <Btn small>Resolve</Btn>
+                <Btn small variant="outline" onClick={() => updateTicket(selectedTicket.id, { status: 'In Progress' })}>In Progress</Btn>
+                <Btn small variant="danger" onClick={() => updateTicket(selectedTicket.id, { escalation: 'Level 1' })}>Escalate</Btn>
+                <Btn small onClick={() => updateTicket(selectedTicket.id, { status: 'Resolved' })}>Resolve</Btn>
               </div>
             </div>
             <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>

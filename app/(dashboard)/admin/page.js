@@ -9,6 +9,9 @@ import { AdminSettings } from "./admin-settings";
 import { AdminCurrency } from "./admin-payments";
 import { AdminUsers, AdminWorkflow, AdminTheme } from "./admin-settings";
 import { AdminOrders } from "./admin-orders";
+import { AdminAnalytics } from "./admin-analytics";
+import { AdminRefunds } from "./admin-refunds";
+import { AdminPromos } from "./admin-promos";
 import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar } from "./admin-shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,12 +22,17 @@ import { useRouter } from "next/navigation";
 const NAV = [
 { id: 'overview', label: 'Overview', icon: '⊞', group: 'Main' },
 { id: 'orders', label: 'Order Requests', icon: '📥', group: 'Main' },
+{ id: 'analytics', label: 'Analytics & ROI', icon: '📈', group: 'Main' },
 { id: 'integrations', label: 'API Integrations', icon: '🔌', group: 'Platform' },
 { id: 'tickets', label: 'Ticketing', icon: '🎫', group: 'Platform' },
-{ id: 'payments', label: 'Payments & Revenue', icon: '💰', group: 'Platform' },
+{ id: 'payments', label: 'Payments', icon: '💰', group: 'Platform' },
+{ id: 'refunds', label: 'Refund Claims', icon: '↩️', group: 'Platform' },
+{ id: 'promos', label: 'Promo Engine', icon: '🏷️', group: 'Platform' },
 { id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
 { id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
 { id: 'users', label: 'User Management', icon: '👤', group: 'People' },
+{ id: 'audit', label: 'Audit Logs', icon: '📜', group: 'System' },
+{ id: 'seo', label: 'SEO & Marketing', icon: '🔍', group: 'System' },
 { id: 'workflow', label: 'Order Workflow', icon: '⟳', group: 'System' },
 { id: 'theme', label: 'Theme & Appearance', icon: '🎨', group: 'System' }];
 
@@ -295,9 +303,14 @@ export default function App() {
     integrations: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
     tickets: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
     payments: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} /></div>,
+    refunds: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
+    promos: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
+    analytics: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAnalytics projects={projects} freelancersCount={freelancers.length} /></div>,
     currency: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
     writers: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters freelancers={freelancers} /></div>,
     users: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminUsers /></div>,
+    audit: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAudit /></div>,
+    seo: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSEO /></div>,
     workflow: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
     theme: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>
   };
@@ -315,4 +328,92 @@ export default function App() {
 
 }
 
+/* ── ADMIN AUDIT ── */
+function AdminAudit() {
+  const [logs, setLogs] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
+  React.useEffect(() => {
+    fetch('/api/admin/audit')
+      .then(res => res.json())
+      .then(data => {
+        setLogs(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={{ animation: 'fadeIn .3s ease' }}>
+      <SectionHeader title="System Audit Logs" subtitle="Security trail of all administrative actions." />
+      <Card>
+        <Table
+          cols={['Administrator', 'Action Performed', 'IP Address', 'Timestamp']}
+          rows={logs.map(l => [
+            <span style={{ fontWeight: 600 }}>{l.userName || 'System'}</span>,
+            l.action,
+            <code style={{ fontSize: 11, color: 'var(--text-dim)' }}>{l.ipAddress || '---'}</code>,
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(l.createdAt).toLocaleString()}</span>
+          ])}
+        />
+        {loading && <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim)' }}>Loading audit trail...</div>}
+        {!loading && logs.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)' }}>No logs found.</div>}
+      </Card>
+    </div>
+  );
+}
+
+/* ── ADMIN SEO ── */
+function AdminSEO() {
+  const [config, setConfig] = React.useState({ title: '', desc: '', keywords: '' });
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch('/api/admin/seo')
+      .then(res => res.json())
+      .then(data => {
+        setConfig(data || {});
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const save = () => {
+    setSaving(true);
+    fetch('/api/admin/seo', {
+      method: 'POST',
+      body: JSON.stringify(config),
+      headers: { 'Content-Type': 'application/json' }
+    }).finally(() => {
+      setSaving(false);
+    });
+  };
+
+  if (loading) return <div style={{ padding: 40, color: 'var(--text-dim)' }}>Loading settings...</div>;
+
+  return (
+    <div style={{ animation: 'fadeIn .3s ease' }}>
+      <SectionHeader title="SEO & Marketing Settings" subtitle="Manage meta tags, indexing, and analytics scripts." />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <Card>
+          <CardHeader title="Global Meta Tags" />
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Input label="Default Page Title" value={config.title} onChange={v => setConfig({...config, title: v})} />
+            <Input label="Meta Description" value={config.desc} onChange={v => setConfig({...config, desc: v})} />
+            <Input label="Keywords" value={config.keywords} onChange={v => setConfig({...config, keywords: v})} />
+          </div>
+        </Card>
+        <Card>
+          <CardHeader title="Indexing & Robots" />
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Toggle label="Enable Search Engine Indexing (Robots.txt)" value={config.indexing} onChange={v => setConfig({...config, indexing: v})} />
+            <Toggle label="Generate Sitemap daily" value={config.sitemap} onChange={v => setConfig({...config, sitemap: v})} />
+            <Btn variant="outline" small>Force Sitemap Regeneration</Btn>
+          </div>
+        </Card>
+      </div>
+      <SaveBar show={true} onSave={save} saved={saving} />
+    </div>
+  );
+}

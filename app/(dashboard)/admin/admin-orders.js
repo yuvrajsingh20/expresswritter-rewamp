@@ -9,6 +9,8 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
   const [loading, setLoading] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkWriterId, setBulkWriterId] = useState('');
   const { data: session } = useSession();
 
   // Filter projects that need assignment (status is CREATED or UNASSIGNED)
@@ -23,17 +25,44 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
         body: JSON.stringify({ freelancerId: writerId, status: 'ASSIGNED' })
       });
       if (res.ok) {
-        alert("Writer successfully assigned to order!");
-        window.location.reload();
+        // Update local state instead of reload for smoother experience
+        setProjects(prev => prev.map(p => p.id === projectId ? { ...p, freelancerId: writerId, status: 'ASSIGNED', freelancer: freelancers.find(f => f.id === writerId) } : p));
+        return true;
       } else {
         alert("Failed to assign writer");
+        return false;
       }
     } catch (err) {
       console.error(err);
       alert("Error assigning writer.");
+      return false;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBulkAssign = async () => {
+    if (!bulkWriterId || selectedIds.length === 0) return;
+    setLoading(true);
+    let successCount = 0;
+    for (const id of selectedIds) {
+      const success = await handleAssign(id, bulkWriterId);
+      if (success) successCount++;
+    }
+    alert(`Successfully assigned ${successCount} orders.`);
+    setSelectedIds([]);
+    setBulkWriterId('');
+    setLoading(false);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === unassignedProjects.length) setSelectedIds([]);
+    else setSelectedIds(unassignedProjects.map(p => p.id));
+  };
+
+  const toggleSelect = (id) => {
+    if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(i => i !== id));
+    else setSelectedIds([...selectedIds, id]);
   };
 
   return (
@@ -60,13 +89,36 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
       {mainTab === 'Direct Chat' && <DirectChatPanel freelancers={freelancers} />}
       {mainTab === 'Order Assignments' && (
         <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: 20, animation: 'fadeIn .3s ease' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>New Order Requests (Awaiting Assignment)</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>New Order Requests (Awaiting Assignment)</h3>
+            {selectedIds.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'fadeIn .2s ease', background: 'rgba(13,148,136,0.1)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--teal)' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--teal-light)' }}>{selectedIds.length} Selected</span>
+                <select 
+                  value={bulkWriterId}
+                  onChange={e => setBulkWriterId(e.target.value)}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}
+                >
+                  <option value="">Bulk Assign to...</option>
+                  {freelancers.filter(f => (f.freelancerProfile?.status || 'Active') === 'Active').map(f => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+                <Btn small onClick={handleBulkAssign} disabled={!bulkWriterId || loading}>Apply Batch</Btn>
+              </div>
+            )}
+          </div>
+
           {unassignedProjects.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)' }}>No new orders awaiting assignment.</div>
           ) : (
             <Table
-              cols={['Order ID', 'Service', 'Deadline', 'Client', 'Assign Writer']}
+              cols={[
+                <input type="checkbox" checked={selectedIds.length === unassignedProjects.length && unassignedProjects.length > 0} onChange={toggleSelectAll} />,
+                'Order ID', 'Service', 'Deadline', 'Client', 'Assign Writer'
+              ]}
               rows={unassignedProjects.map(p => [
+                <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />,
                 <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>#{p.id.slice(-6).toUpperCase()}</span>,
                 <span style={{ fontSize: 13 }}>{p.title}</span>,
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A'}</span>,

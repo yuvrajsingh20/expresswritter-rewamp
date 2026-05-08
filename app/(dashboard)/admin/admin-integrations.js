@@ -14,11 +14,37 @@ export function AdminIntegrations() {
   });
   const [enabled, setEnabled] = React.useState({ google: true, stripe: true, razorpay: false, whatsapp: true, make: false, openai: true, claude: true, gemini: false, sendgrid: true, twilio: false });
   const [saved, setSaved] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [revealed, setRevealed] = React.useState({});
+
+  useEffect(() => {
+    fetch('/api/admin/config/integrations')
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setKeys(data.keys || keys);
+          setEnabled(data.enabled || enabled);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const mask = (v) => v ? '••••••••' + v.slice(-4) : '';
   const toggleReveal = (k) => setRevealed(r => ({ ...r, [k]: !r[k] }));
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
+  
+  const save = () => {
+    setSaved(true);
+    fetch('/api/admin/config/integrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys, enabled })
+    }).finally(() => {
+      setTimeout(() => setSaved(false), 2500);
+    });
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)' }}>Loading integration settings...</div>;
 
   const groups = [
     {

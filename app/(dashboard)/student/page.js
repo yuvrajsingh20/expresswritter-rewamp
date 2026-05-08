@@ -5,52 +5,13 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
 import servicesData from '@/data/services_data.json';
+import Wallet from "./student-wallet";
+import Notifications from "./student-notifications";
 
 
 
 /* ── DATA ── */
-const ORDERS = [
-  { id: 'XW-48291', service: 'Statement of Purpose', writer: 'Dr. Amara Singh', status: 'In Progress', progress: 65, due: 'Apr 24, 2026', words: 800, price: 144, submitted: 'Apr 20', category: 'Academic' },
-  { id: 'XW-47103', service: 'LinkedIn Profile', writer: 'James Whitfield', status: 'Quality Check', progress: 90, due: 'Apr 22, 2026', words: 500, price: 75, submitted: 'Apr 19', category: 'Career' },
-  { id: 'XW-46892', service: 'Blog Post — SEO', writer: 'Priya Nair', status: 'Delivered', progress: 100, due: 'Apr 18, 2026', words: 1500, price: 180, submitted: 'Apr 14', category: 'Content' },
-  { id: 'XW-45771', service: 'Resume (Executive)', writer: 'James Whitfield', status: 'Delivered', progress: 100, due: 'Apr 10, 2026', words: 600, price: 90, submitted: 'Apr 7', category: 'Career' },
-  { id: 'XW-44302', service: 'Research Proposal', writer: 'Rahul Desai', status: 'Revision Requested', progress: 80, due: 'Apr 28, 2026', words: 2000, price: 280, submitted: 'Apr 18', category: 'Academic' },
-  { id: 'XW-43109', service: 'Business Proposal', writer: 'Marcus Chen', status: 'Delivered', progress: 100, due: 'Apr 5, 2026', words: 1200, price: 240, submitted: 'Apr 1', category: 'Business' },
-];
-
-const CONVERSATIONS = [
-  { id: 1, writer: 'Dr. Amara Singh', avatar: 'AS', orderId: 'XW-48291', service: 'Statement of Purpose', lastMsg: 'I\'ve completed the first draft — would you like...', time: '2m ago', unread: 2, online: true,
-    messages: [
-      { from: 'writer', text: 'Hello! I\'ve reviewed your brief for the Stanford SOP. I have a few clarifying questions before I begin drafting.', time: '10:02 AM' },
-      { from: 'user', text: 'Of course, please go ahead! Happy to clarify.', time: '10:15 AM' },
-      { from: 'writer', text: 'Could you share 2-3 specific research experiences that you\'d like highlighted? Also, which professor at Stanford are you most interested in working with?', time: '10:18 AM' },
-      { from: 'user', text: 'I worked on a computational linguistics project under Prof. Chen at NYU — I\'d like that highlighted. And I\'m hoping to work with Prof. Manning at Stanford.', time: '10:45 AM' },
-      { from: 'writer', text: 'Perfect! That\'s a strong connection to draw. I\'ve started drafting and will have the first version ready by tomorrow morning. I\'ll ensure the narrative flows from your NYU work directly into your Stanford research goals.', time: '11:02 AM' },
-      { from: 'writer', text: 'I\'ve completed the first draft — would you like to review it now? I\'m available for a quick call if you\'d like to discuss before finalising.', time: '2:34 PM' },
-    ]
-  },
-  { id: 2, writer: 'James Whitfield', avatar: 'JW', orderId: 'XW-47103', service: 'LinkedIn Profile', lastMsg: 'Your profile is ready for review. I\'ve rewritten...', time: '1h ago', unread: 1, online: true,
-    messages: [
-      { from: 'writer', text: 'Hi! I\'ve done a deep audit of your current LinkedIn. The headline and summary need the most work — they\'re underselling you significantly.', time: 'Yesterday 3:00 PM' },
-      { from: 'user', text: 'That\'s what I figured. Happy to have you take full creative control.', time: 'Yesterday 3:15 PM' },
-      { from: 'writer', text: 'Your profile is ready for review. I\'ve rewritten the headline, about section, and experience bullets. Also optimised for 14 relevant keywords.', time: '9:10 AM' },
-    ]
-  },
-  { id: 3, writer: 'Priya Nair', avatar: 'PN', orderId: 'XW-46892', service: 'Blog Post', lastMsg: 'All done! Hope you love it. Let me know if...', time: '2d ago', unread: 0, online: false,
-    messages: [
-      { from: 'writer', text: 'Delivered! The post is 1,520 words, optimised for the keyword "remote work productivity tools". Readability score is 72 (Flesch-Kincaid).', time: 'Apr 18 4:00 PM' },
-      { from: 'user', text: 'This is excellent! Exactly what I needed. Publishing tomorrow.', time: 'Apr 18 5:30 PM' },
-      { from: 'writer', text: 'All done! Hope you love it. Let me know if you need any tweaks before publishing — happy to help!', time: 'Apr 18 5:45 PM' },
-    ]
-  },
-];
-
-const SAVED_WRITERS = [
-  { name: 'Dr. Amara Singh', avatar: 'AS', specialty: 'Academic & SOP', rating: 4.97, reviews: 312, badge: 'Top Writer', price: 18, online: true },
-  { name: 'James Whitfield', avatar: 'JW', specialty: 'Resume & Career', rating: 4.95, reviews: 487, badge: 'Elite', price: 15, online: true },
-  { name: 'Marcus Chen', avatar: 'MC', specialty: 'Business Writing', rating: 4.98, reviews: 198, badge: 'Top Writer', price: 20, online: false },
-  { name: 'Priya Nair', avatar: 'PN', specialty: 'Content & Blog', rating: 4.92, reviews: 256, badge: 'Rising Star', price: 12, online: false },
-];
+/* ── HARD-CODED DATA REMOVED ── */
 
 /* ── STATUS ── */
 const STATUS_COLORS = {
@@ -69,7 +30,9 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
     { id: 'overview', icon: '⊞', label: 'Overview' },
     { id: 'new-order', icon: '📝', label: 'New Order' },
     { id: 'orders', icon: '📋', label: 'My Orders' },
+    { id: 'wallet', icon: '💳', label: 'Wallet & Credits' },
     { id: 'messages', icon: '💬', label: 'Messages' },
+    { id: 'notifications', icon: '🔔', label: 'Notifications' },
     { id: 'writers', icon: '✍️', label: 'My Writers' },
     { id: 'settings', icon: '⚙️', label: 'Settings' },
   ];
@@ -125,12 +88,12 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
 }
 
 /* ── OVERVIEW ── */
-function Overview({ setActive, setSelectedOrder, projects = [], userName = "Student" }) {
+function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student" }) {
   const stats = [
     { label: 'Active Orders', val: projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').length, icon: '⚡', color: 'var(--teal)', sub: 'In progress' },
     { label: 'Completed', val: projects.filter(o => o.status === 'COMPLETED').length, icon: '✓', color: 'var(--green)', sub: 'All time' },
-    { label: 'Total Spent', val: `$${projects.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString()}`, icon: '💳', color: 'var(--gold)', sub: 'Order volume' },
-    { label: 'Saved Writers', val: SAVED_WRITERS.length, icon: '✍️', color: '#f472b6', sub: 'Favorites' },
+    { label: 'Wallet Balance', val: `₹0`, icon: '💳', color: 'var(--gold)', sub: 'Available credits' },
+    { label: 'Saved Writers', val: writers.length, icon: '✍️', color: '#f472b6', sub: 'Favorites' },
   ];
 
   const activeOrders = projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').map(o => {
@@ -164,31 +127,55 @@ function Overview({ setActive, setSelectedOrder, projects = [], userName = "Stud
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {stats.map((s, i) => (
-          <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '20px 20px', animation: `fadeUp 0.3s ease ${i * 0.06}s both` }}>
+          <div key={i} onClick={() => s.label.includes('Wallet') && setActive('wallet')} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '20px 20px', animation: `fadeUp 0.3s ease ${i * 0.06}s both`, cursor: s.label.includes('Wallet') ? 'pointer' : 'default' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{s.label}</span>
               <span style={{ fontSize: 18 }}>{s.icon}</span>
             </div>
             <div style={{ fontSize: 32, fontWeight: 700, color: s.color, marginBottom: 4, letterSpacing: '-0.02em' }}>{s.val}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{s.sub}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{s.sub}</div>
+              {s.label.includes('Wallet') && <span style={{ fontSize: 10, color: 'var(--teal-light)', fontWeight: 700 }}>TOP UP →</span>}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Active orders */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600 }}>Active Orders</h2>
-          <button onClick={() => setActive('orders')} style={{ fontSize: 13, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>View all →</button>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, marginBottom: 32 }}>
+        {/* Active orders */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Active Orders</h2>
+            <button onClick={() => setActive('orders')} style={{ fontSize: 13, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>View all →</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {activeOrders.length > 0 ? activeOrders.map((order, i) => (
+              <ActiveOrderCard key={order.id} order={order} onClick={() => { setActive('orders'); setSelectedOrder(order.id); }} />
+            )) : (
+              <div style={{ padding: 40, textAlign: 'center', border: '1px dashed var(--border2)', borderRadius: 10, color: 'var(--text-muted)' }}>
+                No active orders found. <button onClick={() => setActive('new-order')} style={{ color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 14 }}>Start your first order</button>
+              </div>
+            )}
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {activeOrders.length > 0 ? activeOrders.map((order, i) => (
-            <ActiveOrderCard key={order.id} order={order} onClick={() => { setActive('orders'); setSelectedOrder(order.id); }} />
-          )) : (
-            <div style={{ padding: 40, textAlign: 'center', border: '1px dashed var(--border2)', borderRadius: 10, color: 'var(--text-muted)' }}>
-              No active orders found. <button onClick={() => setActive('new-order')} style={{ color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 14 }}>Start your first order</button>
-            </div>
-          )}
+
+        {/* Quick Reorder */}
+        <div>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Quick Reorder</h2>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: 16 }}>
+            {projects.filter(p => p.status === 'COMPLETED').slice(0, 2).map(p => (
+              <div key={p.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border2)' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{p.serviceType || p.title}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>₹{p.amount?.toLocaleString()}</span>
+                  <button onClick={() => setActive('new-order')} style={{ padding: '4px 10px', borderRadius: 4, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--teal)', color: 'var(--teal-light)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>REORDER</button>
+                </div>
+              </div>
+            ))}
+            {projects.filter(p => p.status === 'COMPLETED').length === 0 && (
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', padding: '10px 0' }}>Completed orders will appear here for easy reordering.</div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -259,7 +246,48 @@ function ActiveOrderCard({ order, onClick }) {
 /* ── ORDERS ── */
 function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
   const [filter, setFilter] = useState('All');
+  const [search, setSearch] = useState('');
   const filters = ['All', 'Active', 'Delivered', 'Revision'];
+  
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketSuccess, setTicketSuccess] = useState(false);
+  const [ticketError, setTicketError] = useState('');
+  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketMessage, setTicketMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleCreateTicket = async () => {
+    setTicketError('');
+    if (!ticketSubject || !ticketMessage) {
+      setTicketError('Please fill in all fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'Order',
+          subject: ticketSubject,
+          description: ticketMessage,
+          orderId: projects.find(p => p.id === selectedOrder)?.id,
+          priority: 'Medium'
+        })
+      });
+      if (res.ok) {
+        setTicketSuccess(true);
+        setTicketSubject('');
+        setTicketMessage('');
+      } else {
+        setTicketError('Failed to create ticket');
+      }
+    } catch (err) {
+      console.error(err);
+      setTicketError('Error creating ticket');
+    }
+    setSubmitting(false);
+  };
   
   const MAPPED_ORDERS = projects.map(p => {
     let displayStatus = 'In Progress';
@@ -284,12 +312,17 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
     };
   });
 
-  const filtered = MAPPED_ORDERS.filter(o =>
-    filter === 'All' ? true :
-    filter === 'Active' ? !['Delivered', 'Revision Requested'].includes(o.status) :
-    filter === 'Delivered' ? o.status === 'Delivered' :
-    filter === 'Revision' ? o.status === 'Revision Requested' : true
-  );
+  const filtered = MAPPED_ORDERS.filter(o => {
+    const matchesFilter = filter === 'All' ? true :
+      filter === 'Active' ? !['Delivered', 'Revision Requested'].includes(o.status) :
+      filter === 'Delivered' ? o.status === 'Delivered' :
+      filter === 'Revision' ? o.status === 'Revision Requested' : true;
+    
+    const matchesSearch = o.id.toLowerCase().includes(search.toLowerCase()) || 
+                          o.service.toLowerCase().includes(search.toLowerCase());
+    
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
@@ -298,8 +331,8 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
         <button onClick={() => setActive('new-order')} style={{ background: 'var(--teal)', color: '#fff', padding: '9px 20px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>+ New Order</button>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      {/* Filters & Search */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
         {filters.map(f => (
           <button key={f} onClick={() => setFilter(f)} style={{
             padding: '6px 16px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
@@ -309,6 +342,15 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
             fontWeight: filter === f ? 600 : 400,
           }}>{f}</button>
         ))}
+        <div style={{ marginLeft: 'auto', background: 'var(--surface2)', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, width: 240, border: '1px solid var(--border2)' }}>
+          <span style={{ color: 'var(--text-dim)', fontSize: 13 }}>🔍</span>
+          <input 
+            placeholder="Search by ID or service..." 
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, width: '100%' }} 
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -355,36 +397,142 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
         const stepIdx = o.status === 'Delivered' ? 4 : 2;
         return (
           <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
               <div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{o.id} · Submitted {o.submitted} · {o.words.toLocaleString()} words</div>
               </div>
-              <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, background: sc.bg, color: sc.color }}>{o.status}</span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, background: sc.bg, color: sc.color, display: 'block', marginBottom: 8 }}>{o.status}</span>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>₹{o.price.toLocaleString()}</div>
+              </div>
             </div>
             {/* Track */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Progress</div>
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Order Tracking</div>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 {TRACK.map((step, i) => (
                   <React.Fragment key={i}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, transition: 'all 0.3s', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', color: i <= stepIdx ? '#fff' : 'var(--text-dim)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}` }}>{i < stepIdx ? '✓' : i + 1}</div>
-                      <div style={{ fontSize: 10, color: i <= stepIdx ? 'var(--text)' : 'var(--text-dim)', textAlign: 'center', maxWidth: 60, lineHeight: 1.3 }}>{step}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, transition: 'all 0.3s', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', color: i <= stepIdx ? '#fff' : 'var(--text-dim)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}` }}>{i < stepIdx ? '✓' : i + 1}</div>
+                      <div style={{ fontSize: 11, color: i <= stepIdx ? 'var(--text)' : 'var(--text-dim)', textAlign: 'center', maxWidth: 70, position: 'absolute', top: 40, width: 80 }}>{step}</div>
                     </div>
-                    {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', marginBottom: 18, transition: 'background 0.3s' }} />}
+                    {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', marginBottom: 0, transition: 'background 0.3s' }} />}
                   </React.Fragment>
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button style={{ padding: '9px 18px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Message Writer</button>
-              {o.status === 'Delivered' && <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Request Revision</button>}
-              <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Download Brief</button>
+
+            <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
+              <div>
+                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Writer Information</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✍️</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{o.writer}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Top Rated Writer</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Actions</h4>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setActive('messages')} style={{ padding: '9px 18px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Message Writer</button>
+                  <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Download Brief</button>
+                </div>
+              </div>
             </div>
+
+            {o.status === 'Delivered' && (
+              <div style={{ marginTop: 12, padding: 20, background: 'rgba(34,197,94,0.05)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#4ade80' }}>✅ Content Ready for Download</div>
+                  <button style={{ padding: '6px 14px', borderRadius: 6, background: '#22c55e', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Download Work ↓</button>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>Rate Writer ★</button>
+                  <button style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Request Revision</button>
+                  <button style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Reorder Item 🔄</button>
+                </div>
+              </div>
+            )}
+
+            {o.status !== 'Delivered' && (
+               <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
+                  <button onClick={() => setShowTicketModal(true)} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
+               </div>
+            )}
           </div>
         );
       })()}
+
+      {/* Ticket Modal */}
+      {showTicketModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--surface)', padding: 24, borderRadius: 12, width: 450, border: '1px solid var(--border2)', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
+            {ticketSuccess ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>🎉</div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>Ticket Created!</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Your support ticket has been created successfully. Our team will review it shortly.</p>
+                <button 
+                  onClick={() => { setShowTicketModal(false); setTicketSuccess(false); setTicketError(''); }} 
+                  style={{ padding: '10px 24px', borderRadius: 8, background: 'var(--teal)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, color: 'var(--text)' }}>Report Issue / Request Refund</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>Our team will review your request and get back to you within 24 hours.</p>
+                
+                {ticketError && (
+                  <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '10px', borderRadius: 6, fontSize: 13, marginBottom: 16 }}>
+                    {ticketError}
+                  </div>
+                )}
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 6 }}>Subject</label>
+                  <input 
+                    value={ticketSubject} 
+                    onChange={e => setTicketSubject(e.target.value)} 
+                    placeholder="e.g., Formatting issue, Plagiarism check, etc."
+                    style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} 
+                  />
+                </div>
+                
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 6 }}>Detailed Description</label>
+                  <textarea 
+                    value={ticketMessage} 
+                    onChange={e => setTicketMessage(e.target.value)} 
+                    placeholder="Please describe your issue in detail..."
+                    style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, minHeight: 120, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} 
+                  />
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <button 
+                    onClick={() => { setShowTicketModal(false); setTicketError(''); }} 
+                    style={{ padding: '10px 18px', borderRadius: 8, background: 'var(--surface3)', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleCreateTicket} 
+                    disabled={submitting}
+                    style={{ padding: '10px 18px', borderRadius: 8, background: 'var(--teal)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Ticket'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -549,7 +697,7 @@ function Messages({ projects = [], userId }) {
 }
 
 /* ── WRITERS ── */
-function SavedWriters({ setActive }) {
+function SavedWriters({ setActive, writers = [] }) {
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -557,7 +705,7 @@ function SavedWriters({ setActive }) {
         <a href="index.html#writers" style={{ fontSize: 13, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Browse more writers →</a>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-        {SAVED_WRITERS.map((w, i) => {
+        {writers.map((w, i) => {
           const badgeColors = { 'Top Writer': 'var(--teal)', 'Elite': 'var(--gold)', 'Rising Star': 'var(--green)' };
           return (
             <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: 20, transition: 'all 0.2s' }}
@@ -616,6 +764,24 @@ function Settings() {
               {opt}
             </label>
           ))}
+        </div>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 16 }}>TEAM & COLLABORATION</div>
+          <div style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 10, padding: 20, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>Team Accounts</div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Invite colleagues to collaborate on orders.</div>
+              </div>
+              <button style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 600 }}>+ Invite Member</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 24, height: 24, borderRadius: 100, background: 'var(--teal)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>MK</div>
+              <span style={{ fontSize: 13 }}>Meera Krishnan (Owner)</span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-dim)' }}>Full Access</span>
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>Agency plan required for more than 2 members. <span style={{ color: 'var(--teal-light)', cursor: 'pointer' }}>Upgrade Now</span></p>
         </div>
         <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }} style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s' }}>
           {saved ? '✓ Saved!' : 'Save Changes'}
@@ -882,6 +1048,7 @@ export default function App() {
   const [active, setActive] = useState('overview');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [writers, setWriters] = useState([]);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
 
@@ -900,20 +1067,34 @@ export default function App() {
         setLoading(false);
       }
     };
+
+    const fetchWriters = async () => {
+      try {
+        const res = await fetch('/api/writers');
+        const data = await res.json();
+        setWriters(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Fetch writers error:", err);
+      }
+    };
+
     fetchProjects();
+    fetchWriters();
   }, []);
 
   useEffect(() => { localStorage.setItem('xw_dash_tab', active); }, [active]);
 
   const userName = session?.user?.name || "Student";
-  const unreadCount = CONVERSATIONS.reduce((a, c) => a + c.unread, 0);
+  const unreadCount = 0;
 
   const content = {
-    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} userName={userName} />,
+    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} />,
     'new-order': <NewOrder setActive={setActive} />,
     orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} projects={projects} setActive={setActive} />,
+    wallet: <Wallet projects={projects} userName={userName} />,
     messages: <Messages projects={projects} userId={session?.user?.id} />,
-    writers: <SavedWriters setActive={setActive} />,
+    notifications: <Notifications userName={userName} />,
+    writers: <SavedWriters setActive={setActive} writers={writers} />,
     settings: <Settings />,
   };
 

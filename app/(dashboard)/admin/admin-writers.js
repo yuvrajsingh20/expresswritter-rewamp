@@ -8,8 +8,9 @@ export function AdminWriters({ freelancers = [] }) {
   const [mainTab, setMainTab] = React.useState('Writers');
   const [tab, setTab] = React.useState('All Writers');
   const [selected, setSelected] = React.useState(null);
-  const [saved, setSaved] = React.useState(false);
   const [localFreelancers, setLocalFreelancers] = useState(freelancers);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkAction, setBulkAction] = useState('');
 
   useEffect(() => {
     setLocalFreelancers(freelancers);
@@ -30,10 +31,41 @@ export function AdminWriters({ freelancers = [] }) {
           ...f, 
           freelancerProfile: { ...f.freelancerProfile, ...data } 
         } : f));
+        return true;
       }
+      return false;
     } catch (err) {
       console.error(err);
+      return false;
     }
+  };
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedIds.length === 0) return;
+    let data = {};
+    if (bulkAction === 'Suspend') data = { status: 'Suspended' };
+    else if (bulkAction === 'Approve') data = { status: 'Active', isVerified: true };
+    else if (bulkAction === 'Deactivate') data = { status: 'Inactive' };
+
+    let successCount = 0;
+    for (const id of selectedIds) {
+      const ok = await handleUpdate(id, data);
+      if (ok) successCount++;
+    }
+    alert(`Bulk action applied to ${successCount} writers.`);
+    setSelectedIds([]);
+    setBulkAction('');
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filtered.length) setSelectedIds([]);
+    else setSelectedIds(filtered.map(w => w.id));
+  };
+
+  const toggleSelect = (e, id) => {
+    e.stopPropagation();
+    if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(i => i !== id));
+    else setSelectedIds([...selectedIds, id]);
   };
 
   const WRITERS = localFreelancers.map(f => ({
@@ -97,15 +129,34 @@ export function AdminWriters({ freelancers = [] }) {
           <SubTabs tabs={['All Writers', 'Active', 'Pending', 'Inactive']} active={tab} onChange={t => { setTab(t); setSelected(null); }} />
 
           <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 340px)', minHeight: 400 }}>
-            <div style={{ width: selected ? 340 : '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
-              {filtered.map(w => (
-                <div key={w.id} onClick={() => setSelected(w.id === selected ? null : w.id)} style={{
-                  background: selected === w.id ? 'rgba(13,148,136,0.06)' : 'var(--surface2)',
-                  border: `1px solid ${selected === w.id ? 'var(--teal)' : 'var(--border)'}`,
-                  borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all .2s',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>{w.avatar}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={toggleSelectAll} style={{ cursor: 'pointer' }} />
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Select All ({filtered.length})</span>
+            </div>
+            {selectedIds.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, animation: 'fadeIn .2s ease' }}>
+                <select value={bulkAction} onChange={e => setBulkAction(e.target.value)} style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text)', padding: '4px 8px', borderRadius: 6, fontSize: 12 }}>
+                  <option value="">Bulk Action...</option>
+                  <option value="Approve">Approve & Verify</option>
+                  <option value="Suspend">Suspend Accounts</option>
+                  <option value="Deactivate">Deactivate</option>
+                </select>
+                <Btn small onClick={handleBulkAction} disabled={!bulkAction}>Apply</Btn>
+              </div>
+            )}
+          </div>
+          <div style={{ width: selected ? 340 : '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
+            {filtered.map(w => (
+              <div key={w.id} onClick={() => setSelected(w.id === selected ? null : w.id)} style={{
+                background: selected === w.id ? 'rgba(13,148,136,0.06)' : 'var(--surface2)',
+                border: `1px solid ${selected === w.id ? 'var(--teal)' : 'var(--border)'}`,
+                borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all .2s',
+                position: 'relative'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input type="checkbox" checked={selectedIds.includes(w.id)} onChange={(e) => toggleSelect(e, w.id)} style={{ cursor: 'pointer' }} />
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>{w.avatar}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{w.name}</span>

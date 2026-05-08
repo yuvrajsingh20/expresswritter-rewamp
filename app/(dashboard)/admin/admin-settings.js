@@ -11,12 +11,33 @@ export function AdminTheme() {
     buttonRadius: 6, cardRadius: 8, buttonStyle: 'filled',
     darkMode: true, compactDensity: false,
   });
+  const [loading, setLoading] = React.useState(true);
   const [saved, setSaved] = React.useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/config/theme')
+      .then(res => res.json())
+      .then(data => {
+        if (data) setTheme(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   const save = () => {
-    document.documentElement.style.setProperty('--teal', theme.accent);
-    document.documentElement.style.setProperty('--bg', theme.bg);
-    setSaved(true); setTimeout(() => setSaved(false), 2500);
+    setSaved(true);
+    fetch('/api/admin/config/theme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(theme)
+    }).finally(() => {
+      document.documentElement.style.setProperty('--teal', theme.accent);
+      document.documentElement.style.setProperty('--bg', theme.bg);
+      setTimeout(() => setSaved(false), 2500);
+    });
   };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)' }}>Loading theme engine...</div>;
 
   const PRESETS = [
     { name: 'Teal Dark', bg: '#09090f', accent: '#0d9488' },
@@ -136,7 +157,33 @@ export function AdminTheme() {
 /* ── ORDER WORKFLOW MATRIX ── */
 export function AdminWorkflow() {
   const [saved, setSaved] = React.useState(false);
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
+  const [loading, setLoading] = React.useState(true);
+  const [automations, setAutomations] = React.useState({
+    autoAssign: true, autoEscalate: true, slaAlerts: true, clientNotify: true, writerNotify: true, aiQC: false,
+  });
+
+  useEffect(() => {
+    fetch('/api/admin/config/workflow')
+      .then(res => res.json())
+      .then(data => {
+        if (data) setAutomations(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const save = () => {
+    setSaved(true);
+    fetch('/api/admin/config/workflow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(automations)
+    }).finally(() => {
+      setTimeout(() => setSaved(false), 2500);
+    });
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)' }}>Loading workflow engine...</div>;
 
   const STATUSES = [
     { id: 'new', label: 'New Order', color: '#3b82f6', icon: '📥', desc: 'Order received, awaiting writer assignment' },
@@ -159,10 +206,6 @@ export function AdminWorkflow() {
     { from: 'revision', to: 'progress', auto: true, trigger: 'Writer acknowledges revision', sla: '2h' },
     { from: 'delivered', to: 'closed', auto: true, trigger: 'Client approves or 14 days pass', sla: '14d' },
   ];
-
-  const [automations, setAutomations] = React.useState({
-    autoAssign: true, autoEscalate: true, slaAlerts: true, clientNotify: true, writerNotify: true, aiQC: false,
-  });
 
   return (
     <div>

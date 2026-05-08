@@ -9,40 +9,50 @@ import {
   ShieldCheck, Zap, Star 
 } from 'lucide-react';
 
-import servicesData from '@/data/services_data.json';
-
-const SERVICES = Object.values(servicesData.individualServices).flat().map(s => {
-  const priceNum = typeof s.price === 'string' 
-    ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
-    : (s.price || 0);
-  return { ...s, price: priceNum || 0 };
-});
-
 export default function StartProjectPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState([]);
   const [formData, setFormData] = useState({
     serviceId: '',
     deadline: '',
     description: '',
   });
 
-  const selectedService = SERVICES.find(s => s.id === formData.serviceId);
+  useEffect(() => {
+    fetch('/api/services')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setServices(data.map(s => ({
+            id: s.id,
+            name: s.name,
+            price: s.basePrice || 0,
+            icon: <FileText size={20} />
+          })));
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const selectedService = services.find(s => s.id === formData.serviceId);
 
   const handleNextStep = () => {
     if (step === 2) {
-      // Save draft to session storage
       sessionStorage.setItem('pendingProject', JSON.stringify({
         ...formData,
         serviceName: selectedService.name,
         price: selectedService.price
       }));
-      // Redirect to register
       router.push('/register?role=STUDENT&redirect=/student/new-order');
     } else {
       setStep(step + 1);
     }
   };
+
+  if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0a192f' }}>INITIALIZING PLATFORM...</div>;
 
   return (
     <div className="bg-white min-h-screen text-[#0a192f] selection:bg-blue-100 selection:text-blue-900">
@@ -83,7 +93,7 @@ export default function StartProjectPage() {
               exit={{ opacity: 0, x: -20 }}
               className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
             >
-              {SERVICES.map((s) => (
+              {services.map((s) => (
                 <div 
                   key={s.id}
                   onClick={() => setFormData({ ...formData, serviceId: s.id })}
@@ -96,7 +106,7 @@ export default function StartProjectPage() {
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
                     formData.serviceId === s.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-blue-600'
                   }`}>
-                    <FileText size={20} />
+                    {s.icon}
                   </div>
                   <div>
                     <h3 className="font-black text-sm mb-1 uppercase tracking-widest">{s.name}</h3>

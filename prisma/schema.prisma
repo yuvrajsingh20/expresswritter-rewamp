@@ -70,6 +70,8 @@ model User {
   projectLogs      ProjectLog[]
   freelancerProfile FreelancerProfile?
   payoutRequests    PayoutRequest[]
+  clientTickets    Ticket[] @relation("ClientTickets")
+  writerTickets    Ticket[] @relation("WriterTickets")
 }
 
 model FreelancerProfile {
@@ -194,6 +196,29 @@ model Notification {
   user        User     @relation(fields: [userId], references: [id])
 }
 
+model Ticket {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  type          String   // Order, Client, Writer
+  subject       String
+  description   String?  // Detailed issue description
+  priority      String   @default("Medium") // High, Medium, Low
+  status        String   @default("Open") // Open, In Progress, Resolved
+  escalation    String   @default("None") // Level 1, Level 2, Level 3, None
+  aiStatus      String?  // Draft sent, Monitoring, etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  clientId      String?  @db.ObjectId
+  client        User?    @relation("ClientTickets", fields: [clientId], references: [id])
+  
+  writerId      String?  @db.ObjectId
+  writer        User?    @relation("WriterTickets", fields: [writerId], references: [id])
+  
+  orderId       String?  @db.ObjectId
+  order         Order?   @relation(fields: [orderId], references: [id])
+}
+
 model Order {
   id            String        @id @default(auto()) @map("_id") @db.ObjectId
   amount        Float
@@ -209,6 +234,7 @@ model Order {
   student       User          @relation(fields: [studentId], references: [id])
 
   chat          Chat?
+  tickets       Ticket[]
 }
 
 model ProjectLog {
@@ -269,4 +295,56 @@ model Chat {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+model Service {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug          String   @unique
+  name          String
+  description   String
+  features      String[]
+  basePrice     Float
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
 
+model RefundRequest {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId       String   @db.ObjectId
+  userId        String   @db.ObjectId
+  amount        Float
+  reason        String
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  priority      String   @default("MEDIUM")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PromoCode {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  code          String   @unique
+  type          String   // PERCENTAGE, FIXED
+  value         Float
+  minOrderValue Float    @default(0)
+  usageLimit    Int?
+  usageCount    Int      @default(0)
+  expiryDate    DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model SystemConfig {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  key           String   @unique // e.g. "SEO_SETTINGS", "MAINTENANCE_MODE"
+  value         Json
+  updatedAt     DateTime @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String?  @db.ObjectId
+  userName      String?
+  action        String
+  details       String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+}

@@ -52,4 +52,6 @@ node_modules/
 .next/
 .env
 dist/
-build/
+build/node_modules/
+.next/
+.env

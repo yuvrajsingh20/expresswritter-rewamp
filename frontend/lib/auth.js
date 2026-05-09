@@ -95,10 +95,19 @@ export const authOptions = {
           if (!credentials?.email || !credentials?.password) return null;
           const user = await prisma.user.findUnique({ where: { email: credentials.email } });
           if (!user || !user.password) return null;
+          
           const isValid = await bcrypt.compare(credentials.password, user.password);
           if (!isValid) return null;
+          
+          if (!user.emailVerified) {
+            throw new Error("EMAIL_NOT_VERIFIED");
+          }
+          
           return { id: user.id, name: user.name, email: user.email, role: user.role };
         } catch (error) {
+          if (error.message === "EMAIL_NOT_VERIFIED") {
+            throw error;
+          }
           return null;
         }
       }

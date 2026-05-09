@@ -5,7 +5,7 @@ import { EagleEyePanel, DirectChatPanel } from "./admin-writers";
 import { useChat } from "@/hooks/useChat";
 import { useSession } from "next-auth/react";
 
-export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
+export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
   const [loading, setLoading] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
@@ -88,8 +88,8 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
       {mainTab === 'Eagle Eye' && <EagleEyePanel />}
       {mainTab === 'Direct Chat' && <DirectChatPanel freelancers={freelancers} />}
       {mainTab === 'Order Assignments' && (
-        <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: 20, animation: 'fadeIn .3s ease' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: isMobile ? 12 : 20, animation: 'fadeIn .3s ease' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: isMobile ? 12 : 0, marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700 }}>New Order Requests (Awaiting Assignment)</h3>
             {selectedIds.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'fadeIn .2s ease', background: 'rgba(13,148,136,0.1)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--teal)' }}>
@@ -149,6 +149,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
               freelancers={freelancers} 
               onClose={() => setActiveProject(null)} 
               userId={session?.user?.id}
+              isMobile={isMobile}
             />
           ) : (
             <>
@@ -172,7 +173,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects }) {
   );
 }
 
-function AdminProjectChatView({ project, freelancers, onClose, userId }) {
+function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile }) {
   const [collabId, setCollabId] = useState('');
   const [adding, setAdding] = useState(false);
 
@@ -225,7 +226,7 @@ function AdminProjectChatView({ project, freelancers, onClose, userId }) {
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', marginTop: 40 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: isMobile ? 12 : 0, padding: isMobile ? '12px' : '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <div>
@@ -233,8 +234,8 @@ function AdminProjectChatView({ project, freelancers, onClose, userId }) {
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Student: {project.student?.name} | Writer: {project.freelancer?.name}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={collabId} onChange={e => setCollabId(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12, outline: 'none' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: 8, width: isMobile ? '100%' : 'auto' }}>
+          <select value={collabId} onChange={e => setCollabId(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12, outline: 'none', width: isMobile ? '100%' : 'auto' }}>
             <option value="">Select Writer to Add...</option>
             {freelancers.filter(f => (f.freelancerProfile?.status || 'Active') === 'Active').map(f => (
               <option key={f.id} value={f.id}>{f.name}</option>

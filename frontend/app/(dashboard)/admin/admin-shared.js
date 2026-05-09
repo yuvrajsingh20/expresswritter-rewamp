@@ -25,7 +25,7 @@ export function Toggle({ value, onChange, label, sublabel, disabled }) {
 
 export function SectionHeader({ title, subtitle, action }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
       <div>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{title}</h2>
         {subtitle && <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 560 }}>{subtitle}</p>}

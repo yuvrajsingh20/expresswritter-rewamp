@@ -84,7 +84,7 @@ export default function FreelancerDashboardClient({ session, profile }) {
 
   if (!profile.isVerified) {
     return (
-      <div className="flex-1 ml-64 flex flex-col bg-[#FBFBFB] min-h-screen text-[#111111]">
+      <div className="flex-1 md:ml-64 flex flex-col bg-[#FBFBFB] min-h-screen text-[#111111]">
         <main className="flex-1 flex flex-col items-center justify-center p-10 max-w-2xl mx-auto text-center space-y-8">
            <div className="w-24 h-24 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center shadow-xl shadow-amber-500/10 animate-bounce">
               <Clock size={48} />
@@ -112,7 +112,7 @@ export default function FreelancerDashboardClient({ session, profile }) {
   ];
 
   return (
-    <div className="flex-1 ml-64 flex flex-col bg-[#FBFBFB] min-h-screen text-[#111111]">
+    <div className="flex-1 md:ml-64 flex flex-col bg-[#FBFBFB] min-h-screen text-[#111111]">
       <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 sticky top-0 z-10">
         <div className="flex items-center gap-3">
            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Workspace</span>
@@ -185,7 +185,7 @@ export default function FreelancerDashboardClient({ session, profile }) {
               <div className="space-y-4 pt-4">
                   {activeTab === 'ACTIVE' ? (
                     tasks.length > 0 ? tasks.map((task) => (
-                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex items-center justify-between">
+                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-6">
                           <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-sm text-slate-400 group-hover:bg-[#0067B8]/5 group-hover:text-[#0067B8] transition-colors">
                              <Briefcase size={18} />
@@ -231,7 +231,7 @@ export default function FreelancerDashboardClient({ session, profile }) {
                     )
                   ) : (
                     availableTasks.length > 0 ? availableTasks.map((task) => (
-                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex items-center justify-between">
+                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-6">
                           <div className="w-10 h-10 bg-blue-50/50 flex items-center justify-center rounded-sm text-[#0067B8]">
                              <Zap size={18} />

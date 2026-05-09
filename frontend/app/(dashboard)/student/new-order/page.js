@@ -168,7 +168,7 @@ export default function NewOrderPage() {
       <Sidebar role="STUDENT" />
       <script src="https://checkout.razorpay.com/v1/checkout.js" async />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="flex-1 md:ml-64 flex flex-col">
         <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 sticky top-0 z-10 transition-all">
           <div className="flex items-center gap-4">
              <button onClick={() => router.back()} className="text-xs font-semibold text-slate-500 hover:text-[#0067B8] flex items-center gap-1 transition-colors">

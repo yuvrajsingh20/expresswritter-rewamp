@@ -3,28 +3,30 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
 
 export async function GET() {
-  const authUser = await getAuthUser();
-  if (!authUser || authUser.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const authUser = await getAuthUser();
+    if (!authUser || authUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const config = await prisma.systemConfig.findUnique({
       where: { key: "INTEGRATION_SETTINGS" },
     });
     return NextResponse.json(config ? config.value : null);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch integration settings" }, { status: 500 });
+    console.error("GET /api/admin/config/integrations error:", error);
+    // Return null on error to allow frontend to use default values instead of crashing with 500
+    return NextResponse.json(null);
   }
 }
 
 export async function POST(req) {
-  const authUser = await getAuthUser();
-  if (!authUser || authUser.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const authUser = await getAuthUser();
+    if (!authUser || authUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const data = await req.json();
     const config = await prisma.systemConfig.upsert({
       where: { key: "INTEGRATION_SETTINGS" },
@@ -44,7 +46,8 @@ export async function POST(req) {
 
     return NextResponse.json(config);
   } catch (error) {
-    console.error(error);
+    console.error("POST /api/admin/config/integrations error:", error);
     return NextResponse.json({ error: "Failed to update integration settings" }, { status: 500 });
   }
 }
+

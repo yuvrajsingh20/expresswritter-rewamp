@@ -16,6 +16,7 @@ export function AdminIntegrations() {
   const [saved, setSaved] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [revealed, setRevealed] = React.useState({});
+  const [activeGroup, setActiveGroup] = React.useState(null);
 
   useEffect(() => {
     fetch('/api/admin/config/integrations')
@@ -137,87 +138,95 @@ export function AdminIntegrations() {
     { label: 'Automation', color: '#6d4ef7', icon: '⚡', items: ['Make.com (Zapier alt.)'] },
   ];
 
-  const [activeGroup, setActiveGroup] = React.useState(null);
+  try {
+    return (
+      <div>
+        <SectionHeader title="API Integrations" subtitle="Connect third-party services. All credentials are AES-256 encrypted at rest." />
 
-  return (
-    <div>
-      <SectionHeader title="API Integrations" subtitle="Connect third-party services. All credentials are AES-256 encrypted at rest." />
-
-      {/* Category overview */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
-        {categories.map(cat => (
-          <div key={cat.label} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14 }}>{cat.icon}</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: cat.color }}>{cat.label}</span>
-            <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{cat.items.length} apps</span>
+        {/* Category overview */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
+          {categories.map(cat => (
+            <div key={cat.label} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14 }}>{cat.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: cat.color }}>{cat.label}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{cat.items.length} apps</span>
+            </div>
+          ))}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)' }}>
+            <StatusDot active={true} /> {Object.values(enabled).filter(Boolean).length} connected
           </div>
-        ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)' }}>
-          <StatusDot active={true} /> {Object.values(enabled).filter(Boolean).length} connected
         </div>
-      </div>
 
-      {/* Integration cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {groups.map(g => {
-          const isOpen = activeGroup === g.label;
-          const isOn = enabled[g.integrationKey];
-          return (
-            <Card key={g.label} style={{ overflow: 'hidden' }}>
-              <div onClick={() => setActiveGroup(isOpen ? null : g.label)} style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: `${g.color}18`, border: `1px solid ${g.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{g.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>{g.label}</span>
-                    {isOn ? <Pill label="Connected" color="#22c55e" /> : <Pill label="Disabled" color="#6b7280" />}
+        {/* Integration cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {groups.map(g => {
+            const isOpen = activeGroup === g.label;
+            const isOn = enabled[g.integrationKey];
+            return (
+              <Card key={g.label} style={{ overflow: 'hidden' }}>
+                <div onClick={() => setActiveGroup(isOpen ? null : g.label)} style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: `${g.color}18`, border: `1px solid ${g.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{g.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>{g.label}</span>
+                      {isOn ? <Pill label="Connected" color="#22c55e" /> : <Pill label="Disabled" color="#6b7280" />}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{g.desc}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{g.desc}</div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div onClick={e => { e.stopPropagation(); setEnabled(en => ({ ...en, [g.integrationKey]: !en[g.integrationKey] })); }}>
-                    <Toggle value={isOn} onChange={() => {}} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div onClick={e => { e.stopPropagation(); setEnabled(en => ({ ...en, [g.integrationKey]: !en[g.integrationKey] })); }}>
+                      <Toggle value={isOn} onChange={() => {}} />
+                    </div>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 14, transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▾</span>
                   </div>
-                  <span style={{ color: 'var(--text-dim)', fontSize: 14, transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▾</span>
                 </div>
-              </div>
 
-              {isOpen && (
-                <div style={{ borderTop: '1px solid var(--border)', padding: '16px', animation: 'fadeUp .25s ease' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>Credentials</div>
-                      {g.fields.map(f => (
-                        <div key={f.key} style={{ marginBottom: 12 }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{f.label}</label>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <input type={f.secret && !revealed[f.key] ? 'password' : 'text'} value={keys[f.key]} onChange={e => setKeys(k => ({ ...k, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ flex: 1, background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 10px', color: 'var(--text)', fontSize: 12, outline: 'none', fontFamily: 'var(--mono)' }} />
-                            {f.secret && <button onClick={() => toggleReveal(f.key)} style={{ padding: '0 10px', background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13 }}>{revealed[f.key] ? '🙈' : '👁'}</button>}
+                {isOpen && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '16px', animation: 'fadeUp .25s ease' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>Credentials</div>
+                        {g.fields.map(f => (
+                          <div key={f.key} style={{ marginBottom: 12 }}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{f.label}</label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input type={f.secret && !revealed[f.key] ? 'password' : 'text'} value={keys[f.key]} onChange={e => setKeys(k => ({ ...k, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ flex: 1, background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 10px', color: 'var(--text)', fontSize: 12, outline: 'none', fontFamily: 'var(--mono)' }} />
+                              {f.secret && <button onClick={() => toggleReveal(f.key)} style={{ padding: '0 10px', background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13 }}>{revealed[f.key] ? '🙈' : '👁'}</button>}
+                            </div>
                           </div>
+                        ))}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                          <Btn small onClick={save}>{saved ? '✓ Saved' : 'Save Keys'}</Btn>
+                          <Btn small variant="outline">Test Connection</Btn>
                         </div>
-                      ))}
-                      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                        <Btn small onClick={save}>{saved ? '✓ Saved' : 'Save Keys'}</Btn>
-                        <Btn small variant="outline">Test Connection</Btn>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>Enabled Features</div>
+                        {g.features.map(f => (
+                          <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <span style={{ color: isOn ? 'var(--teal)' : 'var(--text-dim)', fontSize: 12 }}>{isOn ? '✓' : '○'}</span>
+                            <span style={{ fontSize: 12, color: isOn ? 'var(--text)' : 'var(--text-dim)' }}>{f}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>Enabled Features</div>
-                      {g.features.map(f => (
-                        <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <span style={{ color: isOn ? 'var(--teal)' : 'var(--text-dim)', fontSize: 12 }}>{isOn ? '✓' : '○'}</span>
-                          <span style={{ fontSize: 12, color: isOn ? 'var(--text)' : 'var(--text-dim)' }}>{f}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-                </div>
-              )}
-            </Card>
-          );
-        })}
+                )}
+              </Card>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error("AdminIntegrations render error:", error);
+    return (
+      <div style={{ padding: 40, color: 'var(--red)', textAlign: 'center' }}>
+        <h3>Error rendering integrations</h3>
+        <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}>{error.message}</p>
+      </div>
+    );
+  }
 }
 
 

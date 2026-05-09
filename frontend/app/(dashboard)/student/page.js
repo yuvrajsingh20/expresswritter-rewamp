@@ -88,7 +88,7 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
 }
 
 /* ── OVERVIEW ── */
-function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student" }) {
+function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student", isMobile }) {
   const stats = [
     { label: 'Active Orders', val: projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').length, icon: '⚡', color: 'var(--teal)', sub: 'In progress' },
     { label: 'Completed', val: projects.filter(o => o.status === 'COMPLETED').length, icon: '✓', color: 'var(--green)', sub: 'All time' },
@@ -125,7 +125,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {stats.map((s, i) => (
           <div key={i} onClick={() => s.label.includes('Wallet') && setActive('wallet')} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '20px 20px', animation: `fadeUp 0.3s ease ${i * 0.06}s both`, cursor: s.label.includes('Wallet') ? 'pointer' : 'default' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -141,7 +141,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, marginBottom: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: 24, marginBottom: 32 }}>
         {/* Active orders */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -244,7 +244,7 @@ function ActiveOrderCard({ order, onClick }) {
 }
 
 /* ── ORDERS ── */
-function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
+function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isMobile }) {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const filters = ['All', 'Active', 'Delivered', 'Revision'];
@@ -325,24 +325,27 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
   });
 
   return (
-    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+    <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700 }}>My Orders</h1>
         <button onClick={() => setActive('new-order')} style={{ background: 'var(--teal)', color: '#fff', padding: '9px 20px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>+ New Order</button>
       </div>
 
       {/* Filters & Search */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
-        {filters.map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{
-            padding: '6px 16px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
-            borderColor: filter === f ? 'var(--teal)' : 'var(--border2)',
-            background: filter === f ? 'rgba(13,148,136,0.15)' : 'transparent',
-            color: filter === f ? 'var(--teal-light)' : 'var(--text-muted)',
-            fontWeight: filter === f ? 600 : 400,
-          }}>{f}</button>
-        ))}
-        <div style={{ marginLeft: 'auto', background: 'var(--surface2)', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, width: 240, border: '1px solid var(--border2)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 8, marginBottom: 20, alignItems: isMobile ? 'stretch' : 'center' }}>
+        <div style={{ display: 'flex', gap: 8, overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? 4 : 0 }}>
+          {filters.map(f => (
+            <button key={f} onClick={() => setFilter(f)} style={{
+              padding: '6px 16px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
+              borderColor: filter === f ? 'var(--teal)' : 'var(--border2)',
+              background: filter === f ? 'rgba(13,148,136,0.15)' : 'transparent',
+              color: filter === f ? 'var(--teal-light)' : 'var(--text-muted)',
+              fontWeight: filter === f ? 600 : 400,
+              whiteSpace: 'nowrap',
+            }}>{f}</button>
+          ))}
+        </div>
+        <div style={{ marginLeft: isMobile ? '0' : 'auto', background: 'var(--surface2)', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, width: isMobile ? '100%' : 240, border: '1px solid var(--border2)' }}>
           <span style={{ color: 'var(--text-dim)', fontSize: 13 }}>🔍</span>
           <input 
             placeholder="Search by ID or service..." 
@@ -354,8 +357,8 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
       </div>
 
       {/* Table */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', padding: '10px 20px', borderBottom: '1px solid var(--border2)', background: 'var(--surface2)' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', padding: '10px 20px', borderBottom: '1px solid var(--border2)', background: 'var(--surface2)', minWidth: 600 }}>
           {['Order', 'Service', 'Writer', 'Status', 'Due', 'Price'].map(h => (
             <div key={h} style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>{h}</div>
           ))}
@@ -365,7 +368,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
           const isSelected = selectedOrder === order.id;
           return (
             <div key={order.id} onClick={() => setSelectedOrder(isSelected ? null : order.id)} style={{
-              display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr',
+              display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', minWidth: 600,
               padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '1px solid var(--border2)' : 'none',
               cursor: 'pointer', transition: 'background 0.15s',
               background: isSelected ? 'rgba(13,148,136,0.08)' : 'transparent',
@@ -423,7 +426,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
               </div>
             </div>
 
-            <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
+            <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
               <div>
                 <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Writer Information</h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -538,7 +541,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive }) {
 }
 
 /* ── MESSAGES ── */
-function Messages({ projects = [], userId }) {
+function Messages({ projects = [], userId, isMobile }) {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [input, setInput] = useState('');
   const endRef = useRef(null);
@@ -583,7 +586,7 @@ function Messages({ projects = [], userId }) {
   return (
     <div style={{ display: 'flex', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       {/* Project / conversation list */}
-      <div style={{ width: 280, flexShrink: 0, borderRight: '1px solid var(--border2)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: isMobile ? '100%' : 280, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid var(--border2)', display: (isMobile && activeProjectId) ? 'none' : 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px 16px 12px', borderBottom: '1px solid var(--border2)' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Messages</h2>
           <div style={{ background: 'var(--surface2)', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -615,9 +618,14 @@ function Messages({ projects = [], userId }) {
 
       {/* Chat area */}
       {activeProject ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: (isMobile && !activeProjectId) ? 'none' : 'flex', flexDirection: 'column' }}>
           {/* Header */}
-          <div style={{ padding: '14px 24px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ padding: isMobile ? '12px 16px' : '14px 24px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {isMobile && (
+              <button onClick={() => setActiveProjectId(null)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 18, cursor: 'pointer', padding: '0 4px 0 0' }}>
+                ←
+              </button>
+            )}
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff' }}>
               {(activeProject.freelancer?.name || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
             </div>
@@ -697,9 +705,9 @@ function Messages({ projects = [], userId }) {
 }
 
 /* ── WRITERS ── */
-function SavedWriters({ setActive, writers = [] }) {
+function SavedWriters({ setActive, writers = [], isMobile }) {
   return (
-    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+    <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700 }}>My Writers</h1>
         <a href="index.html#writers" style={{ fontSize: 13, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Browse more writers →</a>
@@ -740,10 +748,10 @@ function SavedWriters({ setActive, writers = [] }) {
 }
 
 /* ── SETTINGS ── */
-function Settings() {
+function Settings({ isMobile }) {
   const [saved, setSaved] = useState(false);
   return (
-    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+    <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 28 }}>Account Settings</h1>
       <div style={{ maxWidth: 560 }}>
         {[
@@ -792,7 +800,7 @@ function Settings() {
 }
 
 /* ── NEW ORDER ── */
-function NewOrder({ setActive }) {
+function NewOrder({ setActive, isMobile }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -926,7 +934,7 @@ function NewOrder({ setActive }) {
                 <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>What do you need?</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>Select a service category to begin</p>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 32 }}>
                   {SERVICES.map((svc, i) => (
                     <div key={i} onClick={() => setForm(f => ({ ...f, category: svc.label }))} style={{
                       padding: '20px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'flex-start', gap: 14,
@@ -955,7 +963,7 @@ function NewOrder({ setActive }) {
                 
                 <div style={{ marginBottom: 28 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>TURNAROUND TIME</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                     {turnaroundOptions.map(t => (
                       <div key={t.id} onClick={() => setForm(f => ({ ...f, turnaround: t.id }))} style={{
                         padding: '16px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s',
@@ -1050,7 +1058,16 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   const [writers, setWriters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: session } = useSession();
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const savedTab = localStorage.getItem('xw_dash_tab');
@@ -1088,22 +1105,46 @@ export default function App() {
   const unreadCount = 0;
 
   const content = {
-    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} />,
-    'new-order': <NewOrder setActive={setActive} />,
-    orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} projects={projects} setActive={setActive} />,
-    wallet: <Wallet projects={projects} userName={userName} />,
-    messages: <Messages projects={projects} userId={session?.user?.id} />,
-    notifications: <Notifications userName={userName} />,
-    writers: <SavedWriters setActive={setActive} writers={writers} />,
-    settings: <Settings />,
+    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} isMobile={isMobile} />,
+    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} />,
+    orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} projects={projects} setActive={setActive} isMobile={isMobile} />,
+    wallet: <Wallet projects={projects} userName={userName} isMobile={isMobile} />,
+    messages: <Messages projects={projects} userId={session?.user?.id} isMobile={isMobile} />,
+    notifications: <Notifications userName={userName} isMobile={isMobile} />,
+    writers: <SavedWriters setActive={setActive} writers={writers} isMobile={isMobile} />,
+    settings: <Settings isMobile={isMobile} />,
   };
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar active={active} setActive={setActive} unreadCount={unreadCount} userName={userName} />
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      <div style={isMobile ? {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        zIndex: 1000,
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.3s ease',
+        background: 'var(--surface)',
+      } : {}}>
+        <Sidebar active={active} setActive={(id) => { setActive(id); if (isMobile) setSidebarOpen(false); }} unreadCount={unreadCount} userName={userName} />
+      </div>
+
+      {isMobile && sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)} 
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }}
+        />
+      )}
+
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* Topbar */}
-        <div style={{ height: 52, borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 36px', flexShrink: 0 }}>
+        <div style={{ height: 52, borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', padding: isMobile ? '0 16px' : '0 36px', flexShrink: 0 }}>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 24, cursor: 'pointer' }}>
+              ☰
+            </button>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ position: 'relative', cursor: 'pointer' }}>
               <span style={{ fontSize: 18 }}>🔔</span>

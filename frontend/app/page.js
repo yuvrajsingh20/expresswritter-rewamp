@@ -80,6 +80,10 @@ function Navbar({ onOrderClick }) {
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <Link href="/login" style={{ padding: '9px 16px', fontSize: 14, color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
+          onMouseEnter={e => e.target.style.color='var(--text)'}
+          onMouseLeave={e => e.target.style.color='var(--text-muted)'}
+        >Login</Link>
         <Link href="/dashboard" style={{ padding: '9px 20px', fontSize: 14, borderRadius: 6, border: '1.5px solid var(--border)', color: 'var(--violet-light)', textDecoration: 'none', fontWeight: 500, display: 'inline-block' }}>Dashboard</Link>
         <button className="btn-primary" style={{ padding: '9px 20px', fontSize: 14 }} onClick={onOrderClick}>Place Order</button>
       </div>

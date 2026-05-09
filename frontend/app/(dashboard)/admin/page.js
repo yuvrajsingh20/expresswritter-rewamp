@@ -187,7 +187,7 @@ function AdminSidebar({ active, setActive, dark }) {
               onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
               ↗ {l.label}</Link>
           )}
-        <button onClick={() => signOut()} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+        <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
           🚪 Logout

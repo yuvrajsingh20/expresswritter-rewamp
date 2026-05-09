@@ -215,7 +215,7 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--teal)'; e.currentTarget.style.color = 'var(--teal-light)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
           🔒 Change Status</button>
-        <button onClick={() => signOut()} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}
+        <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
           <span>🚪</span> Logout</button>

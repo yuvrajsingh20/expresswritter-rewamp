@@ -1,0 +1,350 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../frontend/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SUB_ADMIN
+  FREELANCER
+  STUDENT
+}
+
+enum ProjectStatus {
+  CREATED
+  ASSIGNED
+  IN_PROGRESS
+  REVIEW
+  REVISION
+  COMPLETED
+}
+
+enum ChatType {
+  CLIENT_CHAT
+  INTERNAL_CHAT
+  ADMIN_CHAT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(STUDENT)
+  permissions   String[]  @default([])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  
+  projectsOwned    Project[] @relation("StudentProjects")
+  projectsAssigned Project[] @relation("FreelancerProjects")
+  projectsManaged  Project[] @relation("SubAdminProjects")
+  
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  freelancerInvoices FreelancerInvoice[] @relation("FreelancerInvoices")
+  collaboratingProjects Project[] @relation("CollaboratingProjects", fields: [collaboratingProjectIds], references: [id])
+  collaboratingProjectIds String[] @db.ObjectId
+  
+  studentChats     Chat[]    @relation("StudentChats")
+  freelancerChats  Chat[]    @relation("FreelancerChats")
+  
+  notifications    Notification[]
+  orders           Order[]
+  projectLogs      ProjectLog[]
+  freelancerProfile FreelancerProfile?
+  payoutRequests    PayoutRequest[]
+  clientTickets    Ticket[] @relation("ClientTickets")
+  writerTickets    Ticket[] @relation("WriterTickets")
+}
+
+model FreelancerProfile {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @unique @db.ObjectId
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bio           String?
+  skills        String[] // E.g. ["SOP", "LOR", "Technical", "Academic"]
+  experience    Int?     // Years of experience
+  education     String?  // Highest qualification
+  resumeUrl     String?  // Link to resume
+  photoUrl      String?  // Profile photo
+  portfolioUrl  String?
+  rating        Float    @default(5.0)
+  totalProjects Int      @default(0)
+  isVerified    Boolean  @default(false)
+  availability  Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Project {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  title             String
+  description       String?
+  status            ProjectStatus @default(CREATED)
+  deadline          DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  studentId        String        @db.ObjectId
+  student          User          @relation("StudentProjects", fields: [studentId], references: [id])
+  
+  freelancerId     String?       @db.ObjectId
+  freelancer       User?         @relation("FreelancerProjects", fields: [freelancerId], references: [id])
+  
+  subAdminId       String?       @db.ObjectId
+  subAdmin         User?         @relation("SubAdminProjects", fields: [subAdminId], references: [id])
+
+  collaboratorIds   String[]      @db.ObjectId
+  collaborators     User[]        @relation("CollaboratingProjects", fields: [collaboratorIds], references: [id])
+
+  serviceType       String?       // E.g. "SOP", "LOR", "RESUME"
+  amount            Float?        @default(0)
+  attachments       Json[]        // Array of {url, name}
+  
+  messages         Message[]
+  orders           Order[]
+  logs             ProjectLog[]
+  freelancerInvoices FreelancerInvoice[]
+}
+
+model Message {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  content     String
+  chatType    ChatType
+  attachments Json[]   // Array of {url, name}
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  senderId    String   @db.ObjectId
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  
+  receiverId  String?  @db.ObjectId
+  receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  
+  projectId   String?  @db.ObjectId
+  project     Project? @relation(fields: [projectId], references: [id])
+
+  chatId      String?  @db.ObjectId
+  chat        Chat?    @relation(fields: [chatId], references: [id])
+}
+
+model Notification {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Ticket {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  type          String   // Order, Client, Writer
+  subject       String
+  description   String?  // Detailed issue description
+  priority      String   @default("Medium") // High, Medium, Low
+  status        String   @default("Open") // Open, In Progress, Resolved
+  escalation    String   @default("None") // Level 1, Level 2, Level 3, None
+  aiStatus      String?  // Draft sent, Monitoring, etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  clientId      String?  @db.ObjectId
+  client        User?    @relation("ClientTickets", fields: [clientId], references: [id])
+  
+  writerId      String?  @db.ObjectId
+  writer        User?    @relation("WriterTickets", fields: [writerId], references: [id])
+  
+  orderId       String?  @db.ObjectId
+  order         Order?   @relation(fields: [orderId], references: [id])
+}
+
+model Order {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  amount        Float
+  paymentStatus PaymentStatus @default(PENDING)
+  razorpayId    String?       @unique
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  projectId     String        @db.ObjectId
+  project       Project       @relation(fields: [projectId], references: [id])
+  
+  studentId     String        @db.ObjectId
+  student       User          @relation(fields: [studentId], references: [id])
+
+  chat          Chat?
+  tickets       Ticket[]
+}
+
+model ProjectLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  action    String
+  timestamp DateTime @default(now())
+
+  // Relations
+  projectId String   @db.ObjectId
+  project   Project  @relation(fields: [projectId], references: [id])
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model FreelancerInvoice {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  amount          Float
+  status          PaymentStatus  @default(PENDING)
+  description     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  projectId       String         @db.ObjectId
+  project         Project        @relation(fields: [projectId], references: [id])
+  
+  freelancerId    String         @db.ObjectId
+  freelancer      User           @relation("FreelancerInvoices", fields: [freelancerId], references: [id])
+}
+
+model PayoutRequest {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount        Float
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  paymentMethod String?
+  paymentDetails String? // UPI ID or Bank Details
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  freelancerId  String   @db.ObjectId
+  freelancer    User     @relation(fields: [freelancerId], references: [id])
+}
+
+model Chat {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  orderId      String    @unique @db.ObjectId
+  order        Order     @relation(fields: [orderId], references: [id])
+  
+  studentId    String    @db.ObjectId
+  student      User      @relation("StudentChats", fields: [studentId], references: [id])
+  
+  freelancerId String?   @db.ObjectId
+  freelancer   User?     @relation("FreelancerChats", fields: [freelancerId], references: [id])
+  
+  messages     Message[]
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+model Service {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug          String   @unique
+  name          String
+  description   String
+  features      String[]
+  basePrice     Float
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RefundRequest {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId       String   @db.ObjectId
+  userId        String   @db.ObjectId
+  amount        Float
+  reason        String
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  priority      String   @default("MEDIUM")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PromoCode {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  code          String   @unique
+  type          String   // PERCENTAGE, FIXED
+  value         Float
+  minOrderValue Float    @default(0)
+  usageLimit    Int?
+  usageCount    Int      @default(0)
+  expiryDate    DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model SystemConfig {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  key           String   @unique // e.g. "SEO_SETTINGS", "MAINTENANCE_MODE"
+  value         Json
+  updatedAt     DateTime @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String?  @db.ObjectId
+  userName      String?
+  action        String
+  details       String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+}

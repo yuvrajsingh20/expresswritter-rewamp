@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./theme.css";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
 import servicesData from '@/data/services_data.json';
@@ -75,13 +75,19 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
       </nav>
 
       {/* Bottom */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border2)' }}>
-        <Link href="/onboard/freelancer" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none', padding: '8px 0', transition: 'color 0.2s' }}
+      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Link href="/onboard/freelancer" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none', padding: '4px 0', transition: 'color 0.2s' }}
           onMouseEnter={e => e.currentTarget.style.color = 'var(--teal-light)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
           <span>✦</span> Become a Writer
         </Link>
+        <button onClick={() => signOut()} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', transition: 'color 0.2s', width: '100%', textAlign: 'left', fontFamily: 'var(--font)' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          <span>🚪</span> Logout
+        </button>
       </div>
     </div>
   );

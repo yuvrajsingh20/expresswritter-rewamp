@@ -502,7 +502,7 @@ export default function OrderDetailsPage() {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
         {/* Premium Header */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#E5E5E5] flex items-center justify-between px-10 shrink-0 z-20">
           <div className="flex items-center gap-6">

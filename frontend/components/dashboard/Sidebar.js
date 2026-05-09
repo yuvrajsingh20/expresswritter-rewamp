@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from "next-auth/react";
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar = ({ role = 'ADMIN' }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
   const handleLogout = () => {
@@ -47,7 +48,24 @@ const Sidebar = ({ role = 'ADMIN' }) => {
   const currentMenu = menuItems[role] || menuItems.STUDENT;
 
   return (
-    <aside className="w-64 bg-white border-r border-[#E5E5E5] flex flex-col h-screen fixed left-0 top-0 z-50 font-sans shadow-xl shadow-slate-900/5">
+    <>
+      {/* Hamburger button visible only on mobile */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="fixed top-4 left-4 z-[60] md:hidden bg-[#002D5B] text-white p-2 rounded-lg shadow-lg"
+      >
+        {isOpen ? '✕' : '☰'}
+      </button>
+
+      {/* Backdrop */}
+      {isOpen && (
+        <div 
+          onClick={() => setIsOpen(false)} 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        />
+      )}
+
+      <aside className={`w-64 bg-white border-r border-[#E5E5E5] flex flex-col h-screen fixed left-0 top-0 z-50 font-sans shadow-xl shadow-slate-900/5 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       {/* Premium Logo Section */}
       <div className="p-8 mb-4">
         <Link href="/" className="group flex items-center gap-4">
@@ -76,6 +94,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
             <Link 
               key={item.name} 
               href={item.path}
+              onClick={() => setIsOpen(false)}
               className={`group flex items-center justify-between px-4 py-3.5 rounded-none transition-all ${
                 isActive 
                   ? 'bg-[#002D5B] text-white' 
@@ -115,6 +134,7 @@ const Sidebar = ({ role = 'ADMIN' }) => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
 

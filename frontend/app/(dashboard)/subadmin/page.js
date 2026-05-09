@@ -38,9 +38,9 @@ export default function SubAdminDashboard() {
     <div className="flex bg-[#f8fafc] min-h-screen">
       <Sidebar role="SUB_ADMIN" />
       
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="flex-1 md:ml-64 flex flex-col">
         {/* SubAdmin Header */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 sticky top-0 z-10 transition-all">
+        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-10 sticky top-0 z-10 transition-all">
           <div className="flex items-center gap-6">
             <h1 className="text-sm font-bold text-slate-800">Team Management</h1>
             <div className="h-6 w-[1px] bg-slate-100" />
@@ -61,7 +61,7 @@ export default function SubAdminDashboard() {
           </div>
         </header>
 
-        <main className="p-10 max-w-7xl mx-auto w-full space-y-10">
+        <main className="p-4 md:p-10 max-w-7xl mx-auto w-full space-y-6 md:space-y-10">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">Team Overview</h2>
             <p className="text-slate-400 text-sm font-medium">Monitoring active drafting cycles and resource allocation.</p>

@@ -139,7 +139,7 @@ const AdminChatHub = () => {
     <div className="flex bg-[#f8f9fa] min-h-screen text-[#1d1d1f]">
       <Sidebar role="ADMIN" />
       
-      <main className="flex-1 ml-64 flex bg-white overflow-hidden m-4 rounded-[3rem] border border-slate-100 shadow-2xl">
+      <main className="flex-1 md:ml-64 flex bg-white overflow-hidden m-4 rounded-[3rem] border border-slate-100 shadow-2xl">
         <div className="w-80 border-r border-slate-50 flex flex-col bg-slate-50/30">
            <div className="p-8 pb-4">
               <h1 className="text-xl font-black tracking-tight mb-6 italic">Communication</h1>

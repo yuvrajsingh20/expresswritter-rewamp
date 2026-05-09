@@ -1,725 +1,771 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ChevronRight, ArrowRight, ShieldCheck, 
-  Zap, MessageSquare, Star, 
-  Globe, FileText, Target,
-  Users, DollarSign, Calendar,
-  GraduationCap, Feather, Laptop,
-  Library, BookOpen, PenTool, Briefcase,
-  Eye, EyeOff, Award, ShieldCheck as IconShieldCheck
-} from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import servicesData from '../data/services_data.json';
+import './(auth)/landing.css';
 
-const ICON_MAP = {
-  IconFileText: FileText,
-  IconAward: Award,
-  IconBriefcase: Briefcase,
-  IconShieldCheck: IconShieldCheck
-};
+/* ─── DATA ─── */
+const SERVICES = [
+  { id: 'sop', icon: '🎓', label: 'Statement of Purpose', desc: 'Compelling SOP for top universities worldwide', color: '#7c3aed' },
+  { id: 'essay', icon: '📝', label: 'Academic Essay', desc: 'Research-backed essays for any subject or level', color: '#6d28d9' },
+  { id: 'lor', icon: '📜', label: 'Letter of Recommendation', desc: 'Professional LORs that open doors', color: '#5b21b6' },
+  { id: 'resume', icon: '📄', label: 'Resume & CV', desc: 'ATS-optimised resumes for every industry', color: '#7c3aed' },
+  { id: 'linkedin', icon: '💼', label: 'LinkedIn Profile', desc: 'Profiles that attract recruiters & opportunities', color: '#8b5cf6' },
+  { id: 'email', icon: '✉️', label: 'Professional Emails', desc: 'Cold outreach, campaigns & business emails', color: '#a78bfa' },
+  { id: 'thesis', icon: '🔬', label: 'Thesis & Dissertation', desc: 'End-to-end thesis writing & editing', color: '#7c3aed' },
+  { id: 'ppt', icon: '📊', label: 'Presentations (PPT)', desc: 'Pitch decks, research & corporate slides', color: '#6d28d9' },
+  { id: 'research', icon: '🧪', label: 'Research Proposal', desc: 'Structured proposals with solid literature reviews', color: '#5b21b6' },
+  { id: 'article', icon: '🗞️', label: 'Articles', desc: 'SEO articles, op-eds & thought leadership pieces', color: '#7c3aed' },
+  { id: 'blog', icon: '✍️', label: 'Blog Posts', desc: 'Engaging, rankable blog content for any niche', color: '#8b5cf6' },
+  { id: 'proposal', icon: '📋', label: 'Business Proposals', desc: 'Winning proposals & executive summaries', color: '#a78bfa' },
+];
 
-const SERVICES = Object.values(servicesData.individualServices).flat().map(s => {
-  const priceNum = typeof s.price === 'string' 
-    ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
-    : (s.price || 0);
-  return { ...s, price: priceNum || 0 };
-});
+const WRITERS = [
+  { name: 'Dr. Amara Singh', avatar: 'AS', specialty: 'Academic & SOP', rating: 4.97, reviews: 312, badge: 'Top Writer', skills: ['SOP', 'Thesis', 'Research Proposal'], turnaround: '24h', price: 250, bio: 'PhD in English Literature, 8 years helping students secure admits at Harvard, MIT, Oxford.' },
+  { name: 'James Whitfield', avatar: 'JW', specialty: 'Resume & Career', rating: 4.95, reviews: 487, badge: 'Elite', skills: ['Resume', 'LinkedIn', 'Cover Letter'], turnaround: '12h', price: 200, bio: 'Former HR Director. 3000+ resumes crafted. 94% interview callback rate.' },
+  { name: 'Priya Nair', avatar: 'PN', specialty: 'Content & Blog', rating: 4.92, reviews: 256, badge: 'Rising Star', skills: ['Blog', 'Article', 'SEO'], turnaround: '48h', price: 150, bio: 'Content strategist with bylines in Forbes, HuffPost. Expert in long-form SEO content.' },
+  { name: 'Marcus Chen', avatar: 'MC', specialty: 'Business Writing', rating: 4.98, reviews: 198, badge: 'Top Writer', skills: ['Proposal', 'Email', 'PPT'], turnaround: '36h', price: 300, bio: 'MBA from Wharton. Helped 50+ startups craft investor-ready pitches and proposals.' },
+  { name: 'Sophie Laurent', avatar: 'SL', specialty: 'Academic Essays', rating: 4.91, reviews: 341, badge: 'Elite', skills: ['Essay', 'LOR', 'Thesis'], turnaround: '24h', price: 220, bio: 'Published researcher. Expert in humanities, social science & interdisciplinary writing.' },
+  { name: 'Rahul Desai', avatar: 'RD', specialty: 'Technical Writing', rating: 4.94, reviews: 175, badge: 'Verified', skills: ['Research Proposal', 'Thesis', 'Article'], turnaround: '48h', price: 180, bio: 'STEM background. Specialises in grant proposals, technical reports & whitepapers.' },
+];
 
-export default function LandingPage() {
-  const router = useRouter();
-  const [activeFlow, setActiveFlow] = useState(null); // 'STUDENT' or 'FREELANCER'
-  const [studentStep, setStudentStep] = useState(1);
-  const [writerStep, setWriterStep] = useState(1);
-  const [formData, setFormData] = useState({
-    serviceId: '',
-    name: '',
-    email: '',
-    password: '',
-  });
+const TESTIMONIALS = [
+  { name: 'Meera Krishnan', role: 'Admitted to Stanford MBA', text: 'My SOP was completely transformed. Went from rejections to Stanford, Wharton, and LBS admits in one cycle. Absolutely life-changing service.', rating: 5 },
+  { name: 'David Okeke', role: 'Senior Product Manager', text: 'My LinkedIn profile views tripled in 2 weeks. Got headhunted by a FAANG company. Worth every penny — the writers here truly understand personal branding.', rating: 5 },
+  { name: 'Ananya Patel', role: 'PhD Candidate, UCL', text: 'The research proposal writer was exceptional. Deep academic knowledge, perfect structure, and delivered 3 days before deadline. My supervisor was impressed.', rating: 5 },
+  { name: 'Tom Brennan', role: 'Startup Founder', text: 'Raised $800K after using Xpresswriters for our investor pitch deck. Marcus understood our vision instantly and made it compelling. Highly recommend.', rating: 5 },
+];
 
-  const [writerFormData, setWriterFormData] = useState({
-    domainId: '',
-    experience: '',
-    bio: '',
-    education: '',
-    resumeUrl: '',
-    photoUrl: '',
-    linkedinUrl: '',
-    name: '',
-    email: '',
-    password: '',
-  });
+const TRACK_STEPS = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [showStudentPassword, setShowStudentPassword] = useState(false);
-  const [showWriterPassword, setShowWriterPassword] = useState(false);
+const PRICING = [
+  { name: 'Starter', price: 799, desc: 'For one-off content needs', features: ['1 order at a time', 'Standard delivery (72h)', '1 free revision', 'Basic writer matching', 'Email support'], cta: 'Get Started', highlight: false },
+  { name: 'Pro', price: 2499, desc: 'For students & professionals', features: ['5 orders/month', 'Express delivery (24h)', '3 free revisions', 'Priority writer matching', 'Live chat support', 'Order tracking dashboard'], cta: 'Go Pro', highlight: true },
+  { name: 'Business', price: 6999, desc: 'For teams & businesses', features: ['Unlimited orders', 'Rush delivery (12h)', 'Unlimited revisions', 'Dedicated account manager', 'CRM dashboard', 'Team collaboration tools', 'Analytics & reporting'], cta: 'Contact Sales', highlight: false },
+];
 
-  const selectedService = SERVICES.find(s => s.id === formData.serviceId);
+/* ─── COMPONENTS ─── */
 
-  const handleStudentNext = async () => {
-    setIsSubmitting(true);
-    setAuthError("");
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: "STUDENT",
-          studentProfile: {
-            targetService: formData.serviceId
-          }
-        }),
-      });
+// ── Navbar ──
+function Navbar({ onOrderClick }) {
+  const [scrolled, setScrolled] = useState(false);
 
-      if (res.ok) {
-        router.push('/login?registered=true&role=STUDENT');
-      } else {
-        const data = await res.json();
-        setAuthError(data.message || "Signup failed");
-      }
-    } catch (err) {
-      setAuthError("Connection error. Try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleWriterSubmit = async () => {
-    setIsSubmitting(true);
-    setAuthError("");
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: writerFormData.name,
-          email: writerFormData.email,
-          password: writerFormData.password,
-          role: "FREELANCER",
-          writerProfile: writerFormData
-        }),
-      });
-
-      if (res.ok) {
-        router.push('/login?registered=true&role=FREELANCER');
-      } else {
-        const data = await res.json();
-        setAuthError(data.message || "Signup failed");
-      }
-    } catch (err) {
-      setAuthError("Connection error. Try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <div className="bg-white min-h-screen text-[#0a192f] font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
-      {/* Navigation */}
-      <nav className="h-24 flex items-center justify-between px-10 md:px-20 sticky top-0 bg-white/90 backdrop-blur-md z-[100] border-b border-slate-50">
-        <Link href="/" className="flex items-center gap-3">
-           <div className="w-10 h-10 bg-black flex items-center justify-center text-white font-bold text-xl">E</div>
-           <span className="text-2xl font-[900] tracking-tighter italic uppercase text-black">Express Writer</span>
-        </Link>
-        
-        <div className="hidden lg:flex items-center gap-12">
-          {['Services', 'How it Works', 'Pricing', 'About'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(' ', '-')}`} className="text-[11px] font-black uppercase tracking-wider text-slate-400 hover:text-black transition-colors">{item}</a>
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+      padding: '0 5%',
+      background: scrolled ? 'rgba(13,13,26,0.92)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(20px)' : 'none',
+      borderBottom: scrolled ? '1px solid var(--border)' : 'none',
+      transition: 'all 0.3s',
+      height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--violet)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: '-0.02em' }}>X</div>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #f0eeff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Xpresswriters</span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
+        {['Services', 'Writers', 'Pricing', 'How it Works'].map(item => (
+          <a key={item} href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s' }}
+            onMouseEnter={e => e.target.style.color='var(--text)'}
+            onMouseLeave={e => e.target.style.color='var(--text-muted)'}
+          >{item}</a>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <Link href="/dashboard" style={{ padding: '9px 20px', fontSize: 14, borderRadius: 6, border: '1.5px solid var(--border)', color: 'var(--violet-light)', textDecoration: 'none', fontWeight: 500, display: 'inline-block' }}>Dashboard</Link>
+        <button className="btn-primary" style={{ padding: '9px 20px', fontSize: 14 }} onClick={onOrderClick}>Place Order</button>
+      </div>
+    </nav>
+  );
+}
+
+// ── Hero ──
+function Hero({ onOrderClick }) {
+  const [count, setCount] = useState({ writers: 0, orders: 0, rating: 0 });
+
+  useEffect(() => {
+    const targets = { writers: 1200, orders: 48000, rating: 4.97 };
+    let frame;
+    let start;
+    const duration = 2000;
+    const animate = (ts) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setCount({
+        writers: Math.floor(ease * targets.writers),
+        orders: Math.floor(ease * targets.orders),
+        rating: parseFloat((ease * targets.rating).toFixed(2)),
+      });
+      if (p < 1) frame = requestAnimationFrame(animate);
+    };
+    const timer = setTimeout(() => { frame = requestAnimationFrame(animate); }, 400);
+    return () => { clearTimeout(timer); cancelAnimationFrame(frame); };
+  }, []);
+
+  return (
+    <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '120px 5% 80px', overflow: 'hidden', textAlign: 'center' }}>
+      {/* Glow orbs */}
+      <div className="orb" style={{ width: 600, height: 600, background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', top: '-100px', left: '50%', transform: 'translateX(-50%)' }} />
+      <div className="orb" style={{ width: 300, height: 300, background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', bottom: '100px', right: '5%', opacity: 0.2 }} />
+
+      {/* Badge */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(124,58,237,0.12)', border: '1px solid var(--border)', borderRadius: 100, padding: '6px 16px', marginBottom: 32, animation: 'fadeIn 0.6s ease' }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+        <span style={{ fontSize: 13, color: 'var(--violet-light)', fontWeight: 500 }}>48,000+ orders delivered · Trusted by students in 90+ countries</span>
+      </div>
+
+      {/* Headline */}
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(42px,6vw,88px)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', marginBottom: 28, maxWidth: 900, animation: 'fadeUp 0.7s ease 0.1s both' }}>
+        Words that work.<br />
+        <span style={{ fontStyle: 'italic', background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #f5c842 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200% auto', animation: 'shimmer 4s linear infinite' }}>Writers who deliver.</span>
+      </h1>
+
+      <p style={{ fontSize: 'clamp(16px,2vw,21px)', color: 'var(--text-muted)', maxWidth: 620, lineHeight: 1.7, marginBottom: 48, animation: 'fadeUp 0.7s ease 0.2s both', fontWeight: 300 }}>
+        Connect with expert content writers for SOPs, resumes, essays, theses, blogs & more. Place your order in minutes. Get delivery-ready content.
+      </p>
+
+      {/* CTAs */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 72, flexWrap: 'wrap', justifyContent: 'center', animation: 'fadeUp 0.7s ease 0.3s both' }}>
+        <button className="btn-primary" style={{ fontSize: 16, padding: '16px 36px', borderRadius: 6 }} onClick={onOrderClick}>Place Your Order →</button>
+        <button className="btn-outline" style={{ fontSize: 16, padding: '16px 36px', borderRadius: 6 }}>Browse Writers</button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 'clamp(24px,5vw,72px)', animation: 'fadeUp 0.7s ease 0.4s both' }}>
+        {[
+          { label: 'Expert Writers', val: `${count.writers.toLocaleString()}+` },
+          { label: 'Orders Delivered', val: `${count.orders.toLocaleString()}+` },
+          { label: 'Average Rating', val: `⭐ ${count.rating}` },
+        ].map(s => (
+          <div key={s.label} style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>{s.val}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, fontWeight: 400 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Scroll indicator */}
+      <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, animation: 'float 2.5s ease-in-out infinite' }}>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Scroll</div>
+        <div style={{ width: 1, height: 40, background: 'linear-gradient(to bottom, var(--violet), transparent)' }} />
+      </div>
+    </section>
+  );
+}
+
+// ── Marquee ──
+function Marquee() {
+  const items = ['Statement of Purpose', 'Academic Essays', 'LOR', 'Resume & CV', 'LinkedIn Profile', 'Thesis Writing', 'Blog Posts', 'Research Proposals', 'Business Proposals', 'PPT Presentations', 'SEO Articles', 'Professional Emails'];
+  const doubled = [...items, ...items];
+  return (
+    <div style={{ overflow: 'hidden', padding: '20px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'rgba(124,58,237,0.04)', position: 'relative' }}>
+      <div style={{ display: 'flex', gap: 48, animation: 'marquee 30s linear infinite', width: 'max-content' }}>
+        {doubled.map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>{item}</span>
+            <span style={{ color: 'var(--violet)', fontSize: 18 }}>◆</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Services ──
+function Services({ onOrderClick }) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <section id="services" style={{ padding: '100px 5%' }}>
+      <div style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>What we write</div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 16 }}>Every type of content,<br /><em>crafted to perfection</em></h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 17, maxWidth: 520, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>12 service categories, 1200+ vetted writers, one seamless platform.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20, maxWidth: 1200, margin: '0 auto' }}>
+        {SERVICES.map((svc, i) => (
+          <div key={svc.id}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onOrderClick(svc)}
+            style={{
+              background: hovered === i ? 'var(--surface2)' : 'var(--surface)',
+              border: hovered === i ? '1.5px solid var(--violet)' : '1.5px solid var(--border)',
+              borderRadius: 8, padding: '28px 26px', cursor: 'pointer',
+              transition: 'all 0.25s',
+              transform: hovered === i ? 'translateY(-4px)' : 'none',
+              boxShadow: hovered === i ? '0 16px 40px rgba(124,58,237,0.2)' : 'none',
+              position: 'relative', overflow: 'hidden',
+            }}>
+            {hovered === i && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--violet), var(--violet-light))' }} />}
+            <div style={{ fontSize: 36, marginBottom: 14, display: 'block' }}>{svc.icon}</div>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, marginBottom: 8, letterSpacing: '-0.01em' }}>{svc.label}</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 300 }}>{svc.desc}</p>
+            <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--violet-light)', fontSize: 13, fontWeight: 500, opacity: hovered === i ? 1 : 0, transition: 'opacity 0.2s' }}>
+              Order now <span>→</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── How It Works ──
+function HowItWorks({ onOrderClick }) {
+  const steps = [
+    { n: '01', icon: '🎯', title: 'Choose Your Service', desc: 'Browse 12 service categories. Select exactly what you need — SOP, resume, thesis, blog, and more.' },
+    { n: '02', icon: '✍️', title: 'Match with a Writer', desc: 'Our smart system matches you with a vetted expert. Review profiles, portfolios, and ratings before confirming.' },
+    { n: '03', icon: '🚀', title: 'Receive & Revise', desc: 'Get your content on time, every time. Request revisions until you\'re 100% satisfied. Zero compromise.' },
+  ];
+  return (
+    <section id="how-it-works" style={{ padding: '100px 5%', background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.05), transparent)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>Process</div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em' }}>Three steps to<br /><em>brilliant content</em></h2>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32, maxWidth: 1100, margin: '0 auto 48px' }}>
+        {steps.map((step, i) => (
+          <div key={i} style={{ position: 'relative' }}>
+            <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '40px 32px', textAlign: 'center', transition: 'all 0.3s' }}>
+              <div style={{ width: 64, height: 64, borderRadius: 8, background: 'rgba(124,58,237,0.15)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>{step.icon}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 900, color: 'rgba(124,58,237,0.12)', lineHeight: 1, marginBottom: 12 }}>{step.n}</div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 12, letterSpacing: '-0.01em' }}>{step.title}</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{step.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <button className="btn-primary" style={{ fontSize: 16, padding: '16px 40px' }} onClick={() => onOrderClick()}>Start Your Order →</button>
+      </div>
+    </section>
+  );
+}
+
+// ── Writers Marketplace ──
+function Writers({ onOrderClick }) {
+  const [filter, setFilter] = useState('All');
+  const categories = ['All', 'Academic', 'Career', 'Content', 'Business'];
+  const catMap = { Academic: ['SOP', 'Thesis', 'Essay', 'Research Proposal'], Career: ['Resume', 'LinkedIn'], Content: ['Blog', 'Article', 'SEO'], Business: ['Proposal', 'Email', 'PPT'] };
+
+  const filtered = filter === 'All' ? WRITERS : WRITERS.filter(w => w.skills.some(s => catMap[filter]?.some(c => s.includes(c) || c.includes(s))));
+
+  return (
+    <section id="writers" style={{ padding: '100px 5%' }}>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>The talent</div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 16 }}>Meet our expert<br /><em>writers</em></h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 17, maxWidth: 480, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>Every writer is vetted through a rigorous 5-step quality process. Only the top 3% make it in.</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 48, flexWrap: 'wrap' }}>
+        {categories.map(c => (
+          <button key={c} onClick={() => setFilter(c)} style={{
+            padding: '8px 22px', borderRadius: 100, border: '1.5px solid',
+            borderColor: filter === c ? 'var(--violet)' : 'var(--border)',
+            background: filter === c ? 'var(--violet)' : 'transparent',
+            color: filter === c ? '#fff' : 'var(--text-muted)',
+            fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)',
+          }}>{c}</button>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24, maxWidth: 1200, margin: '0 auto' }}>
+        {filtered.map((w, i) => (
+          <WriterCard key={i} writer={w} onOrder={() => onOrderClick({ writerName: w.name })} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function WriterCard({ writer: w, onOrder }) {
+  const [hovered, setHovered] = useState(false);
+  const badgeColors = { 'Top Writer': '#7c3aed', 'Elite': '#f5c842', 'Rising Star': '#22c55e', 'Verified': '#38bdf8' };
+  return (
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{
+      background: hovered ? 'var(--surface2)' : 'var(--surface)',
+      border: `1.5px solid ${hovered ? 'var(--violet)' : 'var(--border)'}`,
+      borderRadius: 10, padding: 28, transition: 'all 0.25s',
+      transform: hovered ? 'translateY(-4px)' : 'none',
+      boxShadow: hovered ? '0 16px 40px rgba(124,58,237,0.2)' : 'none',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
+        <div style={{ width: 54, height: 54, borderRadius: 8, background: 'linear-gradient(135deg, var(--violet), var(--violet-light))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0, fontFamily: 'var(--font-display)' }}>{w.avatar}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontWeight: 600, fontSize: 16 }}>{w.name}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100, background: `${badgeColors[w.badge]}22`, color: badgeColors[w.badge] }}>{w.badge}</span>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{w.specialty}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+            <span style={{ color: 'var(--gold)', fontSize: 13 }}>★ {w.rating}</span>
+            <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>({w.reviews} reviews)</span>
+          </div>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20, fontWeight: 300 }}>{w.bio}</p>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+        {w.skills.map(s => (
+          <span key={s} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 100, background: 'rgba(124,58,237,0.1)', border: '1px solid var(--border)', color: 'var(--violet-light)' }}>{s}</span>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>From</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700 }}>₹{w.price}<span style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontWeight: 300 }}>/100 words</span></div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Turnaround</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--green)' }}>⚡ {w.turnaround}</div>
+        </div>
+      </div>
+
+      <button className="btn-primary" style={{ width: '100%', marginTop: 16, padding: '11px 0', borderRadius: 10, opacity: hovered ? 1 : 0.85 }} onClick={onOrder}>
+        Hire {w.name.split(' ')[0]}
+      </button>
+    </div>
+  );
+}
+
+// ── Order Tracking ──
+function OrderTracking() {
+  const [activeStep, setActiveStep] = useState(2);
+  useEffect(() => {
+    const interval = setInterval(() => setActiveStep(s => s < TRACK_STEPS.length - 1 ? s + 1 : 0), 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section style={{ padding: '60px 5%', background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 10 }}>Live Order Tracking</div>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Always know where your order stands</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 40, fontWeight: 300 }}>Real-time updates at every stage of the writing process</p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', marginBottom: 20 }}>
+          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 3, background: 'var(--surface2)', transform: 'translateY(-50%)', zIndex: 0 }} />
+          <div style={{ position: 'absolute', top: '50%', left: 0, height: 3, background: 'linear-gradient(90deg, var(--violet), var(--violet-light))', transform: 'translateY(-50%)', zIndex: 1, transition: 'width 1s ease', width: `${(activeStep / (TRACK_STEPS.length - 1)) * 100}%` }} />
+
+          {TRACK_STEPS.map((step, i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, zIndex: 2, position: 'relative' }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, transition: 'all 0.5s',
+                background: i <= activeStep ? 'var(--violet)' : 'var(--surface2)',
+                border: `2px solid ${i <= activeStep ? 'var(--violet)' : 'var(--border)'}`,
+                color: i <= activeStep ? '#fff' : 'var(--text-dim)',
+                boxShadow: i === activeStep ? '0 0 0 6px rgba(124,58,237,0.2)' : 'none',
+                animation: i === activeStep ? 'trackPulse 2s infinite' : 'none',
+              }}>
+                {i < activeStep ? '✓' : i + 1}
+              </div>
+              <div style={{ fontSize: 12, color: i <= activeStep ? 'var(--text)' : 'var(--text-dim)', fontWeight: i === activeStep ? 600 : 400, whiteSpace: 'nowrap', transition: 'color 0.3s' }}>{step}</div>
+            </div>
           ))}
         </div>
 
-        <div className="flex items-center gap-8">
-           <Link href="/login" className="bg-black text-white px-8 py-3.5 text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all rounded-none">
-              Authorized Login
-           </Link>
+        <div style={{ padding: '12px 24px', background: 'rgba(124,58,237,0.08)', borderRadius: 10, border: '1px solid var(--border)', display: 'inline-block' }}>
+          <span style={{ color: 'var(--violet-light)', fontSize: 13, fontWeight: 500 }}>
+            Current status: <strong style={{ color: 'var(--text)' }}>{TRACK_STEPS[activeStep]}</strong>
+          </span>
         </div>
-      </nav>
+      </div>
+    </section>
+  );
+}
 
-      <main>
-        {/* 50/50 Dual Hero Section - Mockup Perfect */}
-        <section className="relative min-h-[85vh] flex flex-col lg:flex-row items-stretch">
-          
-          {/* Student Side (Dark) */}
-          <div className={`flex-1 relative transition-all duration-1000 p-12 md:p-24 flex flex-col items-center justify-center text-center bg-[#0a192f] text-white ${activeFlow === 'FREELANCER' ? 'lg:w-[30%] opacity-20' : 'lg:w-[50%]'}`}>
-             <div className="max-w-md space-y-10 z-10">
-               <div className="flex justify-center gap-6 opacity-30">
-                  <Library size={48} strokeWidth={1.5} />
-                  <GraduationCap size={48} strokeWidth={1.5} />
-                  <BookOpen size={48} strokeWidth={1.5} />
-               </div>
-               
-               <h1 className="text-5xl md:text-7xl font-[900] tracking-tighter leading-[0.9] uppercase italic">
-                 Get Into <br /> Your Dream <br /> University
-               </h1>
-               
-               <p className="text-white/50 font-medium text-lg max-w-sm mx-auto leading-relaxed">
-                 Work with expert writers to craft compelling admissions essays, applications, and statements that stand out.
-               </p>
-               
-               <button 
-                 onClick={() => setActiveFlow('STUDENT')}
-                 className="bg-[#b89150] text-white px-14 py-6 rounded-none font-black text-xs uppercase tracking-widest hover:bg-[#a67d40] transition-all flex items-center justify-center gap-4 shadow-xl shadow-black/30 active:scale-95"
-               >
-                 Start My Project <ArrowRight size={18} strokeWidth={3} />
-               </button>
-             </div>
-             
-             {/* Decorative Elements */}
-             <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none overflow-hidden">
-                <div className="absolute -top-10 -left-10 w-96 h-96 border border-white rounded-none rotate-45" />
-                <div className="absolute -bottom-20 -right-20 w-80 h-80 border border-white rounded-none rotate-12 opacity-50" />
-             </div>
+// ── Testimonials ──
+function Testimonials() {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setActive(a => (a + 1) % TESTIMONIALS.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <section id="testimonials" style={{ padding: '100px 5%', position: 'relative', overflow: 'hidden' }}>
+      <div className="orb" style={{ width: 400, height: 400, background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', bottom: 0, left: '10%', opacity: 0.2 }} />
+      <div style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>Social Proof</div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em' }}>Stories of<br /><em>transformation</em></h2>
+      </div>
+
+      <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
+        {TESTIMONIALS.map((t, i) => (
+          <div key={i} style={{
+            display: i === active ? 'block' : 'none',
+            animation: 'fadeUp 0.5s ease',
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: 24, opacity: 0.3, fontFamily: 'serif', color: 'var(--violet-light)' }}>"</div>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(18px,2.5vw,24px)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 36, color: 'var(--text)' }}>{t.text}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center' }}>
+              <div style={{ width: 46, height: 46, borderRadius: 6, background: 'linear-gradient(135deg, var(--violet), var(--violet-light))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 15, fontFamily: 'var(--font-display)' }}>{t.name[0]}</div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{t.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 300 }}>{t.role}</div>
+              </div>
+              <div style={{ color: 'var(--gold)', fontSize: 14, letterSpacing: 2 }}>{'★'.repeat(t.rating)}</div>
+            </div>
           </div>
+        ))}
 
-          {/* Writer Side (Light) */}
-          <div className={`flex-1 relative transition-all duration-1000 p-12 md:p-24 flex flex-col items-center justify-center text-center bg-[#f0f7ff] ${activeFlow === 'STUDENT' ? 'lg:w-[30%] opacity-20' : 'lg:w-[50%]'}`}>
-             <div className="max-w-md space-y-10 z-10">
-                <div className="flex justify-center gap-8 opacity-20 text-[#0a192f]">
-                   <Feather size={48} strokeWidth={1.5} />
-                   <Laptop size={48} strokeWidth={1.5} />
-                   <div className="flex flex-col items-center">
-                      <div className="flex gap-1 mb-1">
-                        {[1,2,3,4,5].map(i => <Star key={i} size={10} fill="currentColor" />)}
-                      </div>
-                      <div className="w-10 h-6 bg-current rounded-none opacity-50" />
-                   </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 40 }}>
+          {TESTIMONIALS.map((_, i) => (
+            <button key={i} onClick={() => setActive(i)} style={{
+              width: i === active ? 28 : 8, height: 8, borderRadius: 4,
+              background: i === active ? 'var(--violet)' : 'var(--border)',
+              border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0,
+            }} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Pricing ──
+function Pricing({ onOrderClick }) {
+  return (
+    <section id="pricing" style={{ padding: '100px 5%', background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.04), transparent)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>Pricing</div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em' }}>Simple, transparent<br /><em>pricing</em></h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 17, maxWidth: 420, margin: '16px auto 0', lineHeight: 1.7, fontWeight: 300 }}>No hidden fees. No subscriptions lock-in. Cancel anytime.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, maxWidth: 980, margin: '0 auto' }}>
+        {PRICING.map((plan, i) => (
+          <div key={i} style={{
+            background: plan.highlight ? 'linear-gradient(145deg, var(--violet), #5b21b6)' : 'var(--surface)',
+            border: `1.5px solid ${plan.highlight ? 'transparent' : 'var(--border)'}`,
+            borderRadius: 10, padding: '40px 32px', position: 'relative', overflow: 'hidden',
+            transform: plan.highlight ? 'scale(1.04)' : 'none',
+            boxShadow: plan.highlight ? '0 24px 60px rgba(124,58,237,0.4)' : 'none',
+          }}>
+            {plan.highlight && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--gold)', color: '#0d0d1a', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, letterSpacing: '0.08em' }}>POPULAR</div>}
+            <div style={{ fontSize: 14, fontWeight: 600, color: plan.highlight ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', marginBottom: 4 }}>{plan.name}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 52, fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 4 }}>₹{plan.price}<span style={{ fontSize: 18, fontWeight: 400, fontFamily: 'var(--font-body)' }}>/mo</span></div>
+            <div style={{ fontSize: 13, color: plan.highlight ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)', marginBottom: 32, fontWeight: 300 }}>{plan.desc}</div>
+            <div style={{ marginBottom: 32 }}>
+              {plan.features.map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <span style={{ color: plan.highlight ? '#a78bfa' : 'var(--green)', fontSize: 14 }}>✓</span>
+                  <span style={{ fontSize: 14, color: plan.highlight ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontWeight: 300 }}>{f}</span>
                 </div>
-
-                <h1 className="text-5xl md:text-7xl font-[900] tracking-tighter leading-[0.9] uppercase italic text-[#0a192f]">
-                  Build Your <br /> Writing <br /> Career
-                </h1>
-                
-                <p className="text-[#0a192f]/50 font-medium text-lg max-w-sm mx-auto leading-relaxed">
-                  Join a prestigious community of professional writers, access premium projects, and grow your freelance business.
-                </p>
-                
-                <button 
-                  onClick={() => setActiveFlow('FREELANCER')}
-                  className="bg-[#0a192f] text-white px-14 py-6 rounded-none font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-4 shadow-xl shadow-blue-900/10 active:scale-95"
-                >
-                  Apply to Write <ArrowRight size={18} strokeWidth={3} />
-                </button>
-             </div>
-
-             {/* Sketch Background - Using a subtle grid/pattern */}
-             <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#0a192f 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+              ))}
+            </div>
+            <button onClick={() => onOrderClick()} style={{
+              width: '100%', padding: '13px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
+              background: plan.highlight ? 'rgba(255,255,255,0.15)' : 'var(--violet)',
+              color: '#fff', fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-body)',
+              transition: 'all 0.2s', backdropFilter: 'blur(10px)',
+            }}
+            onMouseEnter={e => e.target.style.background = plan.highlight ? 'rgba(255,255,255,0.25)' : '#6d28d9'}
+            onMouseLeave={e => e.target.style.background = plan.highlight ? 'rgba(255,255,255,0.15)' : 'var(--violet)'}
+            >{plan.cta}</button>
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-          {/* Student Flow Overlay - Modern Cinematic */}
-          <AnimatePresence>
-            {activeFlow === 'STUDENT' && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => { setActiveFlow(null); setStudentStep(1); }}
-                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
-                />
-                
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  className="relative w-full max-w-4xl bg-white shadow-2xl overflow-hidden flex flex-col border border-slate-100"
-                >
-                  {/* Minimal Header */}
-                  <div className="h-20 border-b border-slate-100 flex items-center justify-between px-10 md:px-16 shrink-0 bg-white">
-                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-black flex items-center justify-center text-white font-bold text-sm">E</div>
-                        <span className="text-lg font-[900] tracking-tighter italic uppercase text-black">Student Registration</span>
-                     </div>
-                     <button onClick={() => { setActiveFlow(null); setStudentStep(1); }} className="text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
-                        Close <ChevronRight size={14} />
-                     </button>
-                  </div>
-                  
-                  <div className="p-10 md:p-16">
-                     <div className="bg-white">
-                        <div className="h-1 bg-black w-full mb-12" />
-                        
-                        <div className="space-y-12">
-                           <div className="space-y-4 border-b border-slate-100 pb-10 text-center">
-                              <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black leading-none">Create Your Account.</h1>
-                              <p className="text-slate-500 font-medium tracking-tight text-sm uppercase">Join our academic platform to start your first project.</p>
-                           </div>
+// ── Order Modal ──
+function OrderModal({ isOpen, onClose, initialService }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({ category: initialService?.label || '', turnaround: '72h', wordCount: 500, details: '', deadline: '', budget: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-                           <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto">
-                              {/* Google Auth Integration */}
-                              <button 
-                                onClick={() => signIn('google', { callbackUrl: '/student' })}
-                                className="w-full flex items-center justify-center gap-4 bg-white border border-slate-200 py-5 font-black text-xs uppercase tracking-wider hover:bg-slate-50 transition-all rounded-none"
-                              >
-                                 <svg viewBox="0 0 24 24" className="w-5 h-5">
-                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                 </svg>
-                                 Continue with Google
-                              </button>
+  useEffect(() => { if (initialService) setForm(f => ({ ...f, category: initialService.label || '' })); }, [initialService]);
+  useEffect(() => { if (isOpen) { setStep(1); setSubmitted(false); setSubmitting(false); } }, [isOpen]);
 
-                              <div className="relative flex items-center justify-center py-4">
-                                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                                 <span className="relative bg-white px-4 text-[9px] font-black uppercase tracking-widest text-slate-300">Or Manual Registration</span>
-                              </div>
+  if (!isOpen) return null;
 
-                              <div className="space-y-4">
-                                 <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Target Service</label>
-                                 <select 
-                                   value={formData.serviceId}
-                                   onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
-                                   className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
-                                 >
-                                    <option value="">SELECT SERVICE...</option>
-                                    {SERVICES.map(s => (
-                                      <option key={s.id} value={s.id}>{s.name} - {s.price}</option>
-                                    ))}
-                                 </select>
-                              </div>
+  const turnaroundOptions = [
+    { label: '12 Hours', id: '12h', price: '+80%', badge: 'Rush' },
+    { label: '24 Hours', id: '24h', price: '+40%', badge: 'Express' },
+    { label: '72 Hours', id: '72h', price: 'Standard', badge: '' },
+    { label: '7 Days', id: '7d', price: '-10%', badge: 'Economy' },
+  ];
 
-                              <div className="space-y-4">
-                                 <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</label>
-                                 <input 
-                                   type="text" 
-                                   value={formData.name}
-                                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                   className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                   placeholder="E.G. ALEXANDER PIERCE"
-                                 />
-                              </div>
+  const handleSubmit = () => {
+    setSubmitting(true);
+    setTimeout(() => { setSubmitting(false); setSubmitted(true); }, 2000);
+  };
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Email Address</label>
-                                    <input 
-                                      type="email" 
-                                      value={formData.email}
-                                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                      className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                      placeholder="EMAIL@INSTITUTION.COM"
-                                    />
-                                 </div>
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Secure Password</label>
-                                    <input 
-                                      type="password" 
-                                      value={formData.password}
-                                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                      className="w-full bg-slate-50 border border-slate-200 px-8 py-5 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                      placeholder="••••••••"
-                                    />
-                                 </div>
-                              </div>
-                           </div>
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }} />
+      <div style={{ position: 'relative', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '40px', width: '100%', maxWidth: 580, maxHeight: '90vh', overflowY: 'auto', animation: 'fadeUp 0.3s ease' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'var(--surface2)', border: 'none', color: 'var(--text-muted)', width: 32, height: 32, borderRadius: 8, cursor: 'pointer', fontSize: 16, fontFamily: 'var(--font-body)' }}>✕</button>
 
-                           {authError && (
-                              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest text-center border border-red-100">
-                                 {authError}
-                              </div>
-                           )}
+        {submitted ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 64, marginBottom: 20, animation: 'float 2s ease-in-out infinite' }}>🎉</div>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>Order Placed!</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.7, marginBottom: 28, fontWeight: 300 }}>Your order has been received. We're matching you with the perfect writer — you'll hear back within 30 minutes.</p>
+            <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 6, padding: '16px 24px', marginBottom: 24 }}>
+              <div style={{ color: 'var(--green)', fontWeight: 600, fontSize: 14 }}>✓ Order #XW-{Math.floor(Math.random()*90000)+10000}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>Confirmation sent to your email</div>
+            </div>
+            <button className="btn-primary" onClick={onClose}>Close & Track Order</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 36 }}>
+              {[1,2,3].map(s => (
+                <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? 'var(--violet)' : 'var(--surface2)', transition: 'background 0.3s' }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Step {step} of 3</div>
 
-                           <div className="pt-10 flex flex-col items-center gap-8 border-t border-slate-100">
-                               <button 
-                                 onClick={handleStudentNext}
-                                 disabled={isSubmitting || !formData.email || !formData.name || !formData.password || !formData.serviceId}
-                                 className="w-full md:w-auto bg-black text-white px-24 py-6 font-black text-xs uppercase tracking-[0.4em] hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none flex items-center justify-center gap-4"
-                               >
-                                 {isSubmitting ? 'CREATING ACCOUNT...' : 'REGISTER & CONTINUE'} <ChevronRight size={16} />
-                               </button>
-                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-                                 Institutional Grade Encryption / Secure Data Protocols
-                               </p>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                </motion.div>
+            {step === 1 && (
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>What do you need?</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28, fontWeight: 300 }}>Select a service category to begin</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 28, maxHeight: 340, overflowY: 'auto' }}>
+                  {SERVICES.map(svc => (
+                    <div key={svc.id} onClick={() => setForm(f => ({ ...f, category: svc.label }))} style={{
+                      padding: '14px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 10,
+                      background: form.category === svc.label ? 'rgba(124,58,237,0.15)' : 'var(--surface2)',
+                      border: `1.5px solid ${form.category === svc.label ? 'var(--violet)' : 'var(--border)'}`,
+                    }}>
+                      <span style={{ fontSize: 20 }}>{svc.icon}</span>
+                      <span style={{ fontSize: 13, fontWeight: form.category === svc.label ? 600 : 400, color: form.category === svc.label ? 'var(--text)' : 'var(--text-muted)' }}>{svc.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <button className="btn-primary" style={{ width: '100%', padding: '14px 0' }} disabled={!form.category} onClick={() => setStep(2)}>Continue →</button>
               </div>
             )}
-            {activeFlow === 'FREELANCER' && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setActiveFlow(null)}
-                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
-                />
-                
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  className="relative w-full max-w-5xl max-h-[90vh] bg-white shadow-2xl overflow-y-auto flex flex-col border border-slate-100"
-                >
-                  {/* Minimal Header */}
-                  <div className="h-20 border-b border-slate-100 flex items-center justify-between px-10 md:px-16 shrink-0 sticky top-0 bg-white z-10">
-                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-black flex items-center justify-center text-white font-bold text-sm">E</div>
-                        <span className="text-lg font-[900] tracking-tighter italic uppercase text-black">Writer Application</span>
-                     </div>
-                     <button onClick={() => setActiveFlow(null)} className="text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-black flex items-center gap-2 transition-colors">
-                        Close <ChevronRight size={14} />
-                     </button>
-                  </div>
 
-                  <div className="flex-1 p-8 md:p-16">
-                     <div className="bg-white">
-                        {/* Form Banner */}
-                        <div className="h-1 bg-black w-full mb-12" />
-                        
-                        <div className="space-y-12">
-                           <div className="space-y-4 border-b border-slate-100 pb-10">
-                              <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black leading-none">Professional Onboarding.</h1>
-                              <p className="text-slate-500 font-medium tracking-tight text-sm uppercase">Complete your dossier to join our specialized writing panel.</p>
-                           </div>
+            {step === 2 && (
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Order details</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28, fontWeight: 300 }}>Tell us more so we can match the perfect writer</p>
 
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-                              {/* Group 1: Identity */}
-                              <div className="space-y-8">
-                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 border-l-4 border-blue-600 pl-4">Account Information</h4>
-                                 
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</label>
-                                    <input 
-                                       type="text"
-                                       value={writerFormData.name}
-                                       onChange={(e) => setWriterFormData({...writerFormData, name: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="E.G. ALEXANDER PIERCE"
-                                    />
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Professional Email</label>
-                                    <input 
-                                       type="email"
-                                       value={writerFormData.email}
-                                       onChange={(e) => setWriterFormData({...writerFormData, email: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="EMAIL@INSTITUTION.COM"
-                                    />
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Secure Password</label>
-                                    <input 
-                                       type="password"
-                                       value={writerFormData.password}
-                                       onChange={(e) => setWriterFormData({...writerFormData, password: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="MINIMUM 8 CHARACTERS"
-                                    />
-                                 </div>
-                              </div>
-
-                              {/* Group 2: Professional Details */}
-                              <div className="space-y-8">
-                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 border-l-4 border-blue-600 pl-4">Expertise Profile</h4>
-                                 
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Primary Domain</label>
-                                    <select 
-                                       value={writerFormData.domainId}
-                                       onChange={(e) => setWriterFormData({...writerFormData, domainId: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
-                                    >
-                                       <option value="">SELECT SPECIALIZATION...</option>
-                                       {servicesData.categories.map(c => (
-                                         <option key={c.id} value={c.id}>{c.name}</option>
-                                       ))}
-                                    </select>
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Highest Qualification</label>
-                                    <input 
-                                       type="text"
-                                       value={writerFormData.education}
-                                       onChange={(e) => setWriterFormData({...writerFormData, education: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="E.G. PHD IN ASTROPHYSICS"
-                                    />
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Years of Experience</label>
-                                    <select 
-                                       value={writerFormData.experience}
-                                       onChange={(e) => setWriterFormData({...writerFormData, experience: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none appearance-none"
-                                    >
-                                       <option value="">SELECT EXPERIENCE...</option>
-                                       <option value="1">1-3 YEARS</option>
-                                       <option value="4">4-7 YEARS</option>
-                                       <option value="8">8+ YEARS</option>
-                                    </select>
-                                 </div>
-                              </div>
-                           </div>
-
-                           {/* Verification Links */}
-                           <div className="space-y-8 pt-6 border-t border-slate-100">
-                              <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 border-l-4 border-blue-600 pl-4">Verification Artifacts</h4>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Resume / CV Link</label>
-                                    <input 
-                                       type="text"
-                                       value={writerFormData.resumeUrl}
-                                       onChange={(e) => setWriterFormData({...writerFormData, resumeUrl: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="DRIVE OR PORTFOLIO LINK"
-                                    />
-                                 </div>
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">LinkedIn Profile</label>
-                                    <input 
-                                       type="text"
-                                       value={writerFormData.linkedinUrl}
-                                       onChange={(e) => setWriterFormData({...writerFormData, linkedinUrl: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="LINKEDIN.COM/IN/USER"
-                                    />
-                                 </div>
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Professional Photo</label>
-                                    <input 
-                                       type="text"
-                                       value={writerFormData.photoUrl}
-                                       onChange={(e) => setWriterFormData({...writerFormData, photoUrl: e.target.value})}
-                                       className="w-full bg-slate-50 border border-slate-200 px-6 py-4 font-bold text-sm outline-none focus:bg-white focus:border-black transition-all rounded-none"
-                                       placeholder="IMAGE URL"
-                                    />
-                                 </div>
-                              </div>
-                           </div>
-
-                           {authError && (
-                              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest text-center border border-red-100">
-                                 {authError}
-                              </div>
-                           )}
-
-                           <div className="pt-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-xs">
-                                 By submitting this dossier, you agree to our institutional quality standards and non-disclosure protocols.
-                               </p>
-                               <button 
-                                 onClick={handleWriterSubmit}
-                                 disabled={isSubmitting || !writerFormData.email || !writerFormData.name || !writerFormData.domainId}
-                                 className="bg-black text-white px-16 py-6 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-2xl disabled:opacity-20 active:scale-95 rounded-none shrink-0"
-                               >
-                                 {isSubmitting ? 'PROCESSING DOSSIER...' : 'SUBMIT APPLICATION'}
-                               </button>
-                           </div>
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>TURNAROUND TIME</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {turnaroundOptions.map(t => (
+                      <div key={t.id} onClick={() => setForm(f => ({ ...f, turnaround: t.id }))} style={{
+                        padding: '12px 14px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s',
+                        background: form.turnaround === t.id ? 'rgba(124,58,237,0.15)' : 'var(--surface2)',
+                        border: `1.5px solid ${form.turnaround === t.id ? 'var(--violet)' : 'var(--border)'}`,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 14, fontWeight: form.turnaround === t.id ? 600 : 400 }}>{t.label}</span>
+                          {t.badge && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 100, background: 'rgba(124,58,237,0.2)', color: 'var(--violet-light)' }}>{t.badge}</span>}
                         </div>
-                     </div>
-                  </div>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
-        </section>
-
-        {/* Trusted By Bar - Mockup Style */}
-        <section className="py-24 px-10 border-b border-slate-50">
-           <div className="max-w-7xl mx-auto flex flex-col items-center gap-16">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-300">Trusted by Thousands</h4>
-              <div className="flex flex-wrap justify-center items-center gap-16 md:gap-24 opacity-20 grayscale">
-                 {[
-                   { name: 'UNIVERSITY OF MLOBORE', icon: <Library size={24} /> },
-                   { name: 'VEEAN UNIVERSITY', icon: <GraduationCap size={24} /> },
-                   { name: 'UNIVERSITY OF BROWN', icon: <Library size={24} /> },
-                   { name: 'UNIVERSITY OF LAICHORD', icon: <GraduationCap size={24} /> },
-                   { name: 'UNINSORN', icon: <GraduationCap size={24} /> }
-                 ].map((uni, i) => (
-                   <div key={i} className="flex items-center gap-3 group cursor-default">
-                      <div className="opacity-40">{uni.icon}</div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">{uni.name}</span>
-                   </div>
-                 ))}
-              </div>
-           </div>
-        </section>
-
-        {/* Services Section */}
-        <section id="services" className="py-40 px-10 md:px-24 bg-[#fbfbfb]">
-           <div className="max-w-7xl mx-auto space-y-24">
-              <div className="text-center space-y-4">
-                 <p className="text-blue-600 font-black uppercase tracking-[0.2em] text-[9px]">The Arsenal</p>
-                 <h2 className="text-4xl md:text-5xl font-[900] tracking-tighter uppercase text-[#0a192f]">Specialized Domains.</h2>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                 {servicesData.categories.map((service, i) => {
-                   const IconComponent = ICON_MAP[service.icon_name] || FileText;
-                   return (
-                     <div key={i} className="bg-white p-6 shadow-sm hover:shadow-lg transition-all border border-slate-100 group flex flex-col items-start">
-                        <div className="w-9 h-9 bg-blue-50 text-blue-600 mb-5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                           <IconComponent size={16} />
-                        </div>
-                        <h4 className="font-black text-[12px] uppercase tracking-wider mb-2 text-slate-900">{service.name}</h4>
-                        <p className="text-slate-400 text-[10px] font-bold leading-relaxed uppercase tracking-tight">{service.description}</p>
-                     </div>
-                   );
-                 })}
-              </div>
-           </div>
-        </section>
-
-        {/* How it Works Section */}
-        <section id="how-it-works" className="py-40 px-10 md:px-24 bg-white">
-           <div className="max-w-7xl mx-auto space-y-24">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-                 <div className="space-y-8">
-                    <p className="text-blue-600 font-black uppercase tracking-[0.15em] text-[10px]">The Protocol</p>
-                    <h2 className="text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f] leading-[0.9]">High-Performance <br /> Workflow.</h2>
-                    <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-sm italic">We sync elite writing talent with your milestones to ensure institutional-grade results.</p>
-                 </div>
-                 
-                 <div className="space-y-12">
-                    {[
-                      { t: 'Strategic Briefing', d: 'Submit your requirements and academic context through our secure portal.' },
-                      { t: 'Expert Matching', d: 'Our algorithm pairs you with a verified subject matter specialist in your niche.' },
-                      { t: 'Real-time Drafting', d: 'Collaborate directly with your writer through integrated chat and feedback loops.' },
-                      { t: 'Quality Protocol', d: 'Final verified draft delivered with full plagiarism clearance and quality audit.' }
-                    ].map((step, i) => (
-                      <div key={i} className="flex gap-8 group translate-x-0 hover:translate-x-2 transition-transform">
-                         <div className="text-3xl font-[900] text-slate-100 italic transition-colors group-hover:text-blue-100">0{i+1}</div>
-                         <div className="space-y-1">
-                            <h4 className="font-black text-[12px] uppercase tracking-[0.1em] text-[#0a192f]">{step.t}</h4>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight leading-relaxed max-w-md">{step.d}</p>
-                         </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>{t.price}</div>
                       </div>
                     ))}
-                 </div>
-              </div>
-           </div>
-        </section>
+                  </div>
+                </div>
 
-        {/* Pricing Section */}
-        <section id="pricing" className="py-40 px-10 md:px-24 bg-[#F4F7FA] text-[#0a192f] overflow-hidden relative">
-           <div className="max-w-7xl mx-auto space-y-20 relative z-10">
-              <div className="text-center space-y-4">
-                 <p className="text-blue-600 font-black uppercase tracking-[0.2em] text-[9px]">Resource Allocation</p>
-                 <h2 className="text-4xl md:text-5xl font-[900] tracking-tighter uppercase text-[#0a192f]">Transparent Pricing.</h2>
-              </div>
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>APPROXIMATE WORD COUNT: <span style={{ color: 'var(--violet-light)' }}>{form.wordCount.toLocaleString()}</span></label>
+                  <input type="range" min={100} max={10000} step={100} value={form.wordCount} onChange={e => setForm(f => ({ ...f, wordCount: +e.target.value }))} style={{ width: '100%', accentColor: 'var(--violet)', cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}><span>100</span><span>10,000</span></div>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 {[
-                   { t: 'Standard', p: '2,499', d: 'Foundational content for standard applications.', features: ['Expert Writer', '1 Revision', 'Plagiarism Report'] },
-                   { t: 'Premium', p: '4,999', d: 'High-stake documents for Ivy League tiers.', features: ['Subject specialist', 'Unlimited Revisions', 'Direct Chat', 'Priority Support'], featured: true },
-                   { t: 'Institutional', p: '9,999', d: 'Bulk support and long-term academic partnerships.', features: ['Managerial support', 'Custom Workflows', 'Bulk Pricing', 'API Access'] }
-                 ].map((plan, i) => (
-                   <div key={i} className={`p-10 flex flex-col items-center text-center space-y-8 transition-all bg-white border ${plan.featured ? 'border-blue-600 border-t-[6px] shadow-2xl shadow-blue-100 scale-105 z-20' : 'border-slate-100 shadow-sm z-10'}`}>
-                      <div className="space-y-4">
-                         <h4 className={`font-black text-[10px] uppercase tracking-widest ${plan.featured ? 'text-blue-600' : 'text-slate-400'}`}>{plan.t}</h4>
-                         <p className="text-5xl font-black tracking-tighter text-slate-900">₹{plan.p}</p>
-                      </div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-tight leading-relaxed max-w-[200px]">{plan.d}</p>
-                      <div className="w-full h-[1px] bg-slate-100" />
-                      <ul className="space-y-3 flex-1">
-                         {plan.features.map(f => (
-                           <li key={f} className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center justify-center gap-2">
-                              <ShieldCheck size={12} className={plan.featured ? "text-blue-600" : "text-slate-300"} /> {f}
-                           </li>
-                         ))}
-                      </ul>
-                      <button className={`w-full py-4 text-[9px] font-black uppercase tracking-widest transition-all ${plan.featured ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 hover:bg-blue-700' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
-                        Initialize Protocol
-                      </button>
-                   </div>
-                 ))}
-              </div>
-           </div>
-           
-           {/* Decorative Elements */}
-           <div className="absolute top-20 right-20 w-96 h-96 bg-blue-600/5 rounded-none blur-[150px] rotate-45" />
-           <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-600/5 rounded-none blur-[150px] -rotate-12" />
-        </section>
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>BRIEF / REQUIREMENTS</label>
+                  <textarea value={form.details} onChange={e => setForm(f => ({ ...f, details: e.target.value }))} placeholder="Describe what you need. The more detail, the better the match..." style={{ width: '100%', height: 100, background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font-body)', resize: 'vertical', outline: 'none' }} />
+                </div>
 
-        {/* About Section */}
-        <section id="about" className="py-40 px-10 md:px-24 bg-white">
-           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-              <div className="relative">
-                 <div className="aspect-square bg-slate-50 overflow-hidden border border-slate-100">
-                    <div className="absolute inset-0 flex items-center justify-center text-[#0a192f] opacity-5 font-[900] text-[20rem] tracking-tighter leading-none italic select-none">
-                       EW
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn-outline" style={{ flex: 1 }} onClick={() => setStep(1)}>← Back</button>
+                  <button className="btn-primary" style={{ flex: 2 }} onClick={() => setStep(3)}>Continue →</button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Confirm & pay</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28, fontWeight: 300 }}>Review your order summary</p>
+
+                <div style={{ background: 'var(--surface2)', borderRadius: 6, padding: 24, marginBottom: 24 }}>
+                  {[
+                    { label: 'Service', val: form.category },
+                    { label: 'Word Count', val: `${form.wordCount.toLocaleString()} words` },
+                    { label: 'Turnaround', val: turnaroundOptions.find(t => t.id === form.turnaround)?.label },
+                    { label: 'Est. Price', val: `₹${Math.round((form.wordCount / 100) * 200 * (form.turnaround === '12h' ? 1.8 : form.turnaround === '24h' ? 1.4 : form.turnaround === '7d' ? 0.9 : 1))}` },
+                  ].map(row => (
+                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{row.label}</span>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>{row.val}</span>
                     </div>
-                    <div className="absolute inset-20 border-2 border-slate-100 border-dashed" />
-                 </div>
-                 <div className="absolute -bottom-10 -right-10 bg-[#0a192f] p-12 text-white shadow-2xl">
-                    <p className="text-4xl font-[900] tracking-tighter italic">100%</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Quality Guarantee</p>
-                 </div>
-              </div>
+                  ))}
+                </div>
 
-              <div className="space-y-12">
-                 <div className="space-y-6">
-                    <p className="text-blue-600 font-black uppercase tracking-[0.15em] text-[10px]">The Ethos</p>
-                    <h2 className="text-6xl font-[900] tracking-tighter italic uppercase text-[#0a192f] leading-[0.9]">Bridging the <br /> Expertise Gap.</h2>
-                 </div>
-                 <p className="text-slate-400 text-lg font-medium leading-relaxed italic">Express Writer was built to eliminate the friction between elite academic talent and students pursuing global education goals. We are more than a marketplace; we are a specialized writing panel committed to institutional excellence.</p>
-                 <div className="grid grid-cols-2 gap-10">
-                    <div className="space-y-2">
-                       <p className="text-3xl font-[900] text-[#0a192f]">12k+</p>
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Drafts Delivered</p>
-                    </div>
-                    <div className="space-y-2">
-                       <p className="text-3xl font-[900] text-[#0a192f]">500+</p>
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verified Specialists</p>
-                    </div>
-                 </div>
-                 <button className="bg-[#0a192f] text-white px-12 py-6 text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-blue-900/10">Read Our Manifesto</button>
-              </div>
-           </div>
-        </section>
-      </main>
+                <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--violet-light)', marginBottom: 4 }}>🔄 Revision Policy</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 300 }}>Unlimited revisions within 7 days of delivery. We guarantee satisfaction — or a full refund.</div>
+                </div>
 
-      {/* Modern High-End Footer */}
-      <footer className="py-24 px-10 md:px-24 bg-[#0a192f] text-white overflow-hidden relative">
-         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-16 relative z-10">
-            <div className="flex flex-col items-center md:items-start gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white text-[#0a192f] rounded-none flex items-center justify-center font-bold text-lg">E</div>
-                <span className="text-2xl font-[900] tracking-tighter italic">Express Writer</span>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn-outline" style={{ flex: 1 }} onClick={() => setStep(2)}>← Back</button>
+                  <button className="btn-primary" style={{ flex: 2, opacity: submitting ? 0.7 : 1 }} onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? '⏳ Processing...' : '🔒 Place Order'}
+                  </button>
+                </div>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Institutional-Grade Academic Services</p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Live Chat ──
+function LiveChat() {
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState([{ from: 'bot', text: 'Hi! 👋 How can we help you today? Ask us about our services, pricing, or writers.' }]);
+  const [input, setInput] = useState('');
+  const endRef = useRef(null);
+
+  const autoReplies = [
+    'Great question! Our expert writers are available 24/7. What service are you looking for?',
+    'We offer a 100% satisfaction guarantee with unlimited revisions. Anything else?',
+    'Most orders are matched with a writer within 30 minutes! Shall I help you place an order?',
+    'Our top writers have helped students get into Harvard, Stanford, and Oxford. Want to know more?',
+  ];
+
+  const send = () => {
+    if (!input.trim()) return;
+    setMsgs(m => [...m, { from: 'user', text: input }]);
+    setInput('');
+    setTimeout(() => {
+      setMsgs(m => [...m, { from: 'bot', text: autoReplies[Math.floor(Math.random() * autoReplies.length)] }]);
+    }, 1200);
+  };
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+
+  return (
+    <>
+      {open && (
+        <div style={{ position: 'fixed', bottom: 90, right: 24, width: 340, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, zIndex: 3000, animation: 'slideIn 0.3s ease', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--violet), #5b21b6)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>X</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>Xpresswriters Support</div>
+                <div style={{ fontSize: 12, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} /> Online</div>
+              </div>
             </div>
-            
-            <div className="flex flex-wrap justify-center gap-12">
-               {['Expertise', 'Stream', 'Writers', 'Legal'].map(item => (
-                 <div key={item} className="flex flex-col gap-4">
-                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20 mb-2">{item}</span>
-                    <a href="#" className="text-xs font-bold uppercase tracking-widest hover:text-blue-400 transition-colors">Protocol</a>
-                 </div>
-               ))}
+            <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 8, width: 28, height: 28, cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>✕</button>
+          </div>
+          <div style={{ height: 280, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {msgs.map((m, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: m.from === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{ maxWidth: '80%', padding: '10px 14px', borderRadius: m.from === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: m.from === 'user' ? 'var(--surface2)' : 'var(--surface)', fontSize: 13, lineHeight: 1.5, color: 'var(--text)' }}>{m.text}</div>
+              </div>
+            ))}
+            <div ref={endRef} />
+          </div>
+          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="Type a message..." style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px', color: 'var(--text)', fontSize: 13, fontFamily: 'var(--font-body)', outline: 'none' }} />
+            <button onClick={send} style={{ background: 'var(--violet)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', fontSize: 18 }}>↑</button>
+          </div>
+        </div>
+      )}
+
+      <button onClick={() => setOpen(o => !o)} style={{ position: 'fixed', bottom: 24, right: 24, width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--violet), #5b21b6)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: '0 8px 30px rgba(124,58,237,0.5)', zIndex: 3000, animation: open ? 'none' : 'pulse 3s ease-in-out infinite', transition: 'all 0.3s' }}>
+        {open ? '✕' : '💬'}
+      </button>
+    </>
+  );
+}
+
+// ── Footer ──
+function Footer() {
+  const links = {
+    Services: ['Statement of Purpose', 'Resume & CV', 'Thesis Writing', 'Academic Essays', 'LinkedIn Profile'],
+    Company: ['About Us', 'How it Works', 'Blog', 'Careers', 'Press'],
+    Support: ['Help Center', 'Contact Us', 'Track Order', 'Revision Policy', 'Refund Policy'],
+  };
+  return (
+    <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '72px 5% 40px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 64 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--violet)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#fff' }}>X</div>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18 }}>Xpresswriters</span>
             </div>
-         </div>
-         
-         <div className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-30 relative z-10">
-            <p className="text-[9px] font-black uppercase tracking-wider">© 2026 Admino Education Hub. All Rights Reserved.</p>
-            <div className="flex gap-8">
-               {['Terms', 'Privacy', 'Security'].map(item => (
-                 <a key={item} href="#" className="text-[9px] font-black uppercase tracking-widest hover:text-white transition-colors">{item}</a>
-               ))}
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.7, marginBottom: 24, maxWidth: 260, fontWeight: 300 }}>Words that work. Writers who deliver. The world's most trusted content writing platform.</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {['Twitter', 'LinkedIn', 'Instagram'].map(s => (
+                <div key={s} style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', fontSize: 13, color: 'var(--text-muted)' }}>{s[0]}</div>
+              ))}
             </div>
-         </div>
-         
-         {/* Decorative Blur */}
-         <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-600/10 rounded-none blur-[120px] rotate-45" />
-      </footer>
+          </div>
+          {Object.entries(links).map(([cat, items]) => (
+            <div key={cat}>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 20 }}>{cat}</div>
+              {items.map(item => (
+                <div key={item} style={{ marginBottom: 10 }}>
+                  <a href="#" style={{ fontSize: 14, color: 'var(--text-dim)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 300 }}
+                    onMouseEnter={e => e.target.style.color = 'var(--text)'}
+                    onMouseLeave={e => e.target.style.color = 'var(--text-dim)'}
+                  >{item}</a>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>© 2026 Xpresswriters. All rights reserved.</span>
+          <div style={{ display: 'flex', gap: 24 }}>
+            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(l => (
+              <a key={l} href="#" style={{ fontSize: 13, color: 'var(--text-dim)', textDecoration: 'none' }}>{l}</a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export default function LandingPage() {
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [orderService, setOrderService] = useState(null);
+
+  const handleOrder = (svc = null) => { setOrderService(svc); setOrderOpen(true); };
+
+  return (
+    <div className="landing-page">
+      <Navbar onOrderClick={handleOrder} />
+      <Hero onOrderClick={handleOrder} />
+      <Marquee />
+      <Services onOrderClick={handleOrder} />
+      <HowItWorks onOrderClick={handleOrder} />
+      <Writers onOrderClick={handleOrder} />
+      <OrderTracking />
+      <Testimonials />
+      <Pricing onOrderClick={handleOrder} />
+      <Footer />
+      <LiveChat />
+      <OrderModal isOpen={orderOpen} onClose={() => setOrderOpen(false)} initialService={orderService} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-export default function Wallet({ projects = [], userName = "Student" }) {
+export default function Wallet({ projects = [], userName = "Student", isMobile }) {
   const [amount, setAmount] = useState(500);
   
   // In a real app, this would be fetched from the User model
@@ -19,18 +19,18 @@ export default function Wallet({ projects = [], userName = "Student" }) {
     }));
 
   return (
-    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+    <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Wallet & Credits</h1>
         <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Manage your balance, top up credits, and view transaction history.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 24, marginBottom: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: 24, marginBottom: 32 }}>
         {/* Balance Card */}
         <div style={{ 
           background: 'linear-gradient(135deg, var(--teal), #0f766e)', 
           borderRadius: 16, 
-          padding: 32, 
+          padding: isMobile ? 20 : 32, 
           color: '#fff',
           position: 'relative',
           overflow: 'hidden',
@@ -125,8 +125,8 @@ export default function Wallet({ projects = [], userName = "Student" }) {
           <h2 style={{ fontSize: 18, fontWeight: 600 }}>Transaction History</h2>
           <button style={{ background: 'none', border: 'none', color: 'var(--teal-light)', fontSize: 13, cursor: 'pointer' }}>Download All Invoices</button>
         </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', padding: '12px 20px', background: 'var(--surface2)', borderBottom: '1px solid var(--border2)' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, overflowX: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', padding: '12px 20px', background: 'var(--surface2)', borderBottom: '1px solid var(--border2)', minWidth: 600 }}>
             {['ID', 'Date', 'Description', 'Amount', 'Invoice'].map(h => (
               <div key={h} style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
             ))}
@@ -136,6 +136,7 @@ export default function Wallet({ projects = [], userName = "Student" }) {
               display: 'grid', 
               gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', 
               padding: '16px 20px', 
+              minWidth: 600,
               borderBottom: i < transactions.length - 1 ? '1px solid var(--border2)' : 'none',
               alignItems: 'center'
             }}>

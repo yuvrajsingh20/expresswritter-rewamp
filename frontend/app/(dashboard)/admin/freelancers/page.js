@@ -32,7 +32,7 @@ const WorkforcePortal = () => {
     <div className="flex bg-[#f8f9fa] min-h-screen text-[#1d1d1f]">
       <Sidebar role="ADMIN" />
       
-      <main className="flex-1 ml-64 p-10 space-y-10 max-w-7xl mx-auto w-full">
+      <main className="flex-1 md:ml-64 p-10 space-y-10 max-w-7xl mx-auto w-full">
         <header className="flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-black tracking-tight italic">Workforce Control</h1>

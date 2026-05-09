@@ -64,7 +64,7 @@ function LoginForm() {
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 56px', maxWidth: 520, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px clamp(20px, 5vw, 56px)', maxWidth: 520, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
       <div style={{ marginBottom: 36 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 6 }}>Welcome back</h1>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300 }}>Sign in to your Xpresswriters account</p>

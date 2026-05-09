@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, StatusDot } from "./admin-shared";
 
 // ── SECTION 5: WRITER MANAGEMENT ──
-export function AdminWriters({ freelancers = [] }) {
+export function AdminWriters({ freelancers = [], isMobile }) {
   const [mainTab, setMainTab] = React.useState('Writers');
   const [tab, setTab] = React.useState('All Writers');
   const [selected, setSelected] = React.useState(null);
@@ -122,13 +122,13 @@ export function AdminWriters({ freelancers = [] }) {
         ))}
       </div>
 
-      {mainTab === 'Eagle Eye' && <EagleEyePanel />}
-      {mainTab === 'Direct Chat' && <DirectChatPanel freelancers={WRITERS} />}
+      {mainTab === 'Eagle Eye' && <EagleEyePanel isMobile={isMobile} />}
+      {mainTab === 'Direct Chat' && <DirectChatPanel freelancers={WRITERS} isMobile={isMobile} />}
       {mainTab !== 'Writers' ? null : (
         <div>
           <SubTabs tabs={['All Writers', 'Active', 'Pending', 'Inactive']} active={tab} onChange={t => { setTab(t); setSelected(null); }} />
 
-          <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 340px)', minHeight: 400 }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, height: isMobile ? 'auto' : 'calc(100vh - 340px)', minHeight: 400 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={toggleSelectAll} style={{ cursor: 'pointer' }} />
@@ -146,7 +146,7 @@ export function AdminWriters({ freelancers = [] }) {
               </div>
             )}
           </div>
-          <div style={{ width: selected ? 340 : '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
+          <div style={{ width: isMobile ? '100%' : (selected ? 340 : '100%'), flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
             {filtered.map(w => (
               <div key={w.id} onClick={() => setSelected(w.id === selected ? null : w.id)} style={{
                 background: selected === w.id ? 'rgba(13,148,136,0.06)' : 'var(--surface2)',
@@ -198,7 +198,7 @@ export function AdminWriters({ freelancers = [] }) {
                   </div>
                 </div>
 
-                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                   <Card>
                     <CardHeader title="KPI / KRA" />
                     <div style={{ padding: 12 }}>
@@ -243,7 +243,7 @@ export function AdminWriters({ freelancers = [] }) {
                   <Card>
                     <CardHeader title="Payment Settings" />
                     <div style={{ padding: 12 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 10 }}>
                         {[['Method', selected_w.payMethod], ['Currency', selected_w.currency], ['Total Earned', `$${selected_w.earnings.toLocaleString()}`], ['Platform Share', '30%']].map(([k, v]) => (
                           <div key={k} style={{ background: 'var(--surface3)', borderRadius: 6, padding: '8px 10px' }}>
                             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>{k}</div>
@@ -278,7 +278,7 @@ export function AdminWriters({ freelancers = [] }) {
   );
 }
 
-export function EagleEyePanel() {
+export function EagleEyePanel({ isMobile }) {
   const [flagged, setFlagged] = React.useState([]);
   const [live, setLive] = React.useState([]);
   const socketRef = React.useRef(null);
@@ -291,7 +291,7 @@ export function EagleEyePanel() {
     return () => s.disconnect();
   }, []);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, height: 'calc(100vh - 320px)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, height: isMobile ? 'auto' : 'calc(100vh - 320px)' }}>
       <div style={{ background: 'var(--surface2)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.06)' }}>
           <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 13, color: '#ef4444' }}>Blocked Messages</div><div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Content filter violations</div></div>
@@ -339,7 +339,7 @@ export function EagleEyePanel() {
   );
 }
 
-export function DirectChatPanel({ freelancers }) {
+export function DirectChatPanel({ freelancers, isMobile }) {
   const [activeId, setActiveId] = React.useState(null);
   const [input, setInput] = React.useState('');
   const [messages, setMessages] = React.useState([]);
@@ -376,8 +376,8 @@ export function DirectChatPanel({ freelancers }) {
   };
   const active = freelancers ? freelancers.find(f => f.id === activeId) : null;
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 320px)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-      <div style={{ width: 240, borderRight: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', height: isMobile ? 'auto' : 'calc(100vh - 320px)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ width: isMobile ? '100%' : 240, borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', background: 'var(--surface2)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 13 }}>Writers</div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {(freelancers || []).map(f => (

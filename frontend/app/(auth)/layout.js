@@ -19,7 +19,7 @@ function AuthPanel() {
   ];
 
   return (
-    <div style={{
+    <div className="auth-panel" style={{
       width: 440, flexShrink: 0, background: 'linear-gradient(160deg,#0a0a18 0%,#0d1a20 60%,#091a18 100%)',
       borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', justifyContent: 'space-between',

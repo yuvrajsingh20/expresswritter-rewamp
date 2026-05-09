@@ -46,7 +46,7 @@ const PRICING = [
 /* ─── COMPONENTS ─── */
 
 // ── Navbar ──
-function Navbar({ onOrderClick }) {
+function Navbar({ onOrderClick, isMobile }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -70,21 +70,25 @@ function Navbar({ onOrderClick }) {
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #f0eeff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Xpresswriters</span>
       </div>
 
-      <div style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
-        {['Services', 'Writers', 'Pricing', 'How it Works'].map(item => (
-          <a key={item} href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s' }}
-            onMouseEnter={e => e.target.style.color='var(--text)'}
-            onMouseLeave={e => e.target.style.color='var(--text-muted)'}
-          >{item}</a>
-        ))}
-      </div>
+      {!isMobile && (
+        <div style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
+          {['Services', 'Writers', 'Pricing', 'How it Works'].map(item => (
+            <a key={item} href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s' }}
+              onMouseEnter={e => e.target.style.color='var(--text)'}
+              onMouseLeave={e => e.target.style.color='var(--text-muted)'}
+            >{item}</a>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <Link href="/login" style={{ padding: '9px 16px', fontSize: 14, color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
+        <Link href="/login" style={{ padding: '9px 12px', fontSize: 14, color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
           onMouseEnter={e => e.target.style.color='var(--text)'}
           onMouseLeave={e => e.target.style.color='var(--text-muted)'}
         >Login</Link>
-        <Link href="/dashboard" style={{ padding: '9px 20px', fontSize: 14, borderRadius: 6, border: '1.5px solid var(--border)', color: 'var(--violet-light)', textDecoration: 'none', fontWeight: 500, display: 'inline-block' }}>Dashboard</Link>
+        {!isMobile && (
+          <Link href="/dashboard" style={{ padding: '9px 20px', fontSize: 14, borderRadius: 6, border: '1.5px solid var(--border)', color: 'var(--violet-light)', textDecoration: 'none', fontWeight: 500, display: 'inline-block' }}>Dashboard</Link>
+        )}
         <button className="btn-primary" style={{ padding: '9px 20px', fontSize: 14 }} onClick={onOrderClick}>Place Order</button>
       </div>
     </nav>
@@ -701,7 +705,7 @@ function LiveChat() {
 }
 
 // ── Footer ──
-function Footer() {
+function Footer({ isMobile }) {
   const links = {
     Services: ['Statement of Purpose', 'Resume & CV', 'Thesis Writing', 'Academic Essays', 'LinkedIn Profile'],
     Company: ['About Us', 'How it Works', 'Blog', 'Careers', 'Press'],
@@ -710,7 +714,7 @@ function Footer() {
   return (
     <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '72px 5% 40px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 64 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 64 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
               <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--violet)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#fff' }}>X</div>
@@ -753,12 +757,20 @@ function Footer() {
 export default function LandingPage() {
   const [orderOpen, setOrderOpen] = useState(false);
   const [orderService, setOrderService] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleOrder = (svc = null) => { setOrderService(svc); setOrderOpen(true); };
 
   return (
     <div className="landing-page">
-      <Navbar onOrderClick={handleOrder} />
+      <Navbar onOrderClick={handleOrder} isMobile={isMobile} />
       <Hero onOrderClick={handleOrder} />
       <Marquee />
       <Services onOrderClick={handleOrder} />
@@ -767,7 +779,7 @@ export default function LandingPage() {
       <OrderTracking />
       <Testimonials />
       <Pricing onOrderClick={handleOrder} />
-      <Footer />
+      <Footer isMobile={isMobile} />
       <LiveChat />
       <OrderModal isOpen={orderOpen} onClose={() => setOrderOpen(false)} initialService={orderService} />
     </div>

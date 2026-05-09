@@ -109,7 +109,7 @@ const ProjectBridgeManagement = ({ params }) => {
     <div className="flex bg-[#f8f9fa] min-h-screen text-[#1d1d1f]">
       <Sidebar role="ADMIN" />
       
-      <main className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
         {/* Project Context Header */}
         <header className="p-6 bg-white border-b border-slate-100 flex justify-between items-center shadow-sm z-20">
            <div className="flex items-center gap-4">

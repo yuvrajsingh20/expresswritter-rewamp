@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
-export default function Notifications({ userName = "Student" }) {
+export default function Notifications({ userName = "Student", isMobile }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,8 +28,8 @@ export default function Notifications({ userName = "Student" }) {
   };
 
   return (
-    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+    <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: isMobile ? 16 : 0, marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Notifications Center</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Stay updated with your orders and account activity.</p>
@@ -49,7 +49,7 @@ export default function Notifications({ userName = "Student" }) {
           <div key={n.id} style={{ 
             display: 'flex', 
             gap: 16, 
-            padding: '20px 24px', 
+            padding: isMobile ? '16px' : '20px 24px', 
             background: n.read ? 'transparent' : 'rgba(13,148,136,0.04)',
             borderBottom: i < notifications.length - 1 ? '1px solid var(--border2)' : 'none',
             position: 'relative',

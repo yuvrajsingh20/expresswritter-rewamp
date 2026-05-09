@@ -76,12 +76,6 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
 
       {/* Bottom */}
       <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <Link href="/onboard/freelancer" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none', padding: '4px 0', transition: 'color 0.2s' }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--teal-light)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-        >
-          <span>✦</span> Become a Writer
-        </Link>
         <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', transition: 'color 0.2s', width: '100%', textAlign: 'left', fontFamily: 'var(--font)' }}
           onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}

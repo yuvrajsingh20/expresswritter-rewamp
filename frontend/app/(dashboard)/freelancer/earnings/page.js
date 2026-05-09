@@ -80,7 +80,7 @@ export default function FreelancerEarnings() {
     <div className="flex bg-[#FBFBFB] min-h-screen text-[#111111]">
       <Sidebar role="FREELANCER" />
       
-      <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
           {/* Header */}
           <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 shrink-0">
              <div className="flex items-center gap-3">

@@ -1,157 +1,230 @@
 "use client";
-import React, { useState, Suspense } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, ChevronRight, ShieldCheck, Zap } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { InputField, SocialBtn, Divider, PrimaryBtn } from "../auth-components";
+
+function PasswordStrength({ password }) {
+  if (!password) return null;
+  const checks = [
+    { label: '8+ characters', pass: password.length >= 8 },
+    { label: 'Uppercase letter', pass: /[A-Z]/.test(password) },
+    { label: 'Number', pass: /[0-9]/.test(password) },
+    { label: 'Special character', pass: /[^A-Za-z0-9]/.test(password) }
+  ];
+
+  const score = checks.filter((c) => c.pass).length;
+  const levels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['', 'var(--red)', 'var(--amber)', 'var(--teal)', 'var(--green)'];
+  return (
+    <div style={{ marginTop: -8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+        {[1, 2, 3, 4].map((i) =>
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= score ? colors[score] : 'var(--surface3)', transition: 'background .3s' }} />
+        )}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 11, color: colors[score], fontWeight: 600, transition: 'color .3s' }}>{score > 0 ? levels[score] : ''}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {checks.map((c) =>
+          <span key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: c.pass ? 'var(--green)' : 'var(--text-dim)', transition: 'color .3s' }}>
+            <span style={{ fontSize: 12 }}>{c.pass ? '✓' : '○'}</span>{c.label}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get('role')?.toUpperCase() || 'STUDENT';
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: initialRole });
-  const [error, setError] = useState("");
+  
+  const [step, setStep] = useState(1);
+  const [role, setRole] = useState(initialRole === 'FREELANCER' ? 'writer' : 'client');
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', agree: false });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [done, setDone] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  const update = (k, v) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setErrors((e) => ({ ...e, [k]: '' }));
+  };
 
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  const ROLES = [
+    { id: 'client', label: 'I need content', icon: '🧑‍💼', desc: 'Place orders and work with writers', color: 'var(--teal)' },
+    { id: 'writer', label: 'I am a writer', icon: '✍️', desc: 'Apply to write and earn', color: '#8b5cf6' }
+  ];
 
-      if (res.ok) {
-        const redirectPath = searchParams.get('redirect') || '/dashboard';
-        router.push(`/login?registered=true&callbackUrl=${encodeURIComponent(redirectPath)}`);
-      } else {
-        const data = await res.json();
-        setError(data.message || "Something went wrong");
+  const validateStep1 = () => {
+    if (!role) return { role: 'Please select a role' };
+    return {};
+  };
+
+  const validateStep2 = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = 'Full name is required';
+    if (!form.email) e.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email';
+    if (!form.password) e.password = 'Password is required';
+    else if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
+    if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    if (!form.agree) e.agree = 'Please accept the terms to continue';
+    return e;
+  };
+
+  const handleNext = async () => {
+    if (step === 1) {
+      const e = validateStep1();
+      if (Object.keys(e).length) { setErrors(e); return; }
+      setStep(2);
+    } else {
+      const e = validateStep2();
+      if (Object.keys(e).length) { setErrors(e); return; }
+      setLoading(true);
+      
+      try {
+        const backendRole = role === 'writer' ? 'FREELANCER' : 'STUDENT';
+        const res = await fetch("/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            role: backendRole
+          }),
+        });
+
+        if (res.ok) {
+          setDone(true);
+        } else {
+          const data = await res.json();
+          setErrors({ submit: data.message || "Something went wrong" });
+        }
+      } catch (err) {
+        setErrors({ submit: "Failed to initialize account. Try again." });
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError("Failed to initialize account. Try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
+  if (done) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', animation: 'fadeUp .4s ease', textAlign: 'center' }}>
+      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(13,148,136,0.12)', border: '2px solid var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, marginBottom: 24, animation: 'checkPop .5s ease' }}>✓</div>
+      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>Account created!</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 360, marginBottom: 28 }}>
+        {role === 'writer' ?
+          'Your writer application is under review. We\'ll email you within 48 hours. Meanwhile, complete your onboarding.' :
+          'Welcome to Xpresswriters! Check your email to verify your account, then start placing orders.'}
+      </p>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {role === 'writer' ?
+          <Link href="/onboard" style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Complete Onboarding →</Link> :
+          <Link href="/dashboard" style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Go to Dashboard →</Link>
+        }
+        <Link href="/login" style={{ background: 'transparent', border: '1.5px solid var(--border)', color: 'var(--text-muted)', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 500, cursor: 'pointer', textDecoration: 'none' }}>Sign In</Link>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="w-full max-w-xl space-y-12">
-      <div className="text-center space-y-6">
-        <div className="w-16 h-16 bg-black mx-auto flex items-center justify-center text-white text-2xl font-black">
-           E
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-4xl font-[900] tracking-tight italic uppercase text-black">Initialize Account.</h1>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Institutional Access Protocol</p>
-        </div>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 56px', maxWidth: 520, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
+      {/* Step progress */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 32 }}>
+        {[1, 2].map((s) =>
+          <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? 'var(--teal)' : 'var(--surface3)', transition: 'background .4s' }} />
+        )}
       </div>
 
-      <div className="bg-white border border-slate-100 p-10 md:p-16 shadow-[0_30px_80px_rgba(0,0,0,0.05)] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-black" />
-        
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {error && (
-            <div className="bg-red-50 border border-red-100 p-4 text-red-600 flex items-center gap-3">
-              <Zap size={16} className="shrink-0" />
-              <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">{error}</p>
-            </div>
-          )}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 6 }}>Step {step} of 2</div>
+        <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 4 }}>
+          {step === 1 ? 'Create your account' : 'Your details'}
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300 }}>
+          {step === 1 ? 'How will you be using Xpresswriters?' : 'Almost there — just a few more details.'}
+        </p>
+      </div>
 
-          <div className="space-y-8">
-             <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Legal Name</label>
-                <input
-                  type="text"
-                  placeholder="E.G. ALEXANDER PIERCE"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 py-5 px-8 text-sm font-bold focus:bg-white focus:border-black transition-all outline-none rounded-none"
-                />
-             </div>
+      {errors.submit && (
+        <div style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid var(--red)', padding: '12px', borderRadius: 7, color: 'var(--red)', fontSize: 13, marginBottom: 16 }}>
+          {errors.submit}
+        </div>
+      )}
 
-             <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Email</label>
-                <input
-                  type="email"
-                  placeholder="EMAIL@INSTITUTION.COM"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 py-5 px-8 text-sm font-bold focus:bg-white focus:border-black transition-all outline-none rounded-none"
-                />
-             </div>
+      {step === 1 &&
+        <div style={{ animation: 'fadeIn .3s ease' }}>
+          {/* Google */}
+          <SocialBtn icon="🔍" label="Sign up with Google" onClick={() => {}} />
+          <Divider label="or choose your account type" />
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Security Key</label>
-                   <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        required
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 py-5 px-8 text-sm font-bold focus:bg-white focus:border-black transition-all outline-none rounded-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 hover:text-black transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                   </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {ROLES.map((r) =>
+              <div key={r.id} onClick={() => { setRole(r.id); setErrors({}); }} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 10, cursor: 'pointer', transition: 'all .2s',
+                background: role === r.id ? 'rgba(13,148,136,0.1)' : 'var(--surface3)',
+                border: `1.5px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`
+              }}>
+                <div style={{ width: 44, height: 44, borderRadius: 11, background: `${r.color}15`, border: `1px solid ${r.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{r.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2, color: 'var(--text)' }}>{r.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.desc}</div>
                 </div>
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Platform Role</label>
-                   <select 
-                     value={formData.role}
-                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                     className="w-full bg-slate-50 border border-slate-200 py-5 px-8 text-sm font-bold focus:bg-white focus:border-black transition-all outline-none rounded-none appearance-none cursor-pointer"
-                   >
-                     <option value="STUDENT">STUDENT (ACADEMIC)</option>
-                     <option value="FREELANCER">WRITER (EXPERT)</option>
-                   </select>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`, background: role === r.id ? 'var(--teal)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}>
+                  {role === r.id && <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>✓</span>}
                 </div>
-             </div>
+              </div>
+            )}
+          </div>
+          {errors.role && <div style={{ fontSize: 11, color: 'var(--red)', marginBottom: 12 }}>{errors.role}</div>}
+          <PrimaryBtn onClick={handleNext}>Continue →</PrimaryBtn>
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: 'var(--text-muted)' }}>
+            Already have an account?{' '}
+            <Link href="/login" style={{ color: 'var(--teal-light)', fontSize: 14, textDecoration: 'none', fontWeight: 600 }}>Sign in →</Link>
+          </div>
+        </div>
+      }
+
+      {step === 2 &&
+        <div style={{ animation: 'fadeIn .3s ease' }}>
+          <InputField label="Full Name" value={form.name} onChange={(v) => update('name', v)} placeholder="Dr. Amara Singh" icon="👤" error={errors.name} autoComplete="name" />
+          <InputField label="Email Address" type="email" value={form.email} onChange={(v) => update('email', v)} placeholder="you@example.com" icon="✉️" error={errors.email} autoComplete="email" />
+          <InputField label="Password" type="password" value={form.password} onChange={(v) => update('password', v)} placeholder="Create a strong password" error={errors.password} autoComplete="new-password" />
+          <PasswordStrength password={form.password} />
+          <InputField label="Confirm Password" type="password" value={form.confirmPassword} onChange={(v) => update('confirmPassword', v)} placeholder="Repeat password" error={errors.confirmPassword} autoComplete="new-password" />
+
+          {/* Terms */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.agree} onChange={(e) => update('agree', e.target.checked)} style={{ accentColor: 'var(--teal)', marginTop: 2, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                I agree to Xpresswriters' <span style={{ color: 'var(--teal-light)' }}>Terms of Service</span> and <span style={{ color: 'var(--teal-light)' }}>Privacy Policy</span>. I understand my data is encrypted and never shared.
+              </span>
+            </label>
+            {errors.agree && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 5 }}>{errors.agree}</div>}
           </div>
 
-          <button
-            disabled={loading}
-            className="w-full bg-black text-white py-6 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all flex items-center justify-center gap-4 shadow-2xl disabled:opacity-50 active:scale-[0.98] rounded-none"
-          >
-            {loading ? "INITIALIZING..." : "CREATE ACCOUNT"} <ChevronRight size={18} />
-          </button>
+          <PrimaryBtn onClick={handleNext} loading={loading}>
+            {!loading && `Create ${role === 'writer' ? 'Writer' : 'Client'} Account →`}
+          </PrimaryBtn>
 
-          <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-            Existing researcher?{" "}
-            <Link href="/login" className="text-black border-b border-black/20 hover:border-black transition-all">
-              Authorize Access
-            </Link>
-          </p>
-        </form>
-      </div>
+          <button onClick={() => setStep(1)} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)', padding: '8px 0' }}>← Back</button>
+        </div>
+      }
     </div>
   );
 }
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-[#fbfbfb] flex items-center justify-center p-10 font-sans">
-      <Suspense fallback={<div className="font-black text-[10px] uppercase tracking-[0.15em] text-slate-300 animate-pulse">Loading Protocol...</div>}>
-        <RegisterForm />
-      </Suspense>
-      {/* Decorative Gradients */}
-      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-slate-100 rounded-full blur-[120px] -z-10" />
-      <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-slate-100 rounded-full blur-[120px] -z-10" />
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }
-

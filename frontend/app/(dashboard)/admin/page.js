@@ -39,7 +39,7 @@ const NAV = [
 
 
 /* ── OVERVIEW ── */
-function AdminOverview({ setSection, projects = [], freelancers = [] }) {
+function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }) {
   const stats = [
     { label: 'Total Orders', val: projects.length, sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
@@ -63,7 +63,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [] }) {
   const recentLogs = projects.flatMap(p => (p.logs || []).map(l => ({ ...l, projectTitle: p.title }))).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 6);
 
   return (
-    <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
+    <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Admin Overview</h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Platform health at a glance. All systems operational.</p>
@@ -76,7 +76,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [] }) {
         <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--mono)' }}>Real-time synchronization enabled</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
         {stats.map((s, i) =>
           <div key={i} style={{ background: `linear-gradient(135deg, var(--surface2) 60%, ${s.color}0d 100%)`, border: `1px solid ${s.color}22`, borderRadius: 8, padding: '18px 18px', animation: `fadeUp .3s ease ${i * .06}s both`, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: '50%', background: `radial-gradient(circle, ${s.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
@@ -90,10 +90,10 @@ function AdminOverview({ setSection, projects = [], freelancers = [] }) {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
         <div>
           <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Quick Access</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
             {quickLinks.map((ql) =>
               <div key={ql.id} onClick={() => setSection(ql.id)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all .2s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; e.currentTarget.style.background = 'var(--surface3)'; }}
@@ -198,11 +198,16 @@ function AdminSidebar({ active, setActive, dark }) {
 }
 
 /* ── TOPBAR ── */
-function AdminTopbar({ section, dark, setDark }) {
+function AdminTopbar({ section, dark, setDark, isMobile, setSidebarOpen }) {
   const item = NAV.find((n) => n.id === section) || { label: 'Overview', icon: '⊞' };
   const [togHov, setTogHov] = useState(false);
   return (
-    <div style={{ height: 52, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 28px', gap: 14, flexShrink: 0, background: dark ? 'linear-gradient(90deg,#0d0d1c 0%,#0f1a20 50%,#0d0d1c 100%)' : 'linear-gradient(90deg,#ffffff 0%,#f4f8ff 50%,#ffffff 100%)' }}>
+    <div style={{ height: 52, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: isMobile ? '0 16px' : '0 28px', gap: 14, flexShrink: 0, background: dark ? 'linear-gradient(90deg,#0d0d1c 0%,#0f1a20 50%,#0d0d1c 100%)' : 'linear-gradient(90deg,#ffffff 0%,#f4f8ff 50%,#ffffff 100%)' }}>
+      {isMobile && (
+        <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 24, cursor: 'pointer' }}>
+          ☰
+        </button>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
         <span style={{ fontSize: 16 }}>{item.icon}</span>
         <span style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</span>
@@ -257,6 +262,15 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   const [freelancers, setFreelancers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const savedSection = localStorage.getItem('xw_admin_section');
@@ -304,28 +318,47 @@ export default function App() {
   }, [dark]);
 
   const views = {
-    overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} />,
-    orders: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} /></div>,
-    integrations: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
-    tickets: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
-    payments: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} /></div>,
-    refunds: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
-    promos: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
-    analytics: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAnalytics projects={projects} freelancersCount={freelancers.length} /></div>,
-    currency: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
-    writers: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters freelancers={freelancers} /></div>,
-    users: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminUsers /></div>,
-    audit: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAudit /></div>,
-    seo: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSEO /></div>,
-    workflow: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
-    theme: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>
+    overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} />,
+    orders: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} isMobile={isMobile} /></div>,
+    integrations: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
+    tickets: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
+    payments: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} /></div>,
+    refunds: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
+    promos: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
+    analytics: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAnalytics projects={projects} freelancersCount={freelancers.length} /></div>,
+    currency: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
+    writers: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters freelancers={freelancers} isMobile={isMobile} /></div>,
+    users: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminUsers /></div>,
+    audit: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAudit /></div>,
+    seo: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSEO /></div>,
+    workflow: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
+    theme: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>
   };
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <AdminSidebar active={section} setActive={setSection} dark={dark} />
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      <div style={isMobile ? {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        zIndex: 1000,
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.3s ease',
+        background: 'var(--surface)',
+      } : {}}>
+        <AdminSidebar active={section} setActive={(id) => { setSection(id); if (isMobile) setSidebarOpen(false); }} dark={dark} />
+      </div>
+
+      {isMobile && sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)} 
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }}
+        />
+      )}
+
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: dark ? 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.07) 0%, transparent 70%), var(--bg)' : 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.05) 0%, transparent 70%), var(--bg)' }}>
-        <AdminTopbar section={section} dark={dark} setDark={setDark} />
+        <AdminTopbar section={section} dark={dark} setDark={setDark} isMobile={isMobile} setSidebarOpen={setSidebarOpen} />
         <div style={{ flex: 1, overflow: 'hidden' }}>
           {views[section] || views.overview}
         </div>

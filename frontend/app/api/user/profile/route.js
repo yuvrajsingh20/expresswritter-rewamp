@@ -20,6 +20,7 @@ export async function GET() {
         occupation: true,
         college: true,
         profileCompleted: true,
+        freelancerProfile: true,
       },
     });
 

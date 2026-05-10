@@ -7,6 +7,7 @@ import { useChat } from "@/hooks/useChat";
 import servicesData from '@/data/services_data.json';
 import Wallet from "./student-wallet";
 import Notifications from "@/components/NotificationsView";
+import NotificationBell from '@/components/NotificationBell';
 
 
 
@@ -242,7 +243,7 @@ function ActiveOrderCard({ order, onClick }) {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Due: <span style={{ color: 'var(--text)' }}>{order.due}</span></div>
-        <div style={{ width: 100, height: 4, borderRadius: 2, background: 'var(--surface3)', overflow: 'hidden' }}>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--surface3)', overflow: 'hidden', margin: '0 16px' }}>
           <div style={{ width: `${order.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--teal), var(--teal-light))', borderRadius: 2, transition: 'width 0.5s' }} />
         </div>
         <div style={{ fontSize: 12, color: 'var(--teal-light)', fontWeight: 600 }}>{order.progress}%</div>
@@ -495,7 +496,16 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
               </div>
             ) : (
               <>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, color: 'var(--text)' }}>Report Issue / Request Refund</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Report Issue / Request Refund</h3>
+                  <button 
+                    onClick={() => { setShowTicketModal(false); setTicketError(''); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
+                    title="Close"
+                  >
+                    &times;
+                  </button>
+                </div>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>Our team will review your request and get back to you within 24 hours.</p>
                 
                 {ticketError && (
@@ -845,8 +855,8 @@ function Settings({ isMobile, profile, onUpdate }) {
 
         <button 
           onClick={handleSave} 
-          disabled={loading}
-          style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s', minWidth: 140 }}
+          disabled={loading || !form.name.trim() || !form.phone.trim()}
+          style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s', minWidth: 140, opacity: (loading || !form.name.trim() || !form.phone.trim()) ? 0.6 : 1 }}
         >
           {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
         </button>
@@ -877,8 +887,21 @@ function ProfilePrompt({ onComplete }) {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', animation: 'fadeUp 0.4s ease' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <style>{`
+        @keyframes softPop {
+          from { opacity: 0; transform: scale(0.97) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+      <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', animation: 'softPop 0.4s cubic-bezier(0.16, 1, 0.3, 1)', position: 'relative' }}>
+        <button 
+          onClick={() => onComplete()}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
+          title="Close"
+        >
+          &times;
+        </button>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, var(--teal), #0f766e)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px', color: '#fff', boxShadow: '0 10px 20px rgba(13,148,136,0.2)' }}>✨</div>
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>Complete Your Profile</h2>
@@ -898,16 +921,7 @@ function ProfilePrompt({ onComplete }) {
 
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8, letterSpacing: '0.08em' }}>I AM A...</label>
-            <select 
-              value={form.occupation} 
-              onChange={e => setForm({...form, occupation: e.target.value})}
-              style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }}
-            >
-              <option value="Student">Student</option>
-              <option value="Working Professional">Working Professional</option>
-              <option value="Freelancer">Freelancer</option>
-              <option value="Other">Other</option>
-            </select>
+            <div style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', fontSize: 14 }}>Student</div>
           </div>
 
           <div>
@@ -1149,7 +1163,7 @@ function NewOrder({ setActive, isMobile }) {
 
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                   <button style={{ padding: '12px 24px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => setStep(1)}>← Back</button>
-                  <button style={{ padding: '12px 32px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => setStep(3)}>Continue →</button>
+                  <button style={{ padding: '12px 32px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: form.details.trim() ? 1 : 0.5 }} disabled={!form.details.trim()} onClick={() => setStep(3)}>Continue →</button>
                 </div>
               </div>
             )}
@@ -1227,25 +1241,33 @@ export default function App() {
   checkMobile();
   window.addEventListener('resize', checkMobile);
 
-  // Checkout / saved tab logic
-  const params = new URLSearchParams(window.location.search);
-  const isCheckout = params.get('action') === 'checkout';
+    // Checkout / saved tab logic
+    const params = new URLSearchParams(window.location.search);
+    const isCheckout = params.get('action') === 'checkout';
+    const tabParam = params.get('tab');
 
-  if (isCheckout) {
-    setActive('new-order');
-    window.history.replaceState({}, '', window.location.pathname);
-  } else if (params.get('tab') === 'notifications') {
-    setActive('notifications');
-    window.history.replaceState({}, '', window.location.pathname);
-  } else {
-    const savedTab = localStorage.getItem('xw_dash_tab');
-    if (savedTab) setActive(savedTab);
-  }
+    if (isCheckout) {
+      setActive('new-order');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (tabParam) {
+      setActive(tabParam);
+    } else {
+      const savedTab = localStorage.getItem('xw_dash_tab');
+      if (savedTab) setActive(savedTab);
+    }
 
-  return () => {
-    window.removeEventListener('resize', checkMobile);
-  };
-}, []);
+    const handlePopState = () => {
+      const p = new URLSearchParams(window.location.search);
+      const t = p.get('tab');
+      if (t) setActive(t);
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const fetchProfile = async () => {
     try {
@@ -1288,7 +1310,14 @@ export default function App() {
     fetchProfile();
   }, []);
 
-  useEffect(() => { localStorage.setItem('xw_dash_tab', active); }, [active]);
+  useEffect(() => {
+    localStorage.setItem('xw_dash_tab', active);
+    const url = new URL(window.location);
+    if (url.searchParams.get('tab') !== active) {
+      url.searchParams.set('tab', active);
+      window.history.pushState({}, '', url);
+    }
+  }, [active]);
 
   const userName = userProfile?.name || session?.user?.name || "Student";
   const unreadCount = 0;
@@ -1337,12 +1366,9 @@ export default function App() {
             </button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ position: 'relative', cursor: 'pointer' }}>
-              <span style={{ fontSize: 18 }}>🔔</span>
-              <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', border: '2px solid var(--bg)' }} />
-            </div>
+            <NotificationBell />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11, color: '#fff' }}>{userName.split(' ').map(n => n[0]).join('').toUpperCase()}</div>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff' }}>{userName.split(' ').map(n => n[0]).join('').toUpperCase()}</div>
               <span style={{ fontSize: 13, fontWeight: 500 }}>{userName.split(' ')[0]}</span>
             </div>
           </div>

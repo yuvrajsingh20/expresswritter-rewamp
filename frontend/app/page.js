@@ -5,12 +5,12 @@ import './(auth)/landing.css';
 
 /* ─── DATA ─── */
 const SERVICES = [
-  { id: 'sop', icon: '🎓', label: 'Statement of Purpose', desc: 'Compelling SOP for top universities worldwide', color: '#7c3aed' },
-  { id: 'essay', icon: '📝', label: 'Academic Essay', desc: 'Research-backed essays for any subject or level', color: '#6d28d9' },
-  { id: 'lor', icon: '📜', label: 'Letter of Recommendation', desc: 'Professional LORs that open doors', color: '#5b21b6' },
-  { id: 'resume', icon: '📄', label: 'Resume & CV', desc: 'ATS-optimised resumes for every industry', color: '#7c3aed' },
-  { id: 'linkedin', icon: '💼', label: 'LinkedIn Profile', desc: 'Profiles that attract recruiters & opportunities', color: '#8b5cf6' },
-  { id: 'email', icon: '✉️', label: 'Professional Emails', desc: 'Cold outreach, campaigns & business emails', color: '#a78bfa' },
+  { id: 'sop', icon: '🎓', label: 'Statement of Purpose: Academic', desc: 'Compelling SOP for top universities worldwide', color: '#7c3aed' },
+  { id: 'essay', icon: '📝', label: 'Academic Essays', desc: 'Research-backed essays for any subject or level', color: '#6d28d9' },
+  { id: 'lor', icon: '📜', label: 'Academic Letter of Recommendation(LOR)', desc: 'Professional LORs that open doors', color: '#5b21b6' },
+  { id: 'resume', icon: '📄', label: 'Admission Focussed Resume', desc: 'ATS-optimised resumes for every industry', color: '#7c3aed' },
+  { id: 'linkedin', icon: '💼', label: 'Linkedin Profile Management', desc: 'Profiles that attract recruiters & opportunities', color: '#8b5cf6' },
+  { id: 'email', icon: '✉️', label: 'Email Templates', desc: 'Cold outreach, campaigns & business emails', color: '#a78bfa' },
   { id: 'thesis', icon: '🔬', label: 'Thesis & Dissertation', desc: 'End-to-end thesis writing & editing', color: '#7c3aed' },
   { id: 'ppt', icon: '📊', label: 'Presentations (PPT)', desc: 'Pitch decks, research & corporate slides', color: '#6d28d9' },
   { id: 'research', icon: '🧪', label: 'Research Proposal', desc: 'Structured proposals with solid literature reviews', color: '#5b21b6' },
@@ -513,7 +513,16 @@ function OrderModal({ isOpen, onClose, initialService }) {
 
   const handleSubmit = () => {
     setSubmitting(true);
-    setTimeout(() => { setSubmitting(false); setSubmitted(true); }, 2000);
+    
+    // Save to localStorage
+    const pendingOrder = {
+      ...form,
+      estPrice: Math.round((form.wordCount / 100) * 200 * (form.turnaround === '12h' ? 1.8 : form.turnaround === '24h' ? 1.4 : form.turnaround === '7d' ? 0.9 : 1))
+    };
+    localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+    
+    // Redirect to login with callback to student dashboard checkout
+    window.location.href = `/login?callbackUrl=/student?action=checkout`;
   };
 
   return (

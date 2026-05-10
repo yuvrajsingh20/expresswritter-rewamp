@@ -34,7 +34,7 @@ export default function Notifications({ userName = "User", isMobile }) {
           <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Notifications Center</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Stay updated with your orders and account activity.</p>
         </div>
-        <button 
+        <button
           onClick={markAllRead}
           style={{ background: 'none', border: '1px solid var(--border2, var(--border))', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}
         >
@@ -46,18 +46,18 @@ export default function Notifications({ userName = "User", isMobile }) {
         {loading ? (
           <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-dim)' }}>Loading notifications...</div>
         ) : notifications.length > 0 ? notifications.map((n, i) => (
-          <div key={n.id} style={{ 
-            display: 'flex', 
-            gap: 16, 
-            padding: isMobile ? '16px' : '20px 24px', 
+          <div key={n.id} style={{
+            display: 'flex',
+            gap: 16,
+            padding: isMobile ? '16px' : '20px 24px',
             background: n.read ? 'transparent' : 'rgba(13,148,136,0.04)',
             borderBottom: i < notifications.length - 1 ? '1px solid var(--border2, var(--border))' : 'none',
             position: 'relative',
             cursor: 'pointer',
             transition: 'background 0.2s'
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(128,128,128,0.05)'}
-          onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(13,148,136,0.04)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(128,128,128,0.05)'}
+            onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(13,148,136,0.04)'}
           >
             {!n.read && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--teal)' }} />}
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>

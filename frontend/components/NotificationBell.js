@@ -86,12 +86,12 @@ export default function NotificationBell() {
   if (!session) return null;
 
   return (
-    <div style={{ position: 'fixed', top: 16, right: 100, zIndex: 9999 }}>
-      <button 
+    <div style={{ position: 'relative', zIndex: 9999 }}>
+      <button
         onClick={() => setOpen(!open)}
         style={{
-          background: 'var(--surface2, #fff)',
-          border: '1px solid var(--border, #e5e7eb)',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: '50%',
           width: 40,
           height: 40,
@@ -100,7 +100,8 @@ export default function NotificationBell() {
           justifyContent: 'center',
           cursor: 'pointer',
           position: 'relative',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)'
         }}
       >
         <span style={{ fontSize: 20 }}>🔔</span>
@@ -129,16 +130,17 @@ export default function NotificationBell() {
           top: 48,
           right: 0,
           width: 320,
-          background: 'var(--surface, #fff)',
-          border: '1px solid var(--border, #e5e7eb)',
-          borderRadius: 8,
-          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+          background: 'rgba(30, 41, 59, 0.85)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: 16,
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column'
         }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border, #e5e7eb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface2, #f9fafb)' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text, #111)' }}>Notifications</h3>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.2)' }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#fff' }}>Notifications</h3>
             {unreadCount > 0 && (
               <button onClick={markAllRead} style={{ fontSize: 12, color: 'var(--teal, #0d9488)', background: 'none', border: 'none', cursor: 'pointer' }}>Mark all read</button>
             )}
@@ -149,12 +151,12 @@ export default function NotificationBell() {
             ) : (
               notifications.slice(0, 5).map(n => {
                 return (
-                  <div key={n.id} 
+                  <div key={n.id}
                     onClick={() => { if (!n.read) markAsRead(n.id); }}
-                    style={{ 
-                      padding: '12px 16px', 
-                      borderBottom: '1px solid var(--border, #e5e7eb)',
-                      background: n.read ? 'transparent' : 'rgba(13, 148, 136, 0.05)',
+                    style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                      background: n.read ? 'transparent' : 'rgba(13, 148, 136, 0.1)',
                       display: 'flex',
                       gap: 12,
                       cursor: 'pointer',
@@ -163,10 +165,10 @@ export default function NotificationBell() {
                   >
                     <div style={{ fontSize: 20 }}>{n.icon || '🔔'}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: 'var(--text, #111)', marginBottom: 2 }}>{n.title}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted, #4b5563)' }}>{n.msg}</div>
+                      <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: '#fff', marginBottom: 2 }}>{n.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-dim, #9ca3af)' }}>{n.msg}</div>
                       <div style={{ fontSize: 10, color: 'var(--text-dim, #9ca3af)', marginTop: 4 }}>
-                        {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       {n.link && (
                         <Link href={n.link} style={{ fontSize: 11, color: 'var(--teal, #0d9488)', marginTop: 4, display: 'inline-block' }}>View Details →</Link>

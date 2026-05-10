@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, getAuthUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthUser(req);
+    if (!user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const userData = await prisma.user.findUnique({
+      where: { email: user.email },
       select: {
         id: true,
         name: true,
@@ -24,7 +23,7 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(user);
+    return NextResponse.json(userData);
   } catch (error) {
     console.error("Profile Fetch Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -33,8 +32,8 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthUser(req);
+    if (!user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -42,7 +41,7 @@ export async function POST(req) {
     const { phone, occupation, college } = body;
 
     const updatedUser = await prisma.user.update({
-      where: { email: session.user.email },
+      where: { email: user.email },
       data: {
         phone,
         occupation,

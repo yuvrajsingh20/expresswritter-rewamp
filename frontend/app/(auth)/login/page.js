@@ -92,7 +92,11 @@ function LoginForm() {
       <SocialBtn 
         icon={socialLoading === 'google' ? <Loader2 className="animate-spin" size={16} /> : "🔍"} 
         label="Continue with Google" 
-        onClick={() => { setSocialLoading('google'); signIn('google', { callbackUrl }); }} 
+        onClick={() => {
+          setSocialLoading('google');
+          const targetUrl = role === 'writer' ? '/onboard/freelancer/setup' : callbackUrl;
+          signIn('google', { callbackUrl: targetUrl });
+        }} 
       />
       
       <Divider label="or sign in with email" />

@@ -806,6 +806,27 @@ function NewOrder({ setActive, isMobile }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Auto-fill from landing page
+  useEffect(() => {
+    const pending = localStorage.getItem('pendingOrder');
+    if (pending) {
+      try {
+        const data = JSON.parse(pending);
+        setForm({
+          category: data.category || '',
+          turnaround: data.turnaround || '72h',
+          wordCount: data.wordCount || 500,
+          details: data.details || '',
+          deadline: data.deadline || ''
+        });
+        setStep(3); // Jump to payment step
+        localStorage.removeItem('pendingOrder'); // Clear it so it doesn't repeat
+      } catch (e) {
+        console.error("Error parsing pending order", e);
+      }
+    }
+  }, []);
+
   const SERVICES = useMemo(() => {
     return Object.values(servicesData.individualServices).flat().map(s => {
       const priceNum = typeof s.price === 'string' 
@@ -1063,16 +1084,29 @@ export default function App() {
   const { data: session } = useSession();
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Mobile check
+  const checkMobile = () => setIsMobile(window.innerWidth < 768);
 
-  useEffect(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+
+  // Checkout / saved tab logic
+  const params = new URLSearchParams(window.location.search);
+  const isCheckout = params.get('action') === 'checkout';
+
+  if (isCheckout) {
+    setActive('new-order');
+    window.history.replaceState({}, '', window.location.pathname);
+  } else {
     const savedTab = localStorage.getItem('xw_dash_tab');
     if (savedTab) setActive(savedTab);
+  }
 
+  return () => {
+    window.removeEventListener('resize', checkMobile);
+  };
+}, []);
+   
     const fetchProjects = async () => {
       try {
         const res = await fetch('/api/projects');

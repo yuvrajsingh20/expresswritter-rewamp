@@ -28,6 +28,23 @@ const WorkforcePortal = () => {
     fetchFreelancers();
   }, []);
 
+  const handleVerify = async (userId) => {
+    try {
+      const res = await fetch('/api/admin/freelancers/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+      if (res.ok) {
+        setFreelancers(prev => prev.map(f => 
+          f.id === userId ? { ...f, freelancerProfile: { ...f.freelancerProfile, isVerified: true } } : f
+        ));
+      }
+    } catch (error) {
+      console.error("Failed to verify freelancer:", error);
+    }
+  };
+
   return (
     <div className="flex bg-[#f8f9fa] min-h-screen text-[#1d1d1f]">
       <Sidebar role="ADMIN" />
@@ -140,6 +157,15 @@ const WorkforcePortal = () => {
                             <Link href={`/admin/chat?user=${f.id}`} className="p-3 bg-blue-50 text-[#0071e3] rounded-2xl hover:bg-[#0071e3] hover:text-white transition-all shadow-inner" title="Separate Chat">
                                <MessageCircle size={18} />
                             </Link>
+                            {!f.freelancerProfile?.isVerified && (
+                              <button 
+                                onClick={() => handleVerify(f.id)}
+                                className="p-3 bg-green-50 text-green-600 rounded-2xl hover:bg-green-600 hover:text-white transition-all shadow-inner" 
+                                title="Verify Expert"
+                              >
+                                 <UserCheck size={18} />
+                              </button>
+                            )}
                             <button className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-200" title="Assign Helper Tasks">
                                <Zap size={18} />
                             </button>

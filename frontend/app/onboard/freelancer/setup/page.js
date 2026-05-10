@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   CheckCircle2, Briefcase, FileText, 
   Search, Award, ChevronRight, 
-  Upload, Info 
+  Upload, Info, Users, Globe 
 } from 'lucide-react';
 
 import servicesData from '@/data/services_data.json';
@@ -20,7 +20,13 @@ const FreelancerSetupPage = () => {
     bio: "",
     skills: [],
     experience: "",
-    portfolioUrl: ""
+    portfolioUrl: "",
+    name: "",
+    phone: "",
+    age: "",
+    gender: "",
+    linkedinUrl: "",
+    resumeUrl: ""
   });
 
   const toggleSkill = (skill) => {
@@ -64,17 +70,17 @@ const FreelancerSetupPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfdfe] text-[#0a192f] p-6 flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-[#09090f] text-[#eefcfb] p-6 flex items-center justify-center font-sans">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-4xl w-full bg-white rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col md:flex-row"
+        className="max-w-4xl w-full bg-[#101019] rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] border border-[#1c1c30] overflow-hidden flex flex-col md:flex-row"
       >
         {/* Progress Sidebar */}
-        <div className="md:w-[35%] bg-[#0a192f] p-12 text-white flex flex-col justify-between relative overflow-hidden">
+        <div className="md:w-[35%] bg-[#161626] p-12 text-[#eefcfb] flex flex-col justify-between relative overflow-hidden">
            <div className="z-10">
-              <div className="w-12 h-12 bg-white text-[#0a192f] rounded-2xl flex items-center justify-center font-black text-xl mb-12 italic">E</div>
-              <h2 className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-8">Writer <br /> Profile <br /> Setup.</h2>
+              <div className="w-12 h-12 bg-[#0d9488] text-[#eefcfb] rounded-2xl flex items-center justify-center font-black text-xl mb-12 italic">E</div>
+              <h2 className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-8 text-[#eefcfb]">Writer <br /> Profile <br /> Setup.</h2>
               <div className="space-y-6">
                 {[
                   { label: "Credentials", active: true },
@@ -82,98 +88,180 @@ const FreelancerSetupPage = () => {
                   { label: "Verification", active: false }
                 ].map((step, i) => (
                   <div key={i} className="flex items-center gap-4 group">
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${step.active ? 'border-blue-400 bg-blue-400/10' : 'border-white/10'}`}>
-                      {step.active ? <CheckCircle2 size={14} className="text-blue-400" /> : <span className="text-[10px] font-bold text-white/30">{i+1}</span>}
+                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${step.active ? 'border-[#0d9488] bg-[#0d9488]/10' : 'border-[#eefcfb]/10'}`}>
+                      {step.active ? <CheckCircle2 size={14} className="text-[#0d9488]" /> : <span className="text-[10px] font-bold text-[#eefcfb]/30">{i+1}</span>}
                     </div>
-                    <span className={`text-[11px] font-black uppercase tracking-widest ${step.active ? 'text-white' : 'text-white/20'}`}>{step.label}</span>
+                    <span className={`text-[11px] font-black uppercase tracking-widest ${step.active ? 'text-[#eefcfb]' : 'text-[#eefcfb]/20'}`}>{step.label}</span>
                   </div>
                 ))}
               </div>
            </div>
            
            <div className="z-10 mt-20 opacity-40">
-              <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Protocol v1.0.4 <br /> Institutional Verification Suite</p>
+              {/* Decorative elements or text */}
            </div>
-           
-           <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]" />
         </div>
 
-        {/* Form Area */}
-        <div className="flex-1 p-10 md:p-16">
-          <form onSubmit={handleSubmit} className="space-y-10">
-            <div className="space-y-6">
-               <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3 italic">
-                 <Briefcase size={20} className="text-blue-600" /> Professional Summary
+        {/* Form Content */}
+        <div className="flex-1 p-12 overflow-y-auto max-h-[85vh]">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Personal Information */}
+            <div className="space-y-4">
+               <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-3 italic text-[#eefcfb]">
+                 <Users size={20} className="text-[#0d9488]" /> Personal Details
                </h3>
-               <textarea 
-                 className="w-full bg-slate-50 border-2 border-transparent p-6 rounded-3xl font-medium text-sm outline-none focus:bg-white focus:border-blue-600 transition-all resize-none shadow-sm"
-                 rows={3}
-                 placeholder="DESCRIBE YOUR ACADEMIC WRITING BACKGROUND..."
-                 value={formData.bio}
-                 onChange={(e) => setFormData({...formData, bio: e.target.value})}
-               />
-            </div>
-
-            <div className="space-y-6">
-               <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3 italic">
-                 <Award size={24} className="text-blue-600" /> Domain Expertise
-               </h3>
-               <div className="flex flex-wrap gap-3">
-                  {SKILLS_OPTIONS.map(skill => (
-                    <button
-                      key={skill}
-                      type="button"
-                      onClick={() => toggleSkill(skill)}
-                      className={`px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 border-2 ${
-                        formData.skills.includes(skill) 
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20 rotate-1' 
-                          : 'bg-white border-slate-100 text-slate-400 hover:border-blue-600'
-                      }`}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Full Name</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
+                      placeholder="Your Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                    />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Phone Number</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
+                      placeholder="Your Phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      required
+                    />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Age</label>
+                    <input 
+                      type="number"
+                      className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
+                      placeholder="Age"
+                      value={formData.age}
+                      onChange={(e) => setFormData({...formData, age: e.target.value})}
+                      required
+                    />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Gender</label>
+                    <select
+                      className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
+                      value={formData.gender}
+                      onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                      required
                     >
-                      {skill}
-                    </button>
-                  ))}
+                      <option value="" disabled className="bg-[#101019]">Select Gender</option>
+                      <option value="Male" className="bg-[#101019]">Male</option>
+                      <option value="Female" className="bg-[#101019]">Female</option>
+                      <option value="Other" className="bg-[#101019]">Other</option>
+                    </select>
+                 </div>
                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 ml-4">Years Exp.</label>
+            {/* Professional Summary */}
+            <div className="space-y-4">
+               <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-3 italic text-[#eefcfb]">
+                 <Briefcase size={20} className="text-[#0d9488]" /> Professional Summary
+               </h3>
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Short Bio</label>
+                  <textarea 
+                    className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-4 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all h-24"
+                    placeholder="Tell us about your expertise..."
+                    value={formData.bio}
+                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                    required
+                  />
+               </div>
+            </div>
+
+            {/* Domain Expertise */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-3 italic text-[#eefcfb]">
+                  <Globe size={20} className="text-[#0d9488]" /> Domain Expertise
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                   {SKILLS_OPTIONS.map((skill) => (
+                     <button
+                       key={skill}
+                       type="button"
+                       onClick={() => toggleSkill(skill)}
+                       className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                         formData.skills.includes(skill)
+                           ? 'bg-[#0d9488] text-[#eefcfb]'
+                           : 'bg-[#1c1c30] text-[#6b9e9a] hover:bg-[#21213a]'
+                       }`}
+                     >
+                       {skill}
+                     </button>
+                   ))}
+                </div>
+            </div>
+
+            {/* Links and Experience */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Years Exp.</label>
                  <input 
                    type="number"
-                   className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-2xl font-black text-sm outline-none focus:bg-white focus:border-blue-600 transition-all"
+                   className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
                    placeholder="E.G. 5"
                    value={formData.experience}
                    onChange={(e) => setFormData({...formData, experience: e.target.value})}
+                   required
                  />
               </div>
-              <div className="space-y-4">
-                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 ml-4">Portfolio Link</label>
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Portfolio Link</label>
                  <input 
                    type="url"
-                   className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-2xl font-black text-sm outline-none focus:bg-white focus:border-blue-600 transition-all"
+                   className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
                    placeholder="HTTPS://..."
                    value={formData.portfolioUrl}
                    onChange={(e) => setFormData({...formData, portfolioUrl: e.target.value})}
                  />
               </div>
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">Resume Link</label>
+                 <input 
+                   type="url"
+                   className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
+                   placeholder="HTTPS://..."
+                   value={formData.resumeUrl}
+                   onChange={(e) => setFormData({...formData, resumeUrl: e.target.value})}
+                   required
+                 />
+              </div>
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-[#6b9e9a]">LinkedIn Link (Optional)</label>
+                 <input 
+                   type="url"
+                   className="w-full bg-[#1c1c30] border-2 border-transparent px-6 py-3 rounded-xl font-medium text-sm text-[#eefcfb] outline-none focus:border-[#0d9488] transition-all"
+                   placeholder="HTTPS://..."
+                   value={formData.linkedinUrl}
+                   onChange={(e) => setFormData({...formData, linkedinUrl: e.target.value})}
+                 />
+              </div>
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black border border-red-100 italic uppercase tracking-widest">
+              <div className="p-4 bg-[#f43f5e]/10 text-[#f43f5e] rounded-2xl text-[10px] font-black border border-[#f43f5e]/20 italic uppercase tracking-widest">
                 {error}
               </div>
             )}
 
             <div className="pt-4 flex items-center justify-between">
-               <div className="flex items-center gap-2 text-slate-300">
+               <div className="flex items-center gap-2 text-[#6b9e9a]">
                   <Info size={14} />
                   <span className="text-[9px] font-black uppercase tracking-tight">System review takes ~24 hours</span>
                </div>
                <button 
                  type="submit"
                  disabled={loading}
-                 className="bg-[#0a192f] text-white px-12 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-4 shadow-2xl shadow-blue-900/10 active:scale-95"
+                 className="bg-[#0d9488] text-[#eefcfb] px-12 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#0d9488]/80 transition-all flex items-center gap-4 shadow-2xl shadow-[#0d9488]/10 active:scale-95"
                >
                  {loading ? "INITIALIZING..." : "SUBMIT PORTFOLIO"} <ChevronRight size={16} strokeWidth={4} />
                </button>

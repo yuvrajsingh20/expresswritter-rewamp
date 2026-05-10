@@ -33,6 +33,23 @@ export async function POST(request) {
       documents: [ticketData]
     });
 
+    try {
+      const { createNotification } = require('@/lib/notify');
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+      for (const admin of admins) {
+        await createNotification(prisma, {
+          userId: admin.id,
+          type: 'ticket',
+          title: 'New support ticket',
+          msg: `New ticket: "${subject}" — Priority: ${priority || 'Medium'}`,
+          icon: '🎫',
+          link: '/admin/tickets'
+        });
+      }
+    } catch (notifyErr) {
+      console.error("Ticket notification error:", notifyErr);
+    }
+
     return NextResponse.json({ success: true, result });
   } catch (error) {
     console.error("Failed to create ticket via raw command:", error);

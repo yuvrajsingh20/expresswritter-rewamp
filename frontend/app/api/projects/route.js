@@ -7,7 +7,7 @@ import { getAuthUser } from '@/lib/auth';
  */
 export async function POST(req) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     // Only Student can create, or Admin/SubAdmin on behalf of a student.
     if (!authUser || !['STUDENT', 'ADMIN', 'SUB_ADMIN'].includes(authUser.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -30,7 +30,7 @@ export async function POST(req) {
 
 export async function GET(req) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const projects = await getProjectsByUser(authUser.id, authUser.role);

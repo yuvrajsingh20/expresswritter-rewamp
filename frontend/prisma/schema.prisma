@@ -90,6 +90,9 @@ model FreelancerProfile {
   experience    Int?     // Years of experience
   education     String?  // Highest qualification
   resumeUrl     String?  // Link to resume
+  age           Int?
+  gender        String?
+  linkedinUrl   String?
   photoUrl      String?  // Profile photo
   portfolioUrl  String?
   rating        Float    @default(5.0)

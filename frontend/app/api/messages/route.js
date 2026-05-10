@@ -71,6 +71,35 @@ export async function POST(req) {
       }
     });
 
+    try {
+      const { createNotification } = require('@/lib/notify');
+      let targetUserId = receiverId;
+
+      if (!targetUserId && projectId) {
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (project) {
+          if (session.user.id === project.studentId) {
+            targetUserId = project.freelancerId;
+          } else if (session.user.id === project.freelancerId) {
+            targetUserId = project.studentId;
+          }
+        }
+      }
+
+      if (targetUserId) {
+        await createNotification(prisma, {
+          userId: targetUserId,
+          type: 'message',
+          title: 'New message',
+          msg: `${session.user.name || 'Someone'} sent you a message`,
+          icon: '💬',
+          link: projectId ? `/dashboard/orders/${projectId}` : `/dashboard/messages`
+        });
+      }
+    } catch (notifyErr) {
+      console.error("Message notification error:", notifyErr);
+    }
+
     return NextResponse.json(newMessage);
   } catch (error) {
     console.error("Send message error:", error);

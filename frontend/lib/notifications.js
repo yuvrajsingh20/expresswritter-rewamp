@@ -26,6 +26,12 @@ export async function dispatchNotification(type, data) {
            subject: 'Reset Your Password - Express Writer',
            html: data.html
          });
+      } else if (type === 'email') {
+         await sendEmail({
+           to: data.email,
+           subject: data.subject,
+           html: data.html
+         });
       }
       // Add other quick-dispatch handlers here
       return { id: 'mock-job-done' };

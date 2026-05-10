@@ -99,6 +99,7 @@ model FreelancerProfile {
   totalProjects Int      @default(0)
   isVerified    Boolean  @default(false)
   availability  Boolean  @default(true)
+  status        String   @default("Pending Approval")
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

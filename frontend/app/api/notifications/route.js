@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
 
-export async function GET() {
-  const user = await getAuthUser();
+export async function GET(req) {
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -45,7 +45,7 @@ export async function GET() {
 }
 
 export async function PATCH(request) {
-  const user = await getAuthUser();
+  const user = await getAuthUser(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -63,7 +63,7 @@ export async function PATCH(request) {
 }
 
 export async function POST(request) {
-  const user = await getAuthUser();
+  const user = await getAuthUser(request);
   // Allow admins to send notifications
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import "./theme.css";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useChat } from "@/hooks/useChat";
 import servicesData from '@/data/services_data.json';
 import Wallet from "./student-wallet";
@@ -1232,7 +1233,16 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && session?.user?.role !== "STUDENT") {
+      router.push("/login");
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
   // Mobile check
@@ -1333,6 +1343,13 @@ export default function App() {
     settings: <Settings isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
   };
 
+  if (status === "loading") {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--text)' }}>Loading session...</div>;
+  }
+
+  if (!session || session.user.role !== "STUDENT") {
+    return null;
+  }
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>

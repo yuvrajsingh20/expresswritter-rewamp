@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser || !['ADMIN', 'SUB_ADMIN'].includes(authUser.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

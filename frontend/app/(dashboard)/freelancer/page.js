@@ -4,8 +4,8 @@ import "./theme.css";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
-
-
+import io from 'socket.io-client';
+import Notifications from "@/components/NotificationsView";
 
 
 /* ═══════════════════════════════════════════════
@@ -576,7 +576,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
     </div>);
 }
 
-function OrdersView({ projects = [], userId }) {
+function OrdersView({ projects = [], userId, isMobile }) {
   const [activeOrder, setActiveOrder] = useState(null);
   const [filter, setFilter] = useState('All');
 
@@ -704,6 +704,15 @@ function OrdersView({ projects = [], userId }) {
 }
 
 function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  useEffect(() => {
+    fetch('/api/notifications')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setRecentNotifications(data.slice(0, 5));
+      })
+      .catch(err => console.error("Failed to fetch notifications:", err));
+  }, []);
   const active = projects.filter((o) => o.status !== 'COMPLETED');
   const earnings = projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7;
 
@@ -765,7 +774,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {
       </div>
 
       {/* Performance */}
-      <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '18px 20px' }}>
+      <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '18px 20px', marginBottom: 24 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Profile Performance</h2>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 16 }}>
           {[['Profile Views', '1,248', '↑ 12% this week'], ['Order Response Rate', '98%', 'Within 2 hours'], ['On-Time Delivery', '100%', 'All-time record']].map(([k, v, s]) =>
@@ -774,6 +783,25 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{k}</div>
               <div style={{ fontSize: 10, color: 'var(--green)' }}>{s}</div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Recent Activity</h2>
+        <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {recentNotifications.length > 0 ? recentNotifications.map((item, i) => (
+            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: i < recentNotifications.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', background: item.read ? 'transparent' : 'rgba(13,148,136,0.04)' }} onClick={() => setActive('notifications')}>
+              <div style={{ width: 30, height: 30, borderRadius: 7, background: `rgba(13,148,136,0.14)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{item.icon || '🔔'}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: item.read ? 400 : 600 }}>{item.title}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.msg}</div>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )) : (
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>No recent activity notifications.</div>
           )}
         </div>
       </div>
@@ -879,82 +907,156 @@ function Earnings({ isMobile }) {
     </div>);
 }
 
-/* ═══════════════════════════════════════════════
-   PROFILE
-═══════════════════════════════════════════════ */
-function Profile({ isMobile }) {
+/* ── PROFILE ── */
+function Profile({ isMobile, profile, onUpdate }) {
+  const [form, setForm] = useState({
+    name: profile?.name || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    occupation: profile?.occupation || 'Freelancer',
+    college: profile?.college || '',
+  });
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        name: profile.name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        occupation: profile.occupation || 'Freelancer',
+        college: profile.college || '',
+      });
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setSaved(true);
+        onUpdate();
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>My Profile</h1>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 20, alignItems: 'start' }}>
         <div>
-          {/* Public profile preview */}
           <div style={{ background: 'var(--surface2)', border: '1px solid var(--border-teal)', borderRadius: 8, padding: '20px', marginBottom: 20 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 14 }}>Public Profile Preview</div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 }}>
-              <Avatar initials={WRITER.avatar} size={56} />
+              <Avatar initials={form.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'W'} size={56} />
               <div>
-                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 3 }}>{WRITER.name}</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>{WRITER.title}</div>
+                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 3 }}>{form.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>{form.occupation}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: 'var(--gold)' }}>★ {WRITER.rating}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>({WRITER.reviews} reviews)</span>
-                  <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.15)', color: 'var(--teal-light)', fontWeight: 600 }}>{WRITER.badge}</span>
+                  <span style={{ fontSize: 11, color: 'var(--gold)' }}>★ 5.0</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>(0 reviews)</span>
+                  <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.15)', color: 'var(--teal-light)', fontWeight: 600 }}>Top Writer</span>
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-              <SecurityBadge label="Identity Verified" icon="✓" color="#22c55e" />
-              <SecurityBadge label="NDA Capable" icon="🔒" color="#8b5cf6" />
-              <SecurityBadge label="Top 3%" icon="⭐" color="#f59e0b" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Full Name</label>
+              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Email</label>
+              <input value={form.email} disabled style={{ width: '100%', background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text-dim)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)', cursor: 'not-allowed' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Phone / WhatsApp</label>
+              <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Occupation / Title</label>
+              <input value={form.occupation} onChange={e => setForm({...form, occupation: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
             </div>
           </div>
-          {/* Edit form */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
-            {[['Full Name', WRITER.name], ['Professional Title', WRITER.title], ['Email', 'amara.singh@xpresswriters.com'], ['Location', 'London, UK']].map(([k, v]) =>
-            <div key={k}>
-                <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>{k}</label>
-                <input defaultValue={v} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
-              </div>
-            )}
-          </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Bio</label>
-            <textarea defaultValue="PhD in English Literature with 8+ years of academic writing experience. I specialize in SOPs, research proposals, and dissertations, having helped 500+ students gain admission to top universities worldwide. Former university lecturer, published researcher." rows={4} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)', resize: 'vertical', lineHeight: 1.6 }} />
+            <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>College / Organization</label>
+            <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
           </div>
-          <button onClick={() => {setSaved(true);setTimeout(() => setSaved(false), 2500);}} style={{ padding: '9px 22px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background .3s' }}>
-            {saved ? '✓ Saved!' : 'Save Profile'}
+          <button onClick={handleSave} disabled={loading} style={{ padding: '9px 22px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background .3s' }}>
+            {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Profile'}
           </button>
         </div>
-
-        {/* Stats sidebar */}
         <div>
           <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '18px', marginBottom: 14 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 14 }}>Writer Stats</div>
-            {[['Member since', WRITER.joined], ['Completed orders', WRITER.reviews], ['Total earned', `$${WRITER.earnings.toLocaleString()}`], ['Response time', '< 2 hours'], ['On-time rate', '100%']].map(([k, v]) =>
+            {[['Response time', '< 2 hours'], ['On-time rate', '100%']].map(([k, v]) =>
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
                 <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{k}</span>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>{v}</span>
               </div>
             )}
           </div>
-          <div style={{ background: 'rgba(13,148,136,0.06)', border: '1px solid var(--border-teal)', borderRadius: 8, padding: '14px 16px' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--teal-light)', marginBottom: 6 }}>🔒 Identity Protection</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>Your personal identity is never revealed to clients. You appear as "Expert Writer" until order completion. All communications are routed through Xpresswriters secure relay.</div>
-          </div>
         </div>
       </div>
     </div>);
-
 }
 
-/* ═══════════════════════════════════════════════
-   APP
-═══════════════════════════════════════════════ */
+function ProfilePrompt({ onComplete }) {
+  const [form, setForm] = useState({ phone: '', occupation: 'Writer', college: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!form.phone) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) onComplete();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', animation: 'fadeUp 0.4s ease' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, var(--teal), #0f766e)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px', color: '#fff', boxShadow: '0 10px 20px rgba(13,148,136,0.2)' }}>🖋️</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>Welcome, Expert!</h2>
+          <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.5 }}>Let's set up your writer profile so clients can know your expertise.</p>
+        </div>
+        <div style={{ gap: 20, display: 'flex', flexDirection: 'column' }}>
+          <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="WhatsApp / Phone" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
+          <input value={form.occupation} onChange={e => setForm({...form, occupation: e.target.value})} placeholder="Specialization" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
+          <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} placeholder="University / Organization" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
+          <button onClick={handleSubmit} disabled={loading || !form.phone} style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'var(--teal)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginTop: 10, transition: 'all 0.3s' }}>{loading ? 'Saving...' : 'Start Writing →'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [active, setActive] = useState('overview');
   const [projects, setProjects] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -967,83 +1069,86 @@ export default function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    const savedTab = localStorage.getItem('xw_writer_tab');
-    if (savedTab) setActive(savedTab);
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('/api/user/profile');
+      const data = await res.json();
+      setUserProfile(data);
+      if (data && !data.profileCompleted) setShowProfilePrompt(true);
+    } catch (err) { console.error(err); }
+  };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'notifications') {
+      setActive('notifications');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      const savedTab = localStorage.getItem('xw_writer_tab');
+      if (savedTab) setActive(savedTab);
+    }
     const fetchProjects = async () => {
       try {
         const res = await fetch('/api/projects');
         const data = await res.json();
         setProjects(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Fetch projects error:", err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error(err); } finally { setLoading(false); }
     };
     fetchProjects();
+    fetchProfile();
   }, []);
 
   useEffect(() => { localStorage.setItem('xw_writer_tab', active); }, [active]);
 
-  const userName = session?.user?.name || "Writer";
+  // Socket listener for real-time project refresh
+  useEffect(() => {
+    if (session?.user?.id) {
+      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
+      socket.emit('join_chat', { userId: session.user.id, role: session.user.role });
 
+      socket.on('new_notification', (data) => {
+        if (data.type === 'new_job' || data.type === 'assignment' || data.type === 'revision') {
+          // Re-fetch projects to update dashboard instantly
+          fetch('/api/projects')
+            .then(res => res.json())
+            .then(data => {
+              if (Array.isArray(data)) setProjects(data);
+            })
+            .catch(err => console.error("Failed to re-fetch projects:", err));
+        }
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [session?.user?.id]);
+
+  const userName = userProfile?.name || session?.user?.name || "Writer";
   const views = {
     overview: <Overview setActive={setActive} projects={projects} userName={userName} isMobile={isMobile} />,
-    orders: <OrdersView projects={projects} userId={session?.user?.id} />,
+    orders: <OrdersView projects={projects} userId={session?.user?.id} isMobile={isMobile} />,
     earnings: <Earnings isMobile={isMobile} />,
-    profile: <Profile isMobile={isMobile} />
+    profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
+    notifications: <Notifications userName={userName} isMobile={isMobile} />
   };
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-      <div style={isMobile ? {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        zIndex: 1000,
-        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-        transition: 'transform 0.3s ease',
-        background: 'var(--surface)',
-      } : {}}>
+      {showProfilePrompt && <ProfilePrompt onComplete={() => setShowProfilePrompt(false)} />}
+      <div style={isMobile ? { position: 'absolute', top: 0, left: 0, bottom: 0, zIndex: 1000, transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', transition: 'transform 0.3s ease', background: 'var(--surface)' } : {}}>
         <Sidebar active={active} setActive={(id) => { setActive(id); if (isMobile) setSidebarOpen(false); }} orders={projects} userName={userName} />
       </div>
-
-      {isMobile && sidebarOpen && (
-        <div 
-          onClick={() => setSidebarOpen(false)} 
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }}
-        />
-      )}
-
+      {isMobile && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }} />}
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-        {/* Top bar */}
         <div style={{ height: 46, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', padding: isMobile ? '0 16px' : '0 28px', flexShrink: 0, background: 'var(--surface)' }}>
-          {isMobile && (
-            <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 24, cursor: 'pointer' }}>
-              ☰
-            </button>
-          )}
+          {isMobile && <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 24, cursor: 'pointer' }}>☰</button>}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--teal-light)', background: 'rgba(13,148,136,0.08)', padding: '4px 10px', borderRadius: 100, border: '1px solid var(--border-teal)' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-              Available for orders
-            </div>
-            <div style={{ position: 'relative', cursor: 'pointer' }}>
-              <span style={{ fontSize: 16 }}>🔔</span>
-              <span style={{ position: 'absolute', top: -2, right: -2, width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', border: '2px solid var(--bg)' }} />
-            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--teal-light)', background: 'rgba(13,148,136,0.08)', padding: '4px 10px', borderRadius: 100, border: '1px solid var(--border-teal)' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} /> Available for orders</div>
             <Avatar initials={userName.split(' ').map(n => n[0]).join('').toUpperCase()} size={28} />
           </div>
         </div>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {views[active] || views.overview}
-        </div>
+        <div style={{ flex: 1, overflow: 'hidden' }}>{views[active] || views.overview}</div>
       </main>
     </div>);
-
 }
-
-

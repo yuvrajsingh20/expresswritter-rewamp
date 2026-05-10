@@ -29,6 +29,24 @@ export async function POST(req) {
       }
     });
 
+    try {
+      const { createNotification } = require('@/lib/notify');
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+      
+      for (const admin of admins) {
+        await createNotification(prisma, {
+          userId: admin.id,
+          type: 'payout',
+          title: 'Payout request',
+          msg: `${authUser.name || 'A freelancer'} requested a payout of $${amount}`,
+          icon: '💰',
+          link: '/admin/finances' // Or wherever the payout UI is
+        });
+      }
+    } catch (notifyErr) {
+      console.error("Payout notification error:", notifyErr);
+    }
+
     return NextResponse.json({
       message: 'Payout request submitted successfully',
       payout

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
 import servicesData from '@/data/services_data.json';
 import Wallet from "./student-wallet";
-import Notifications from "./student-notifications";
+import Notifications from "@/components/NotificationsView";
 
 
 
@@ -87,8 +87,16 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
   );
 }
 
-/* ── OVERVIEW ── */
 function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student", isMobile }) {
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  useEffect(() => {
+    fetch('/api/notifications')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setRecentNotifications(data.slice(0, 5));
+      })
+      .catch(err => console.error("Failed to fetch notifications:", err));
+  }, []);
   const stats = [
     { label: 'Active Orders', val: projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').length, icon: '⚡', color: 'var(--teal)', sub: 'In progress' },
     { label: 'Completed', val: projects.filter(o => o.status === 'COMPLETED').length, icon: '✓', color: 'var(--green)', sub: 'All time' },
@@ -115,7 +123,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
     };
   });
 
-  const recentLogs = projects.flatMap(p => (p.logs || []).map(l => ({ ...l, projectTitle: p.title }))).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 4);
+  // Logs replaced with notifications
 
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
@@ -183,14 +191,14 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
       <div>
         <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Recent Activity</h2>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflow: 'hidden' }}>
-          {recentLogs.length > 0 ? recentLogs.map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < recentLogs.length - 1 ? '1px solid var(--border2)' : 'none' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(13,148,136,0.18)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>📜</div>
+          {recentNotifications.length > 0 ? recentNotifications.map((item, i) => (
+            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < recentNotifications.length - 1 ? '1px solid var(--border2)' : 'none', cursor: 'pointer', background: item.read ? 'transparent' : 'rgba(13,148,136,0.04)' }} onClick={() => setActive('notifications')}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(13,148,136,0.18)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{item.icon || '🔔'}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 13, color: 'var(--text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.action}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Project: {item.projectTitle}</span>
+                <span style={{ fontSize: 13, color: 'var(--text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: item.read ? 400 : 600 }}>{item.title}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.msg}</span>
               </div>
-              <span style={{ fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           )) : (
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim)' }}>No recent activity.</div>
@@ -748,22 +756,83 @@ function SavedWriters({ setActive, writers = [], isMobile }) {
 }
 
 /* ── SETTINGS ── */
-function Settings({ isMobile }) {
+function Settings({ isMobile, profile, onUpdate }) {
+  const [form, setForm] = useState({
+    name: profile?.name || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    occupation: profile?.occupation || 'Student',
+    college: profile?.college || '',
+  });
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        name: profile.name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        occupation: profile.occupation || 'Student',
+        college: profile.college || '',
+      });
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setSaved(true);
+        onUpdate();
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 28 }}>Account Settings</h1>
       <div style={{ maxWidth: 560 }}>
-        {[
-          { label: 'Full Name', val: 'Meera Krishnan' },
-          { label: 'Email', val: 'meera@example.com' },
-          { label: 'Phone', val: '+1 (415) 555-0182' },
-        ].map(f => (
-          <div key={f.label} style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>{f.label.toUpperCase()}</label>
-            <input defaultValue={f.val} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
-          </div>
-        ))}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>FULL NAME</label>
+          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+        </div>
+        
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>EMAIL ADDRESS</label>
+          <input value={form.email} disabled style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text-dim)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none', cursor: 'not-allowed' }} />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>PHONE / WHATSAPP</label>
+          <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+91 ..." style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>CURRENT STATUS</label>
+          <select value={form.occupation} onChange={e => setForm({...form, occupation: e.target.value})} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }}>
+            <option value="Student">Student</option>
+            <option value="Working Professional">Working Professional</option>
+            <option value="Freelancer">Freelancer</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>COLLEGE / ORGANIZATION</label>
+          <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} placeholder="University Name" style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+        </div>
+
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 12 }}>NOTIFICATIONS</div>
           {['Email me on order updates', 'Email me on new messages', 'Email me on delivery'].map(opt => (
@@ -773,31 +842,97 @@ function Settings({ isMobile }) {
             </label>
           ))}
         </div>
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 16 }}>TEAM & COLLABORATION</div>
-          <div style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 10, padding: 20, marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>Team Accounts</div>
-                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Invite colleagues to collaborate on orders.</div>
-              </div>
-              <button style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 600 }}>+ Invite Member</button>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 100, background: 'var(--teal)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>MK</div>
-              <span style={{ fontSize: 13 }}>Meera Krishnan (Owner)</span>
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-dim)' }}>Full Access</span>
-            </div>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>Agency plan required for more than 2 members. <span style={{ color: 'var(--teal-light)', cursor: 'pointer' }}>Upgrade Now</span></p>
-        </div>
-        <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }} style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s' }}>
-          {saved ? '✓ Saved!' : 'Save Changes'}
+
+        <button 
+          onClick={handleSave} 
+          disabled={loading}
+          style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s', minWidth: 140 }}
+        >
+          {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
         </button>
       </div>
     </div>
   );
 }
+
+function ProfilePrompt({ onComplete }) {
+  const [form, setForm] = useState({ phone: '', occupation: 'Student', college: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!form.phone) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) onComplete();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', animation: 'fadeUp 0.4s ease' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, var(--teal), #0f766e)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px', color: '#fff', boxShadow: '0 10px 20px rgba(13,148,136,0.2)' }}>✨</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>Complete Your Profile</h2>
+          <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.5 }}>Welcome! Just a few more details to help us provide the best service for you.</p>
+        </div>
+
+        <div style={{ gap: 20, display: 'flex', flexDirection: 'column' }}>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8, letterSpacing: '0.08em' }}>WHATSAPP / PHONE</label>
+            <input 
+              value={form.phone} 
+              onChange={e => setForm({...form, phone: e.target.value})} 
+              placeholder="+91 98765 43210"
+              style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8, letterSpacing: '0.08em' }}>I AM A...</label>
+            <select 
+              value={form.occupation} 
+              onChange={e => setForm({...form, occupation: e.target.value})}
+              style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }}
+            >
+              <option value="Student">Student</option>
+              <option value="Working Professional">Working Professional</option>
+              <option value="Freelancer">Freelancer</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8, letterSpacing: '0.08em' }}>COLLEGE / ORGANIZATION</label>
+            <input 
+              value={form.college} 
+              onChange={e => setForm({...form, college: e.target.value})} 
+              placeholder="e.g. Delhi University"
+              style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }}
+            />
+          </div>
+
+          <button 
+            onClick={handleSubmit}
+            disabled={loading || !form.phone}
+            style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'var(--teal)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginTop: 10, transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(13,148,136,0.3)', opacity: (loading || !form.phone) ? 0.6 : 1 }}
+          >
+            {loading ? 'Saving...' : 'Get Started →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /* ── NEW ORDER ── */
 function NewOrder({ setActive, isMobile }) {
@@ -1078,6 +1213,8 @@ export default function App() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [projects, setProjects] = useState([]);
   const [writers, setWriters] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1097,6 +1234,9 @@ export default function App() {
   if (isCheckout) {
     setActive('new-order');
     window.history.replaceState({}, '', window.location.pathname);
+  } else if (params.get('tab') === 'notifications') {
+    setActive('notifications');
+    window.history.replaceState({}, '', window.location.pathname);
   } else {
     const savedTab = localStorage.getItem('xw_dash_tab');
     if (savedTab) setActive(savedTab);
@@ -1106,7 +1246,21 @@ export default function App() {
     window.removeEventListener('resize', checkMobile);
   };
 }, []);
-   
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('/api/user/profile');
+      const data = await res.json();
+      setUserProfile(data);
+      if (data && !data.profileCompleted) {
+        setShowProfilePrompt(true);
+      }
+    } catch (err) {
+      console.error("Fetch profile error:", err);
+    }
+  };
+
+  useEffect(() => {
     const fetchProjects = async () => {
       try {
         const res = await fetch('/api/projects');
@@ -1131,11 +1285,12 @@ export default function App() {
 
     fetchProjects();
     fetchWriters();
+    fetchProfile();
   }, []);
 
   useEffect(() => { localStorage.setItem('xw_dash_tab', active); }, [active]);
 
-  const userName = session?.user?.name || "Student";
+  const userName = userProfile?.name || session?.user?.name || "Student";
   const unreadCount = 0;
 
   const content = {
@@ -1146,11 +1301,13 @@ export default function App() {
     messages: <Messages projects={projects} userId={session?.user?.id} isMobile={isMobile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />,
     writers: <SavedWriters setActive={setActive} writers={writers} isMobile={isMobile} />,
-    settings: <Settings isMobile={isMobile} />,
+    settings: <Settings isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
   };
+
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      {showProfilePrompt && <ProfilePrompt onComplete={() => setShowProfilePrompt(false)} />}
       <div style={isMobile ? {
         position: 'absolute',
         top: 0,

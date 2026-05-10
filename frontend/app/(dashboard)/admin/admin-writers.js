@@ -11,6 +11,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
   const [localFreelancers, setLocalFreelancers] = useState(freelancers);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkAction, setBulkAction] = useState('');
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setLocalFreelancers(freelancers);

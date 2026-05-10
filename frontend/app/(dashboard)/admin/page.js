@@ -12,6 +12,7 @@ import { AdminOrders } from "./admin-orders";
 import { AdminAnalytics } from "./admin-analytics";
 import { AdminRefunds } from "./admin-refunds";
 import { AdminPromos } from "./admin-promos";
+import Notifications from "@/components/NotificationsView";
 import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar } from "./admin-shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,15 @@ const NAV = [
 
 /* ── OVERVIEW ── */
 function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }) {
+  const [recentNotifications, setRecentNotifications] = React.useState([]);
+  React.useEffect(() => {
+    fetch('/api/notifications')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setRecentNotifications(data.slice(0, 6));
+      })
+      .catch(err => console.error("Failed to fetch notifications:", err));
+  }, []);
   const stats = [
     { label: 'Total Orders', val: projects.length, sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
@@ -60,7 +70,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }
     { id: 'currency', label: 'Currency', icon: '💱', desc: 'Regional settings' }
   ];
 
-  const recentLogs = projects.flatMap(p => (p.logs || []).map(l => ({ ...l, projectTitle: p.title }))).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 6);
+  // Logs replaced with notifications
 
   return (
     <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
@@ -109,14 +119,14 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }
         <div>
           <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>System Activity</h2>
           <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-            {recentLogs.length > 0 ? recentLogs.map((a, i) =>
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: i < recentLogs.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 7, background: `rgba(13,148,136,0.14)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>📜</div>
+            {recentNotifications.length > 0 ? recentNotifications.map((item, i) =>
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: i < recentNotifications.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', background: item.read ? 'transparent' : 'rgba(13,148,136,0.04)' }} onClick={() => setSection('notifications')}>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: `rgba(13,148,136,0.14)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{item.icon || '🔔'}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.action}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Project: {a.projectTitle}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: item.read ? 400 : 600 }}>{item.title}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.msg}</div>
                 </div>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             ) : (
               <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>No recent activity logs.</div>
@@ -273,9 +283,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const savedSection = localStorage.getItem('xw_admin_section');
-    if (savedSection) setSection(savedSection);
-    
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'notifications') {
+      setSection('notifications');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      const savedSection = localStorage.getItem('xw_admin_section');
+      if (savedSection) setSection(savedSection);
+    }
     const savedDark = localStorage.getItem('xw_admin_dark');
     if (savedDark !== null) setDark(savedDark !== 'false');
 
@@ -332,7 +347,8 @@ export default function App() {
     audit: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAudit /></div>,
     seo: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSEO /></div>,
     workflow: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
-    theme: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>
+    theme: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>,
+    notifications: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><Notifications userName="Admin" isMobile={isMobile} /></div>
   };
 
   return (

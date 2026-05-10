@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Pill, Btn, SectionHeader, Table } from "./admin-shared";
 import { EagleEyePanel, DirectChatPanel } from "./admin-writers";
 import { useChat } from "@/hooks/useChat";
@@ -152,20 +152,25 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
               isMobile={isMobile}
             />
           ) : (
-            <>
-              <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 40, marginBottom: 16 }}>Active Projects Overview</h3>
-              <Table
-                  cols={['Order ID', 'Service', 'Status', 'Writer', 'Client', 'Action']}
-                  rows={projects.filter(p => p.status !== 'CREATED' && p.status !== 'UNASSIGNED' && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').map(p => [
-                    <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>#{p.id.slice(-6).toUpperCase()}</span>,
-                    <span style={{ fontSize: 13 }}>{p.title}</span>,
-                    <Pill label={p.status} color="var(--teal)" />,
-                    <span style={{ fontSize: 13 }}>{p.freelancer?.name || 'Unassigned'}</span>,
-                    <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
-                    <Btn small variant="ghost" onClick={() => setActiveProject(p.id)}>Manage Chat</Btn>
-                  ])}
-                />
-            </>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: 20, marginTop: 40 }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Active Projects Overview</h3>
+                <Table
+                    cols={['Order ID', 'Service', 'Status', 'Writer', 'Client', 'Action']}
+                    rows={projects.filter(p => p.status !== 'CREATED' && p.status !== 'UNASSIGNED' && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').map(p => [
+                      <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>#{p.id.slice(-6).toUpperCase()}</span>,
+                      <span style={{ fontSize: 13 }}>{p.title}</span>,
+                      <Pill label={p.status} color="var(--teal)" />,
+                      <span style={{ fontSize: 13 }}>{p.freelancer?.name || 'Unassigned'}</span>,
+                      <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
+                      <Btn small variant="ghost" onClick={() => setActiveProject(p.id)}>Manage Chat</Btn>
+                    ])}
+                  />
+              </div>
+              <div>
+                <AdminNotificationsFeed session={session} />
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -259,6 +264,67 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
               </div>
               <div style={{ padding: '10px 14px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, color: 'var(--text)', fontSize: 13, maxWidth: '75%' }}>
                 {msg.content}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AdminNotificationsFeed({ session }) {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!session) return;
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 20000); // 20s
+    return () => clearInterval(interval);
+  }, [session]);
+
+  const ICONS = {
+    new_order: '📥', assignment: '✍️', new_job: '🎯',
+    status: '📋', message: '💬', payout: '💰',
+    ticket: '🎫', deadline: '⏰', completed: '✅',
+    revision: '🔄', system: '🔔'
+  };
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>System Notifications (Live Feed)</h3>
+        <span style={{ fontSize: 10, color: 'var(--teal-light)', background: 'rgba(13,148,136,0.1)', padding: '2px 6px', borderRadius: 10 }}>Auto-updates</span>
+      </div>
+      <div style={{ maxHeight: 400, overflowY: 'auto', padding: '10px 0' }}>
+        {loading && <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-dim)' }}>Loading feed...</div>}
+        {!loading && notifications.length === 0 && <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-dim)' }}>No recent notifications.</div>}
+        {!loading && notifications.map(n => {
+          const icon = n.icon || ICONS[n.type] || '🔔';
+          return (
+            <div key={n.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, background: n.read ? 'transparent' : 'rgba(13,148,136,0.05)' }}>
+              <div style={{ fontSize: 16, marginTop: 2 }}>{icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{n.title}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{n.msg}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
+                  {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} · {new Date(n.createdAt).toLocaleDateString()}
+                </div>
               </div>
             </div>
           );

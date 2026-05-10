@@ -46,11 +46,20 @@ function LoginForm() {
         redirect: false,
         email,
         password,
+        role,
         callbackUrl,
       });
 
       if (res?.error) {
-        setError(res.error === "EMAIL_NOT_VERIFIED" ? "Email verification required." : "Invalid access parameters.");
+        if (res.error === "EMAIL_NOT_VERIFIED") {
+          setError("Email verification required.");
+        } else if (res.error === "ROLE_MISMATCH_STUDENT") {
+          setError("You joined as a student, contact to admin");
+        } else if (res.error === "ROLE_MISMATCH_WRITER") {
+          setError("You joined as a writer, contact to admin");
+        } else {
+          setError("Invalid access parameters.");
+        }
         setLoading(false);
         return;
       }
@@ -75,15 +84,22 @@ function LoginForm() {
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase' }}>I am a</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
           {ROLES.map((r) =>
-            <div key={r.id} onClick={() => setRole(r.id)} style={{
+            <button key={r.id} onClick={(e) => { e.preventDefault(); setRole(r.id); }} style={{
               padding: '10px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'center', transition: 'all .2s',
               background: role === r.id ? 'rgba(13,148,136,0.12)' : 'var(--surface3)',
-              border: `1.5px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`
+              border: `1.5px solid ${role === r.id ? 'var(--teal)' : 'var(--border)'}`,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'inherit',
+              outline: 'none'
             }}>
               <div style={{ fontSize: 20, marginBottom: 3 }}>{r.icon}</div>
               <div style={{ fontSize: 13, fontWeight: role === r.id ? 700 : 500, color: role === r.id ? 'var(--teal-light)' : 'var(--text)' }}>{r.label}</div>
               <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 1 }}>{r.desc}</div>
-            </div>
+            </button>
           )}
         </div>
       </div>
@@ -133,7 +149,7 @@ function LoginForm() {
       {/* Sign up link */}
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--text-muted)' }}>
         Don't have an account?{' '}
-        <Link href="/register" style={{ color: 'var(--teal-light)', fontSize: 14, textDecoration: 'none', fontWeight: 600 }}>Create one →</Link>
+        <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} style={{ color: 'var(--teal-light)', fontSize: 14, textDecoration: 'none', fontWeight: 600 }}>Create one →</Link>
       </div>
 
       {/* Security note */}

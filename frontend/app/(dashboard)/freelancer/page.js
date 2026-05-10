@@ -395,7 +395,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', animation: 'slideLeft .3s ease' }}>
       {/* Header */}
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, background: 'var(--surface)' }}>
-        <button onClick={onClose} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', width: 28, height: 28, borderRadius: 6, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)', flexShrink: 0 }}>←</button>
+        <button onClick={onClose} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', width: 28, height: 28, borderRadius: 6, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)', flexShrink: 0 }}>&times;</button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.service}</span>
@@ -1013,7 +1013,7 @@ function Profile({ isMobile, profile, onUpdate }) {
 }
 
 function ProfilePrompt({ onComplete }) {
-  const [form, setForm] = useState({ phone: '', occupation: 'Writer', college: '' });
+  const [form, setForm] = useState({ phone: '', occupation: 'Freelancer', college: '' });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -1034,8 +1034,21 @@ function ProfilePrompt({ onComplete }) {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', animation: 'fadeUp 0.4s ease' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <style>{`
+        @keyframes softPop {
+          from { opacity: 0; transform: scale(0.97) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+      <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', animation: 'softPop 0.4s cubic-bezier(0.16, 1, 0.3, 1)', position: 'relative' }}>
+        <button 
+          onClick={() => onComplete()}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
+          title="Close"
+        >
+          &times;
+        </button>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, var(--teal), #0f766e)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px', color: '#fff', boxShadow: '0 10px 20px rgba(13,148,136,0.2)' }}>🖋️</div>
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>Welcome, Expert!</h2>
@@ -1043,7 +1056,7 @@ function ProfilePrompt({ onComplete }) {
         </div>
         <div style={{ gap: 20, display: 'flex', flexDirection: 'column' }}>
           <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="WhatsApp / Phone" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
-          <input value={form.occupation} onChange={e => setForm({...form, occupation: e.target.value})} placeholder="Specialization" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
+          <div style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', fontSize: 14 }}>Freelancer</div>
           <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} placeholder="University / Organization" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
           <button onClick={handleSubmit} disabled={loading || !form.phone} style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'var(--teal)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginTop: 10, transition: 'all 0.3s' }}>{loading ? 'Saving...' : 'Start Writing →'}</button>
         </div>
@@ -1080,13 +1093,21 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('tab') === 'notifications') {
-      setActive('notifications');
-      window.history.replaceState({}, '', window.location.pathname);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      setActive(tabParam);
     } else {
       const savedTab = localStorage.getItem('xw_writer_tab');
       if (savedTab) setActive(savedTab);
     }
+
+    const handlePopState = () => {
+      const p = new URLSearchParams(window.location.search);
+      const t = p.get('tab');
+      if (t) setActive(t);
+    };
+    window.addEventListener('popstate', handlePopState);
+
     const fetchProjects = async () => {
       try {
         const res = await fetch('/api/projects');
@@ -1096,9 +1117,20 @@ export default function App() {
     };
     fetchProjects();
     fetchProfile();
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
-  useEffect(() => { localStorage.setItem('xw_writer_tab', active); }, [active]);
+  useEffect(() => {
+    localStorage.setItem('xw_writer_tab', active);
+    const url = new URL(window.location);
+    if (url.searchParams.get('tab') !== active) {
+      url.searchParams.set('tab', active);
+      window.history.pushState({}, '', url);
+    }
+  }, [active]);
 
   // Socket listener for real-time project refresh
   useEffect(() => {
@@ -1132,6 +1164,36 @@ export default function App() {
     profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />
   };
+
+  const isVerified = userProfile?.freelancerProfile?.isVerified;
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff' }}>
+        <p style={{ fontSize: 14, fontWeight: 'bold', letterSpacing: '0.1em' }}>LOADING DASHBOARD...</p>
+      </div>
+    );
+  }
+
+  if (userProfile && isVerified === false) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff', padding: 20, textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, background: 'rgba(245, 158, 11, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+          <span style={{ fontSize: 40 }}>⏳</span>
+        </div>
+        <h1 style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', marginBottom: 8, letterSpacing: '-0.02em' }}>Application Under Review</h1>
+        <p style={{ color: '#8e8e93', fontSize: 14, maxWidth: 400, marginBottom: 24, lineHeight: 1.5 }}>
+          Thank you for applying! Our team is reviewing your profile. This usually takes less than 24 hours. You will gain access to the dashboard once approved.
+        </p>
+        <button 
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.3s' }}
+        >
+          Sign Out
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>

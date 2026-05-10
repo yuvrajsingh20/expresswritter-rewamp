@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession } from "next-auth/react";
 import './(auth)/landing.css';
 
 /* ─── DATA ─── */
@@ -498,6 +499,7 @@ function OrderModal({ isOpen, onClose, initialService }) {
   const [form, setForm] = useState({ category: initialService?.label || '', turnaround: '72h', wordCount: 500, details: '', deadline: '', budget: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { data: session } = useSession();
 
   useEffect(() => { if (initialService) setForm(f => ({ ...f, category: initialService.label || '' })); }, [initialService]);
   useEffect(() => { if (isOpen) { setStep(1); setSubmitted(false); setSubmitting(false); } }, [isOpen]);
@@ -522,7 +524,11 @@ function OrderModal({ isOpen, onClose, initialService }) {
     localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
     
     // Redirect to login with callback to student dashboard checkout
-    window.location.href = `/login?callbackUrl=/student?action=checkout`;
+    if (session) {
+      window.location.href = `/student?action=checkout`;
+    } else {
+      window.location.href = `/login?callbackUrl=/student?action=checkout`;
+    }
   };
 
   return (

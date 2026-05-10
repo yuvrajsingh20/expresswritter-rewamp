@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -33,41 +34,6 @@ export const signToken = (payload) => {
 /**
  * Utility to extract current authenticated user context in Server Actions/API
  */
-export const getAuthUser = async () => {
-    // 1. Try NextAuth JWT
-    const req = {
-        cookies: await cookies(),
-        headers: {}, 
-    };
-    
-    const token = await getToken({ 
-        req, 
-        secret: JWT_SECRET 
-    });
-
-    if (token) {
-        return {
-            id: token.id || token.sub,
-            role: token.role,
-            name: token.name,
-            email: token.email
-        };
-    }
-
-    const cookieStore = await cookies();
-    const customToken = cookieStore.get('token')?.value;
-    if (customToken) {
-        try {
-            return jwt.verify(customToken, JWT_SECRET);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    return null;
-};
-
-
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -88,7 +54,8 @@ export const authOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text" }
       },
       async authorize(credentials) {
         try {
@@ -103,9 +70,18 @@ export const authOptions = {
             throw new Error("EMAIL_NOT_VERIFIED");
           }
           
+          // Check role mismatch
+          const requestedRole = credentials.role;
+          if (requestedRole === 'writer' && user.role === 'STUDENT') {
+            throw new Error("ROLE_MISMATCH_STUDENT");
+          }
+          if (requestedRole === 'client' && user.role === 'FREELANCER') {
+            throw new Error("ROLE_MISMATCH_WRITER");
+          }
+          
           return { id: user.id, name: user.name, email: user.email, role: user.role };
         } catch (error) {
-          if (error.message === "EMAIL_NOT_VERIFIED") {
+          if (error.message === "EMAIL_NOT_VERIFIED" || error.message.startsWith("ROLE_MISMATCH")) {
             throw error;
           }
           return null;
@@ -132,4 +108,43 @@ export const authOptions = {
   },
   pages: { signIn: "/login", error: "/login" },
   secret: process.env.NEXTAUTH_SECRET,
+};
+
+export const getAuthUser = async (req) => {
+    // 1. Try NextAuth JWT
+    console.log("getAuthUser: Checking token with req...");
+    const token = await getToken({ 
+        req, 
+        secret: JWT_SECRET 
+    });
+    console.log("getAuthUser: Token found:", token ? "YES" : "NO");
+    
+    if (token) {
+        console.log("getAuthUser: Returning token user:", token.email);
+        return {
+            id: token.id || token.sub,
+            role: token.role,
+            name: token.name,
+            email: token.email
+        };
+    }
+
+    // 2. Fallback to custom token in cookies (if any)
+    const cookieStore = await cookies();
+    const customToken = cookieStore.get('token')?.value;
+    console.log("getAuthUser: Custom token found:", customToken ? "YES" : "NO");
+    
+    if (customToken) {
+        try {
+            const decoded = jwt.verify(customToken, JWT_SECRET);
+            console.log("getAuthUser: Returning decoded custom token for:", decoded.email);
+            return decoded;
+        } catch (e) {
+            console.log("getAuthUser: Custom token verification failed:", e.message);
+            return null;
+        }
+    }
+
+    console.log("getAuthUser: No auth found");
+    return null;
 };

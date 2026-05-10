@@ -42,10 +42,20 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get('role')?.toUpperCase() || 'STUDENT';
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(initialRole === 'FREELANCER' ? 'writer' : 'client');
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', agree: false });
+  const [form, setForm] = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '', 
+    agree: false,
+    education: '',
+    experience: '',
+    resumeUrl: ''
+  });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -74,6 +84,13 @@ function RegisterForm() {
     else if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
     if (!form.agree) e.agree = 'Please accept the terms to continue';
+    
+    if (role === 'writer') {
+      if (!form.education.trim()) e.education = 'Qualification is required';
+      if (!form.experience.trim()) e.experience = 'Experience is required';
+      if (!form.resumeUrl.trim()) e.resumeUrl = 'Resume link is required';
+    }
+    
     return e;
   };
 
@@ -96,7 +113,14 @@ function RegisterForm() {
             name: form.name,
             email: form.email,
             password: form.password,
-            role: backendRole
+            role: backendRole,
+            writerProfile: role === 'writer' ? {
+              education: form.education,
+              experience: form.experience,
+              resumeUrl: form.resumeUrl,
+              bio: "Writer application from registration form",
+              domainId: "SOP" // Default domain
+            } : undefined
           }),
         });
 
@@ -120,14 +144,13 @@ function RegisterForm() {
       <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>Account created!</h2>
       <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 360, marginBottom: 28 }}>
         {role === 'writer' ?
-          'Your writer application is under review. We\'ll email you within 48 hours. Meanwhile, complete your onboarding.' :
+          'Your writer application is under review. We have received your qualification details and resume. We\'ll email you within 48 hours once approved. Then you can login and access your dashboard.' :
           'Welcome to Xpresswriters! Check your email to verify your account, then start placing orders.'}
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-        {role === 'writer' ?
-          <Link href="/onboard" style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Complete Onboarding →</Link> :
-          <Link href="/dashboard" style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Go to Dashboard →</Link>
-        }
+        {role === 'writer' ? null : (
+          <Link href={callbackUrl} style={{ background: 'var(--teal)', color: '#fff', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Go to Dashboard →</Link>
+        )}
         <Link href="/login" style={{ background: 'transparent', border: '1.5px solid var(--border)', color: 'var(--text-muted)', padding: '12px 24px', borderRadius: 7, fontSize: 14, fontWeight: 500, cursor: 'pointer', textDecoration: 'none' }}>Sign In</Link>
       </div>
     </div>
@@ -195,6 +218,15 @@ function RegisterForm() {
         <div style={{ animation: 'fadeIn .3s ease' }}>
           <InputField label="Full Name" value={form.name} onChange={(v) => update('name', v)} placeholder="Dr. Amara Singh" icon="👤" error={errors.name} autoComplete="name" />
           <InputField label="Email Address" type="email" value={form.email} onChange={(v) => update('email', v)} placeholder="you@example.com" icon="✉️" error={errors.email} autoComplete="email" />
+          
+          {role === 'writer' && (
+            <>
+              <InputField label="Highest Qualification" value={form.education} onChange={(v) => update('education', v)} placeholder="e.g. Masters in English" icon="🎓" error={errors.education} />
+              <InputField label="Experience (Years)" value={form.experience} onChange={(v) => update('experience', v)} placeholder="e.g. 5" icon="💼" error={errors.experience} type="number" />
+              <InputField label="Resume Link / Portfolio" value={form.resumeUrl} onChange={(v) => update('resumeUrl', v)} placeholder="Link to your resume" icon="🔗" error={errors.resumeUrl} />
+            </>
+          )}
+
           <InputField label="Password" type="password" value={form.password} onChange={(v) => update('password', v)} placeholder="Create a strong password" error={errors.password} autoComplete="new-password" />
           <PasswordStrength password={form.password} />
           <InputField label="Confirm Password" type="password" value={form.confirmPassword} onChange={(v) => update('confirmPassword', v)} placeholder="Repeat password" error={errors.confirmPassword} autoComplete="new-password" />

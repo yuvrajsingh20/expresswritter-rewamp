@@ -92,10 +92,13 @@ export function AdminWriters({ freelancers = [], isMobile }) {
     responseTime: f.freelancerProfile?.responseTime || 'N/A',
     earnings: f.freelancerProfile?.totalEarnings || 0,
     payMethod: f.freelancerProfile?.preferredPaymentMethod || 'N/A',
-    currency: f.freelancerProfile?.currency || 'USD'
+    currency: f.freelancerProfile?.currency || 'USD',
+    education: f.freelancerProfile?.education || 'N/A',
+    experience: f.freelancerProfile?.experience || 0,
+    resumeUrl: f.freelancerProfile?.resumeUrl || ''
   }));
 
-  const STATUS_COLOR = { Active: 'var(--green)', Inactive: 'var(--text-dim)', 'Pending Approval': 'var(--amber)', Suspended: 'var(--red)' };
+  const STATUS_COLOR = { Active: 'var(--green)', Inactive: 'var(--text-dim)', 'Pending Approval': 'var(--amber)', Suspended: 'var(--red)', Rejected: 'var(--red)' };
   const COMPLIANCE_COLOR = { Compliant: 'var(--green)', 'KYC Pending': 'var(--amber)', 'Under Review': 'var(--amber)', 'Non-Compliant': 'var(--red)' };
 
   const filtered = tab === 'All Writers' ? WRITERS :
@@ -150,31 +153,33 @@ export function AdminWriters({ freelancers = [], isMobile }) {
               </div>
             )}
           </div>
-          <div style={{ width: isMobile ? '100%' : (selected ? 340 : '100%'), flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
+          <div style={{ width: isMobile ? (selected ? '0%' : '100%') : (selected ? 340 : '100%'), display: isMobile && selected ? 'none' : 'flex', maxWidth: selected ? 'none' : 1200, flexShrink: 0, flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
             {filtered.map(w => (
               <div key={w.id} onClick={() => setSelected(w.id === selected ? null : w.id)} style={{
-                background: selected === w.id ? 'rgba(13,148,136,0.06)' : 'var(--surface2)',
+                background: selected === w.id ? 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(15,118,110,0.05))' : 'var(--surface2)',
                 border: `1px solid ${selected === w.id ? 'var(--teal)' : 'var(--border)'}`,
-                borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all .2s',
-                position: 'relative'
+                boxShadow: selected === w.id ? '0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px var(--teal)' : 'none',
+                borderRadius: 12, padding: '16px', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                marginBottom: '8px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="checkbox" checked={selectedIds.includes(w.id)} onChange={(e) => toggleSelect(e, w.id)} style={{ cursor: 'pointer' }} />
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>{w.avatar}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input type="checkbox" checked={selectedIds.includes(w.id)} onChange={(e) => toggleSelect(e, w.id)} style={{ cursor: 'pointer', accentColor: 'var(--teal)' }} />
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{w.avatar}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <span style={{ fontWeight: 600, fontSize: 13 }}>{w.name}</span>
-                        {w.verified && <span style={{ fontSize: 10, color: 'var(--teal-light)' }}>✓</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{w.name}</span>
+                        {w.verified && <span style={{ fontSize: 12, color: 'var(--teal-light)' }}>✓</span>}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                         <Pill label={w.status} color={STATUS_COLOR[w.status]} />
                         <Pill label={w.compliance} color={COMPLIANCE_COLOR[w.compliance]} />
-                        <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{w.country} · ★ {w.rating}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 4 }}>{w.country} · ★ {w.rating}</span>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-light)' }}>{w.orders} orders</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>${w.revenue.toLocaleString()} total</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal-light)' }}>{w.orders} orders</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>${w.revenue.toLocaleString()} total</div>
                     </div>
                   </div>
                 </div>
@@ -183,22 +188,37 @@ export function AdminWriters({ freelancers = [], isMobile }) {
 
             {selected_w && (
               <div style={{ flex: 1, overflowY: 'auto', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, animation: 'slideLeft .25s ease' }}>
-                <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, color: '#fff', flexShrink: 0 }}>{selected_w.avatar}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 3 }}>{selected_w.name}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                      <Pill label={selected_w.status} color={STATUS_COLOR[selected_w.status]} />
-                      <Pill label={selected_w.compliance} color={COMPLIANCE_COLOR[selected_w.compliance]} />
-                      {selected_w.badge !== '—' && <Pill label={selected_w.badge} color="var(--gold)" />}
+                <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', gap: 14 }}>
+                  {isMobile && (
+                    <button onClick={() => setSelected(null)} style={{ background: 'transparent', border: 'none', color: 'var(--teal-light)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4, padding: 0, marginBottom: 8 }}>
+                      ← Back to List
+                    </button>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, color: '#fff', flexShrink: 0 }}>{selected_w.avatar}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 3 }}>{selected_w.name}</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                        <Pill label={selected_w.status} color={STATUS_COLOR[selected_w.status]} />
+                        <Pill label={selected_w.compliance} color={COMPLIANCE_COLOR[selected_w.compliance]} />
+                        {selected_w.badge !== '—' && <Pill label={selected_w.badge} color="var(--gold)" />}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{selected_w.email} · {selected_w.country} · Joined {selected_w.joined}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{selected_w.email} · {selected_w.country} · Joined {selected_w.joined}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    {selected_w.status === 'Pending Approval' && <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active', isVerified: true })}>✓ Approve</Btn>}
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, justifyContent: isMobile ? 'flex-start' : 'flex-end', marginTop: isMobile ? 8 : 0 }}>
+                    {selected_w.status === 'Pending Approval' && (
+                      <>
+                        <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active', isVerified: true })}>✓ Approve</Btn>
+                        <Btn small variant="danger" onClick={() => handleUpdate(selected_w.id, { status: 'Rejected' })}>✗ Reject</Btn>
+                      </>
+                    )}
                     {selected_w.status === 'Active' && <Btn small variant="danger" onClick={() => handleUpdate(selected_w.id, { status: 'Inactive' })}>Deactivate</Btn>}
                     {selected_w.status === 'Inactive' && <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active' })}>Activate</Btn>}
                     <Btn small variant="outline" onClick={() => setMainTab('Direct Chat')}>Message</Btn>
+                    <button onClick={() => setSelected(null)} style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', marginLeft: 4 }} aria-label="Close details">
+                      ✕
+                    </button>
                   </div>
                 </div>
 
@@ -227,6 +247,29 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                   <Card>
                     <CardHeader title="Verification & Compliance" />
                     <div style={{ padding: 12 }}>
+                      {/* Application Details */}
+                      <div style={{ marginBottom: 16, padding: '12px', background: 'var(--surface3)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: 11, color: 'var(--teal-light)', marginBottom: 8, fontWeight: 700, letterSpacing: '0.05em' }}>APPLICATION DETAILS</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Qualification</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.education}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Experience</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.experience} years</div>
+                          </div>
+                        </div>
+                        {selected_w.resumeUrl && (
+                          <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Resume</div>
+                            <a href={selected_w.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal-light)', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+                              View Resume <span style={{ fontSize: 10 }}>↗</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
                       {[
                         { label: 'Identity Verified', done: selected_w.verified },
                         { label: 'KYC Submitted', done: selected_w.kycDone },

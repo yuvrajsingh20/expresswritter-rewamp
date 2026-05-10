@@ -29,6 +29,25 @@ export const createProject = async (data) => {
     console.warn('Notification queue error (ignored):', error);
   }
 
+  try {
+    const { createNotification } = require('@/lib/notify');
+    const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+    const student = await prisma.user.findUnique({ where: { id: data.studentId } });
+    
+    for (const admin of admins) {
+      await createNotification(prisma, {
+        userId: admin.id,
+        type: 'new_order',
+        title: 'New order received',
+        msg: `${student?.name || 'A student'} placed a new order: ${project.title}`,
+        icon: '📥',
+        link: `/admin/orders/${project.id}`
+      });
+    }
+  } catch (err) {
+    console.error('Failed to notify admins of new order', err);
+  }
+
   return project;
 };
 

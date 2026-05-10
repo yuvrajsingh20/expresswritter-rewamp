@@ -3,9 +3,19 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const chalk = require("chalk");
 const { filterMessageContent } = require("./lib/chatFilter");
 
 const app = express();
+
+// Custom Logger
+const logger = {
+  info: (msg) => console.log(`${chalk.gray(`[${new Date().toLocaleTimeString()}]`)} ${chalk.blue('ℹ')} ${msg}`),
+  success: (msg) => console.log(`${chalk.gray(`[${new Date().toLocaleTimeString()}]`)} ${chalk.green('✔')} ${msg}`),
+  warn: (msg) => console.log(`${chalk.gray(`[${new Date().toLocaleTimeString()}]`)} ${chalk.yellow('⚠')} ${msg}`),
+  error: (msg) => console.error(`${chalk.gray(`[${new Date().toLocaleTimeString()}]`)} ${chalk.red('✖')} ${msg}`),
+  socket: (id, msg) => console.log(`${chalk.gray(`[${new Date().toLocaleTimeString()}]`)} ${chalk.magenta('⚡')} ${chalk.dim(`[${id.substring(0, 6)}]`)} ${msg}`)
+};
 
 app.use(
   cors({
@@ -13,6 +23,16 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(express.json());
+
+app.post('/notify', (req, res) => {
+  const { userId, title, msg, icon } = req.body;
+  if (io) {
+    io.to(`user_${userId}`).emit('new_notification', { title, msg, icon });
+  }
+  res.json({ ok: true });
+});
 
 const server = http.createServer(app);
 
@@ -24,7 +44,7 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+  logger.socket(socket.id, chalk.green("Client connected"));
 
   // Join Project-based Chat Room or Private User Room
   socket.on("join_chat", (data) => {
@@ -33,18 +53,18 @@ io.on("connection", (socket) => {
     // Every user joins their own private room for DMs
     if (userId) {
       socket.join(`user_${userId}`);
-      console.log(`User ${userId} joined their private room user_${userId}`);
+      logger.socket(socket.id, `User ${chalk.cyan(userId)} joined private room`);
     }
 
     // Admins and SubAdmins also join global monitoring
     if (role === "ADMIN" || role === "SUB_ADMIN") {
       socket.join(`eagle_eye`);
-      console.log(`Admin/SubAdmin ${userId} joined eagle_eye`);
+      logger.socket(socket.id, `${chalk.yellow(role)} ${userId} enabled ${chalk.bold('Eagle Eye')} mode`);
     }
     
     if (projectId) {
       socket.join(`project_${projectId}`);
-      console.log(`Socket ${socket.id} (${role}) joined chat for project ${projectId}`);
+      logger.socket(socket.id, `Joined project ${chalk.blue(projectId)} as ${chalk.dim(role)}`);
     }
   });
 
@@ -55,6 +75,7 @@ io.on("connection", (socket) => {
     const filterResult = filterMessageContent(content);
     
     if (filterResult.isRestricted) {
+      logger.warn(`Blocked restricted content from ${senderId} in ${projectId || 'DM'}`);
       socket.emit("error_alert", {
         message: "Your message contains restricted content (links/phone/email) and was blocked.",
         reasons: filterResult.reasons
@@ -92,7 +113,7 @@ io.on("connection", (socket) => {
         ...data,
         timestamp: new Date(),
       });
-      console.log(`ADMIN_CHAT from ${senderId} to ${receiverId || 'ALL_ADMINS'}`);
+      logger.socket(socket.id, `${chalk.magenta('DM')} ${chalk.dim(senderId)} -> ${chalk.dim(receiverId || 'ADMINS')}`);
       return;
     }
 
@@ -109,53 +130,72 @@ io.on("connection", (socket) => {
         ...data,
         timestamp: new Date(),
       });
-      console.log(`Message in project_${projectId}: ${content}`);
+      logger.socket(socket.id, `${chalk.blue('MSG')} in ${chalk.bold(projectId)}: ${chalk.italic(content.substring(0, 20))}...`);
     }
   });
 
   socket.on("admin_join_chat", (projectId) => {
     socket.join(`project_${projectId}`);
-    console.log(`Eagle eye socket ${socket.id} joined project_${projectId}`);
+    logger.socket(socket.id, `${chalk.yellow('ADMIN')} hooked into project ${chalk.blue(projectId)}`);
   });
 
   socket.on("reassign_freelancer", (data) => {
-    const { projectId, oldFreelancerId, newFreelancerId } = data;
+    const { projectId } = data;
     io.to(`project_${projectId}`).emit("system_alert", {
       message: "Freelancer has been reassigned by admin.",
       type: "REASSIGNMENT"
     });
+    logger.info(`Project ${chalk.blue(projectId)} freelancer reassigned`);
   });
 
   socket.on("admin_assigned_freelancer", (data) => {
     const { projectId, freelancerId, projectName } = data;
-    // Notify the specific freelancer
     io.to(`user_${freelancerId}`).emit("new_assignment", {
       projectId,
       projectName,
       message: "You got new work! A project has been assigned to you."
     });
-    console.log(`Notified freelancer ${freelancerId} about project ${projectId}`);
+    logger.success(`Notified freelancer ${chalk.cyan(freelancerId)} about ${chalk.bold(projectName)}`);
   });
 
   // Keeping project legacy join temporarily
   socket.on("join_project", (projectId) => {
     socket.join(projectId);
-    console.log(`Socket ${socket.id} joined project ${projectId}`);
+    logger.socket(socket.id, `Legacy join: ${projectId}`);
   });
 
   socket.on("status_update", (data) => {
     const { projectId, status } = data;
     io.to(projectId).emit("project_status_changed", data);
-    console.log(`Status update in ${projectId}: ${status}`);
+    logger.info(`Status updated for ${chalk.blue(projectId)}: ${chalk.bold(status)}`);
   });
 
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+    logger.socket(socket.id, chalk.red("Client disconnected"));
   });
 });
 
 const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+  console.clear();
+  console.log(`
+    ${chalk.cyan('╔══════════════════════════════════════════════════════════╗')}
+    ${chalk.cyan('║')}                                                          ${chalk.cyan('║')}
+    ${chalk.cyan('║')}    ${chalk.bold.white('EXPRESSWRITTER')} ${chalk.yellow('CORE SYSTEM')}                      ${chalk.cyan('║')}
+    ${chalk.cyan('║')}    ${chalk.dim('v1.0.0 - Production Grade Socket Server')}         ${chalk.cyan('║')}
+    ${chalk.cyan('║')}                                                          ${chalk.cyan('║')}
+    ${chalk.cyan('╚══════════════════════════════════════════════════════════╝')}
+  `);
+  
+  logger.info(`${chalk.bold('System Configuration:')}`);
+  console.log(`    ${chalk.green('●')} Network:      ${chalk.white('Online')}`);
+  console.log(`    ${chalk.green('●')} Environment:  ${chalk.magenta(process.env.NODE_ENV || 'development')}`);
+  console.log(`    ${chalk.green('●')} Port:         ${chalk.yellow(PORT)}`);
+  console.log(`    ${chalk.green('●')} PID:          ${chalk.dim(process.pid)}`);
+  console.log(`    ${chalk.green('●')} Frontend:     ${chalk.dim(process.env.FRONTEND_URL || "http://localhost:3000")}`);
+  console.log('');
+  logger.success(`Gateway initialized and listening for connections...`);
+  console.log(chalk.gray('─'.repeat(60)));
 });
+

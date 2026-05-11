@@ -14,7 +14,147 @@ import servicesData from '@/data/services_data.json';
 const SERVICES = Object.values(servicesData.individualServices).flat();
 const getServiceName = (id) => SERVICES.find(s => s.id === id)?.name || id;
 
+function OrderChatPanel({ order, onClose }) {
+  const [tab, setTab] = useState('timeline');
+  
+  const TIMELINE = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
+  const stepIdx = order.status === 'COMPLETED' ? 4 : order.status === 'ASSIGNED' ? 1 : 0;
+  
+  return (
+    <div className="flex flex-col h-full bg-[#0d0d13] text-[#eefcfb]">
+      {/* Header */}
+      <div className="p-4 border-b border-[rgba(255,255,255,0.06)] flex items-center gap-3">
+        <button onClick={onClose} className="w-8 h-8 bg-[#161626] border border-[rgba(255,255,255,0.06)] rounded flex items-center justify-center text-[#6b9e9a]">
+          ←
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm truncate">{order.title}</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ 
+              background: order.status === 'COMPLETED' ? 'rgba(34,197,94,0.12)' : 'rgba(13,148,136,0.12)',
+              color: order.status === 'COMPLETED' ? '#22c55e' : '#0d9488'
+            }}>{order.status}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-[#6b9e9a] mt-0.5">
+            <span className="font-mono">{order.id}</span>
+            <span>·</span>
+            <span>Client: {order.student?.name || "N/A"}</span>
+          </div>
+        </div>
+        <button className="h-8 px-4 bg-[#0d9488] text-white rounded text-[10px] font-bold uppercase tracking-widest hover:bg-[#0f766e] transition-all">
+          Accept Assignment
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-[rgba(255,255,255,0.06)] bg-[#101019]">
+        {[['chat', '💬 Chat'], ['brief', '📋 Brief'], ['files', '📁 Files'], ['timeline', '📍 Timeline']].map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 text-xs font-medium transition-all border-b-2 ${tab === id ? 'border-[#0d9488] text-[#2dd4bf]' : 'border-transparent text-[#6b9e9a] hover:text-[#eefcfb]'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {tab === 'timeline' && (
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#2dd4bf] mb-4">Order Timeline</h4>
+            <div className="relative pl-6">
+              <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-[rgba(255,255,255,0.06)]" />
+              {TIMELINE.map((step, i) => {
+                const done = i < stepIdx;
+                const active = i === stepIdx;
+                return (
+                  <div key={i} className="relative mb-6 last:mb-0">
+                    <div className={`absolute -left-6 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${done ? 'bg-[#0d9488] text-white' : active ? 'bg-[#0d9488] text-white' : 'bg-[#161626] text-[#6b9e9a] border border-[rgba(255,255,255,0.06)]'}`}>
+                      {done ? '✓' : i + 1}
+                    </div>
+                    <div className="ml-2">
+                      <div className={`text-xs font-medium ${done || active ? 'text-[#eefcfb]' : 'text-[#6b9e9a]'}`}>{step}</div>
+                      {active && <div className="text-[10px] text-[#2dd4bf] mt-0.5">Current stage</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {tab === 'chat' && <div className="text-xs text-[#6b9e9a]">Chat content goes here...</div>}
+        {tab === 'brief' && <div className="text-xs text-[#6b9e9a]">Brief content goes here...</div>}
+        {tab === 'files' && <div className="text-xs text-[#6b9e9a]">Files content goes here...</div>}
+      </div>
+    </div>
+  );
+}
+
+function OrderStrip({ order, isActive, onClick }) {
+  // Fallback values to match design if data is missing
+  const invoiceNum = order.id;
+  const service = order.title || "Untitled Project";
+  const client = order.student?.name || "Client #4204";
+  const words = order.words || 800;
+  const price = order.price || 144;
+  const status = order.status || "New Order";
+  const isUrgent = order.isUrgent || false;
+  const hasNDA = order.hasNDA || true;
+  const unreadMsgs = order.unreadMsgs || 0;
+  const due = order.due || "Apr 24, 2026";
+
+  const statusColors = {
+    'New Order': { color: '#0d9488', bg: 'rgba(13,148,136,0.12)' },
+    'In Progress': { color: '#0d9488', bg: 'rgba(13,148,136,0.12)' },
+    'Quality Check': { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    'Delivered': { color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+    'COMPLETED': { color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+    'ASSIGNED': { color: '#0d9488', bg: 'rgba(13,148,136,0.12)' },
+  };
+
+  const m = statusColors[status] || { color: '#6b9e9a', bg: 'rgba(255,255,255,0.06)' };
+
+  return (
+    <div onClick={onClick} className={`cursor-pointer rounded-lg border transition-all overflow-hidden mb-2 ${isActive ? 'border-[#0d9488] bg-[rgba(13,148,136,0.06)]' : 'border-[rgba(255,255,255,0.06)] bg-[#161626] hover:border-[rgba(13,148,136,0.3)] hover:bg-[#1c1c30]'}`}>
+      <div style={{ height: 2, background: m.color, opacity: 0.7 }} />
+      <div className="p-3">
+        {/* Row 1 */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-mono text-[10px] text-[#6b9e9a] tracking-wider font-medium">{invoiceNum}</span>
+          <div className="ml-auto flex items-center gap-1">
+            {isUrgent && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[rgba(244,63,94,0.12)] text-[#f43f5e] border border-[rgba(244,63,94,0.2)] tracking-wider">⚡ URGENT</span>}
+            {!isUrgent && <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(59,130,246,0.1)] text-[#60a5fa] border border-[rgba(59,130,246,0.15)]">📅 {due}</span>}
+            {hasNDA && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[rgba(139,92,246,0.1)] text-[#a78bfa] border border-[rgba(139,92,246,0.2)]">🔒 NDA</span>}
+          </div>
+        </div>
+
+        {/* Row 2 */}
+        <div className="mb-2">
+          <div className="font-semibold text-[13px] mb-0.5 truncate text-[#eefcfb]">{service}</div>
+          <div className="flex items-center gap-2 text-[11px] text-[#6b9e9a]">
+            <span className="flex items-center gap-1">
+              <span className="w-3.5 h-3.5 rounded bg-[rgba(13,148,136,0.2)] flex items-center justify-center text-[8px] text-[#2dd4bf]">🛡</span>
+              {client}
+            </span>
+            <span className="text-[#334e4c]">·</span>
+            <span className="text-[#334e4c]">{words.toLocaleString()} words · ${price}</span>
+          </div>
+        </div>
+
+        {/* Row 3 */}
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{ background: m.bg, color: m.color }}>{status}</span>
+          {unreadMsgs > 0 && (
+            <div className="ml-auto flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[rgba(13,148,136,0.18)] text-[#2dd4bf]">
+              💬 {unreadMsgs} new
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FreelancerDashboardClient({ session, profile }) {
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [availableTasks, setAvailableTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,148 +302,46 @@ export default function FreelancerDashboardClient({ session, profile }) {
            ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-6">
-           {/* Task Queue */}
-           <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                 <div className="flex gap-8">
-                    <button 
-                      onClick={() => setActiveTab('ACTIVE')}
-                      className={`text-[11px] font-black uppercase tracking-widest pb-4 -mb-[17px] border-b-2 transition-all ${activeTab === 'ACTIVE' ? 'border-[#002D5B] text-[#002D5B]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                       Active Queue ({tasks.length})
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('AVAILABLE')}
-                      className={`text-[11px] font-black uppercase tracking-widest pb-4 -mb-[17px] border-b-2 transition-all ${activeTab === 'AVAILABLE' ? 'border-[#002D5B] text-[#002D5B]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                       Available Streams ({availableTasks.length})
-                    </button>
+        <div className="flex h-[calc(100vh-12rem)] border border-[rgba(255,255,255,0.06)] rounded-lg overflow-hidden bg-[#101019] mt-6">
+           {/* Orders List */}
+           <div className={`${selectedOrder ? 'w-1/3' : 'w-full'} border-r border-[rgba(255,255,255,0.06)] flex flex-col`}>
+             {/* Header */}
+             <div className="p-4 border-b border-[rgba(255,255,255,0.06)] bg-[#101019]">
+               <div className="flex items-center justify-between mb-3">
+                 <h2 className="text-sm font-bold uppercase tracking-wider text-[#eefcfb]">Orders</h2>
+                 <div className="flex gap-2">
+                   <button className="text-xs text-[#6b9e9a] hover:text-[#eefcfb]">All</button>
+                   <button className="text-xs text-[#6b9e9a] hover:text-[#eefcfb]">Active</button>
                  </div>
-              </div>
+               </div>
+               <div className="relative">
+                 <input placeholder="Search orders..." className="w-full bg-[#161626] border border-[rgba(255,255,255,0.06)] rounded px-3 py-1.5 text-xs text-[#eefcfb] outline-none focus:border-[#0d9488]" />
+               </div>
+             </div>
 
-              <div className="space-y-4 pt-4">
-                  {activeTab === 'ACTIVE' ? (
-                    tasks.length > 0 ? tasks.map((task) => (
-                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-6">
-                          <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-sm text-slate-400 group-hover:bg-[#0067B8]/5 group-hover:text-[#0067B8] transition-colors">
-                             <Briefcase size={18} />
-                          </div>
-                          <div>
-                             <div className="flex items-center gap-3">
-                                <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
-                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                   task.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' :
-                                   task.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
-                                }`}>
-                                  {task.status}
-                                </span>
-                             </div>
-                             <div className="flex gap-4 mt-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{getServiceName(task.serviceType)}</p>
-                                <span className="text-[10px] text-slate-200">|</span>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                  <Clock size={10} /> INITIATED: {new Date(task.createdAt).toLocaleDateString()}
-                                </p>
-                                <span className="text-[10px] text-slate-200">|</span>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                  <Clock size={10} /> DL: {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
-                                </p>
-                             </div>
-                          </div>
-                        </div>
-                        <a 
-                          href={`/freelancer/projects/${task.id}`}
-                          className="h-9 px-4 flex items-center gap-2 border border-[#E5E5E5] rounded-sm text-[10px] font-bold uppercase tracking-widest hover:border-[#0067B8] hover:text-[#0067B8] transition-all"
-                        >
-                          Manage <ChevronRight size={14} />
-                        </a>
-                      </div>
-                    )) : (
-                      <div className="bg-white border border-[#E5E5E5] border-dashed p-16 rounded-sm flex flex-col items-center justify-center text-center">
-                         <div className="w-12 h-12 bg-slate-50 rounded-sm flex items-center justify-center mb-4 text-slate-300">
-                            <Briefcase size={24} />
-                         </div>
-                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No assigned projects</p>
-                         <p className="text-xs text-slate-300 mt-1 uppercase tracking-wider font-medium">Monitoring for new submissions...</p>
-                      </div>
-                    )
-                  ) : (
-                    availableTasks.length > 0 ? availableTasks.map((task) => (
-                      <div key={task.id} className="group bg-white p-6 border border-[#E5E5E5] rounded-sm hover:border-[#0067B8] transition-all shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-6">
-                          <div className="w-10 h-10 bg-blue-50/50 flex items-center justify-center rounded-sm text-[#0067B8]">
-                             <Zap size={18} />
-                          </div>
-                          <div>
-                             <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
-                             <div className="flex gap-4 mt-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{getServiceName(task.serviceType)}</p>
-                                <span className="text-[10px] text-slate-200">|</span>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                  INITIATED: {new Date(task.createdAt).toLocaleDateString()}
-                                </p>
-                                <span className="text-[10px] text-slate-200">|</span>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Client: {task.student?.name}</p>
-                             </div>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => handleClaim(task.id)}
-                          className="h-9 px-6 bg-[#002D5B] text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-[#001D3D] transition-all"
-                        >
-                          Claim Project
-                        </button>
-                      </div>
-                    )) : (
-                      <div className="bg-white border border-[#E5E5E5] border-dashed p-16 rounded-sm flex flex-col items-center justify-center text-center">
-                         <div className="w-12 h-12 bg-slate-50 rounded-sm flex items-center justify-center mb-4 text-slate-300">
-                            <Zap size={24} />
-                         </div>
-                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No available streams</p>
-                         <p className="text-xs text-slate-300 mt-1 uppercase tracking-wider font-medium">All projects are currently under specialist management.</p>
-                      </div>
-                    )
-                  )}
-              </div>
+             {/* List */}
+             <div className="flex-1 overflow-y-auto p-2 space-y-2">
+               {tasks.length > 0 ? tasks.map((task) => (
+                 <OrderStrip key={task.id} order={task} isActive={selectedOrder?.id === task.id} onClick={() => setSelectedOrder(task)} />
+               )) : (
+                 <div className="text-center p-4 text-xs text-[#6b9e9a]">No orders</div>
+               )}
+             </div>
            </div>
 
-           {/* Sidebar Info Cards */}
-           <div className="space-y-6">
-              <div className="bg-[#002D5B] rounded-sm p-8 text-white flex flex-col justify-between shadow-lg relative overflow-hidden h-[380px]">
-                 <div className="relative z-10">
-                    <div className="w-10 h-10 bg-white/10 rounded-sm flex items-center justify-center mb-8">
-                       <Zap className="text-blue-300" size={20} />
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">Writer Guidelines</h3>
-                    <p className="text-blue-100/60 text-xs leading-relaxed mb-8">Ensure all deliverables follow IEEE/APA academic formatting standards. 98% accuracy is required for ELITE status.</p>
-                    
-                    <div className="space-y-3">
-                       <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-all group">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Quality Checklist</span>
-                          <ArrowUpRight size={14} className="text-blue-300 opacity-50 group-hover:opacity-100" />
-                       </button>
-                       <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-all group">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Project Templates</span>
-                          <Download size={14} className="text-blue-300 opacity-50 group-hover:opacity-100" />
-                       </button>
-                    </div>
-                 </div>
-              </div>
-
-              {/* Verified Badge */}
-              <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-sm flex items-center gap-4">
-                 <div className="p-2 bg-emerald-500 text-white rounded-sm">
-                    <CheckCircle size={18} />
-                 </div>
-                 <div>
-                    <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Verified Identity</p>
-                    <p className="text-[10px] text-emerald-700 font-medium">Full access to high-priority stream enabled.</p>
-                 </div>
-              </div>
-           </div>
-        </div>
+           {/* Details / Chat */}
+           {selectedOrder ? (
+             <div className="flex-1">
+               <OrderChatPanel order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+             </div>
+           ) : (
+             <div className="flex-1 flex flex-col items-center justify-center text-[#6b9e9a] bg-[#0d0d13]">
+               <div className="text-3xl mb-2">💬</div>
+               <div className="text-xs font-medium">Select an order to view details</div>
+               <div className="text-[10px] opacity-60 mt-0.5">All conversations are secured</div>
+             </div>
+           )}
+         </div>
       </main>
 
       {/* New Assignment Notification Modal */}

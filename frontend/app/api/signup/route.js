@@ -38,6 +38,8 @@ export async function POST(req) {
               resumeUrl: writerProfile.resumeUrl,
               photoUrl: writerProfile.photoUrl,
               linkedinUrl: writerProfile.linkedinUrl,
+              country: writerProfile.country,
+              currency: writerProfile.currency || "USD",
               skills: [writerProfile.domainId], // Default skill from domain
               isVerified: false
             }
@@ -49,7 +51,9 @@ export async function POST(req) {
       }
     });
 
+    // --- EMAIL VERIFICATION TEMPORARILY DISABLED ---
     // Generate Verification Token
+    /*
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 3600000); // 1 hour
 
@@ -66,20 +70,25 @@ export async function POST(req) {
     // In Prod: Adds to background queue
     const verificationUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify?token=${token}`;
     
-    await dispatchNotification('verification', {
-      email: user.email,
-      name: user.name,
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e4e8; border-radius: 12px;">
-          <h1 style="color: #0a192f; margin-bottom: 24px;">Confirm your email</h1>
-          <p style="color: #4a5568; line-height: 1.6;">Hello ${user.name}, thanks for joining Express Writer. Please click the button below to verify your account:</p>
-          <div style="margin: 32px 0;">
-            <a href="${verificationUrl}" style="background-color: #0a192f; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Verify Email Address</a>
+    try {
+      await dispatchNotification('verification', {
+        email: user.email,
+        name: user.name,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e4e8; border-radius: 12px;">
+            <h1 style="color: #0a192f; margin-bottom: 24px;">Confirm your email</h1>
+            <p style="color: #4a5568; line-height: 1.6;">Hello ${user.name}, thanks for joining Express Writer. Please click the button below to verify your account:</p>
+            <div style="margin: 32px 0;">
+              <a href="${verificationUrl}" style="background-color: #0a192f; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Verify Email Address</a>
+            </div>
+            <p style="color: #a0aec0; font-size: 14px;">This link will expire in 1 hour.</p>
           </div>
-          <p style="color: #a0aec0; font-size: 14px;">This link will expire in 1 hour.</p>
-        </div>
-      `
-    });
+        `
+      });
+    } catch (mailError) {
+      console.warn("⚠️ Non-fatal: Failed to send verification email:", mailError.message);
+    }
+    */
 
     // Don't return password
     const { password: _, ...userWithoutPassword } = user;

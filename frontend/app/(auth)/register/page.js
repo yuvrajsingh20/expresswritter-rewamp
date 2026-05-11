@@ -38,6 +38,17 @@ function PasswordStrength({ password }) {
   );
 }
 
+const FALLBACK_CURRENCIES = [
+  { region: 'India', currency: 'INR' },
+  { region: 'United Kingdom', currency: 'GBP' },
+  { region: 'United States', currency: 'USD' },
+  { region: 'European Union', currency: 'EUR' },
+  { region: 'Canada', currency: 'CAD' },
+  { region: 'Australia', currency: 'AUD' },
+  { region: 'UAE', currency: 'AED' },
+  { region: 'Nigeria', currency: 'NGN' },
+];
+
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,8 +65,24 @@ function RegisterForm() {
     agree: false,
     education: '',
     experience: '',
-    resumeUrl: ''
+    resumeUrl: '',
+    country: '',
+    currency: 'USD'
   });
+  const [currencyConfig, setCurrencyConfig] = useState([]);
+
+  useEffect(() => {
+    if (role === 'writer') {
+      fetch('/api/admin/config/currency')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.currencies) {
+            setCurrencyConfig(data.currencies.filter(c => c.enabled));
+          }
+        })
+        .catch(err => console.error("Failed to fetch currency config:", err));
+    }
+  }, [role]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -89,6 +116,7 @@ function RegisterForm() {
       if (!form.education.trim()) e.education = 'Qualification is required';
       if (!form.experience.trim()) e.experience = 'Experience is required';
       if (!form.resumeUrl.trim()) e.resumeUrl = 'Resume link is required';
+      if (!form.country) e.country = 'Country is required';
     }
     
     return e;
@@ -118,6 +146,8 @@ function RegisterForm() {
               education: form.education,
               experience: form.experience,
               resumeUrl: form.resumeUrl,
+              country: form.country,
+              currency: form.currency,
               bio: "Writer application from registration form",
               domainId: "SOP" // Default domain
             } : undefined
@@ -224,6 +254,36 @@ function RegisterForm() {
               <InputField label="Highest Qualification" value={form.education} onChange={(v) => update('education', v)} placeholder="e.g. Masters in English" icon="🎓" error={errors.education} />
               <InputField label="Experience (Years)" value={form.experience} onChange={(v) => update('experience', v)} placeholder="e.g. 5" icon="💼" error={errors.experience} type="number" />
               <InputField label="Resume Link / Portfolio" value={form.resumeUrl} onChange={(v) => update('resumeUrl', v)} placeholder="Link to your resume" icon="🔗" error={errors.resumeUrl} />
+              
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>🌍</span> Country of Residence
+                </div>
+                <select 
+                  value={form.country} 
+                  onChange={(e) => {
+                    const country = e.target.value;
+                    const activeConfig = currencyConfig.length > 0 ? currencyConfig : FALLBACK_CURRENCIES;
+                    const currency = activeConfig.find(c => c.region === country)?.currency || 'USD';
+                    setForm(f => ({ ...f, country, currency }));
+                    setErrors(errs => ({ ...errs, country: '' }));
+                  }}
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 8, background: 'var(--surface3)', border: `1.5px solid ${errors.country ? 'var(--red)' : 'var(--border)'}`, color: 'var(--text)', fontSize: 14, outline: 'none' }}
+                >
+                  <option value="">Select your country</option>
+                  {currencyConfig.length > 0 ? (
+                    currencyConfig.map(c => <option key={c.region} value={c.region}>{c.region}</option>)
+                  ) : (
+                    FALLBACK_CURRENCIES.map(c => <option key={c.region} value={c.region}>{c.region}</option>)
+                  )}
+                </select>
+                {errors.country && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 5 }}>{errors.country}</div>}
+                {form.currency && form.country && (
+                  <div style={{ fontSize: 11, color: 'var(--teal-light)', marginTop: 6, fontWeight: 500 }}>
+                    Payout Currency: {form.currency}
+                  </div>
+                )}
+              </div>
             </>
           )}
 

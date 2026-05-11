@@ -16,14 +16,14 @@ const defaultOptions = {
 /**
  * Queue for handling non-blocking background notifications (Email, In-App)
  */
-export const notificationQueue = new Queue('notifications', defaultOptions);
+export const notificationQueue = process.env.REDIS_URL ? new Queue('notifications', defaultOptions) : { add: async () => console.log('Mock notificationQueue add called') };
 
 /**
  * Queue for complex automation tasks like auto-assignment and PDF generation
  */
-export const automationQueue = new Queue('automation', defaultOptions);
+export const automationQueue = process.env.REDIS_URL ? new Queue('automation', defaultOptions) : { add: async () => console.log('Mock automationQueue add called') };
 
 /**
  * Queue for payment-related post-processing logic (Razorpay hooks)
  */
-export const paymentQueue = new Queue('payments', defaultOptions);
+export const paymentQueue = process.env.REDIS_URL ? new Queue('payments', defaultOptions) : { add: async () => console.log('Mock paymentQueue add called') };

@@ -9,6 +9,35 @@ export async function GET() {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Fetch freelancer's currency and admin config
+    const freelancer = await prisma.user.findUnique({
+      where: { id: authUser.id },
+      include: { freelancerProfile: true }
+    });
+
+    const currencyConfig = await prisma.systemConfig.findUnique({
+      where: { key: "CURRENCY_SETTINGS" }
+    });
+
+    const userCurrency = freelancer?.freelancerProfile?.currency || 'USD';
+    const config = currencyConfig?.value || {};
+    
+    const FALLBACK_CURRENCIES = [
+      { region: 'India', currency: 'INR', symbol: '₹', rate: 83.2 },
+      { region: 'United Kingdom', currency: 'GBP', symbol: '£', rate: 0.79 },
+      { region: 'United States', currency: 'USD', symbol: '$', rate: 1.0 },
+      { region: 'European Union', currency: 'EUR', symbol: '€', rate: 0.92 },
+      { region: 'Canada', currency: 'CAD', symbol: 'CA$', rate: 1.37 },
+      { region: 'Australia', currency: 'AUD', symbol: 'AU$', rate: 1.53 },
+      { region: 'UAE', currency: 'AED', symbol: 'د.إ', rate: 3.67 },
+      { region: 'Nigeria', currency: 'NGN', symbol: '₦', rate: 1620 },
+    ];
+
+    const activeCurrencies = (config.currencies && config.currencies.length > 0) ? config.currencies : FALLBACK_CURRENCIES;
+    const currencyInfo = activeCurrencies.find(c => c.currency === userCurrency) || { rate: 1, symbol: '$' };
+    const rate = currencyInfo.rate || 1;
+    const symbol = currencyInfo.symbol || '$';
+
     // Fetch all invoices for this freelancer
     const invoices = await prisma.freelancerInvoice.findMany({
       where: { freelancerId: authUser.id },
@@ -23,17 +52,18 @@ export async function GET() {
     let balance = 0;
 
     const projectData = invoices.map(inv => {
+      const convertedAmount = inv.amount * rate;
       if (inv.status === 'PAID') {
-        totalEarned += inv.amount;
-        balance += inv.amount;
+        totalEarned += convertedAmount;
+        balance += convertedAmount;
       } else if (inv.status === 'PENDING') {
-        pending += inv.amount;
+        pending += convertedAmount;
       }
       return {
         id: inv.projectId,
         invoiceId: inv.id,
         title: inv.project.title,
-        amount: inv.amount,
+        amount: convertedAmount,
         status: inv.status,
         date: inv.createdAt
       };
@@ -47,7 +77,7 @@ export async function GET() {
 
     const history = payoutRequests.map(pr => ({
       id: pr.id.toString().slice(-8).toUpperCase(),
-      amount: pr.amount,
+      amount: pr.amount * rate,
       date: pr.createdAt.toISOString().split('T')[0],
       status: pr.status,
       method: pr.paymentMethod
@@ -56,7 +86,7 @@ export async function GET() {
     // Subtract past payouts from balance
     const totalPaidOut = payoutRequests
       .filter(pr => pr.status === 'COMPLETED')
-      .reduce((acc, curr) => acc + curr.amount, 0);
+      .reduce((acc, curr) => acc + curr.amount, 0) * rate;
       
     balance = Math.max(0, balance - totalPaidOut);
 
@@ -65,7 +95,9 @@ export async function GET() {
       totalEarned,
       pending,
       history,
-      projects: projectData
+      projects: projectData,
+      currency: userCurrency,
+      symbol: symbol
     }, { status: 200 });
 
   } catch (error) {

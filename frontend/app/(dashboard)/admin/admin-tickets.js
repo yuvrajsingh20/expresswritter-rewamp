@@ -17,7 +17,10 @@ export function AdminTickets() {
 
   useEffect(() => {
     fetch('/api/admin/tickets')
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data)) setTickets(data);
         setLoading(false);

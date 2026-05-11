@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const authUser = await getAuthUser();
+  const authUser = await getAuthUser(req);
   if (!authUser || authUser.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

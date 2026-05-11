@@ -4,8 +4,8 @@ import { getAuthUser } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
-  const user = await getAuthUser();
+export async function GET(request) {
+  const user = await getAuthUser(request);
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -67,7 +67,7 @@ export async function GET() {
 }
 
 export async function PATCH(request) {
-  const user = await getAuthUser();
+  const user = await getAuthUser(request);
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

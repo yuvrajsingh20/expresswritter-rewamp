@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== 'FREELANCER') {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

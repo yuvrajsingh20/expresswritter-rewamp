@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, Table, Select, Input } from "./admin-shared";
 // ── SECTIONS 3 & 4: PAYMENTS, REVENUE, CURRENCY ──
 
-export function AdminPayments({ projects = [] }) {
+export function AdminPayments({ projects = [], config, displayCurrency, setDisplayCurrency }) {
   const [tab, setTab] = React.useState('Overview');
   const [saved, setSaved] = React.useState(false);
   const [orders, setOrders] = useState([]);
@@ -31,37 +31,44 @@ export function AdminPayments({ projects = [] }) {
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
 
+  const baseCurrency = config?.baseCurrency || 'USD';
+  const baseCurrencyConfig = config?.currencies?.find(c => c.currency === baseCurrency) || { rate: 1, symbol: '$' };
+  const currentDisplayConfig = config?.currencies?.find(c => c.currency === displayCurrency) || baseCurrencyConfig;
+  
+  const baseSymbol = currentDisplayConfig.symbol || '$';
+  const multiplier = (currentDisplayConfig.rate || 1) / (baseCurrencyConfig.rate || 1);
+
   const TRANSACTIONS = orders.map(o => ({
     id: o.razorpayId || `ORD-${o.id.slice(-4).toUpperCase()}`,
     client: o.student?.name || 'N/A',
     service: o.project?.serviceType || 'N/A',
-    amount: o.amount || 0,
-    currency: 'INR',
+    amount: (o.amount || 0) * multiplier,
+    currency: displayCurrency,
     gateway: 'Razorpay',
     status: o.paymentStatus === 'PAID' ? 'Paid' : 'Pending',
     date: new Date(o.createdAt).toLocaleDateString(),
-    writerPayout: (o.amount || 0) * 0.7
+    writerPayout: ((o.amount || 0) * 0.7) * multiplier
   }));
 
   const PAYOUTS = invoices.map(i => ({
     writer: i.freelancer?.name || 'N/A',
-    amount: i.amount,
-    currency: 'INR',
+    amount: i.amount * multiplier,
+    currency: displayCurrency,
     method: 'Razorpay',
     status: i.status === 'PAID' ? 'Paid' : 'Pending',
     date: new Date(i.createdAt).toLocaleDateString(),
     orders: 1
   }));
 
-  const totalRevenue = orders.reduce((acc, o) => acc + (o.amount || 0), 0);
-  const monthlyRevenueTotal = orders.filter(o => new Date(o.createdAt).getMonth() === new Date().getMonth()).reduce((acc, o) => acc + (o.amount || 0), 0);
-  const pendingPayouts = orders.filter(o => o.paymentStatus !== 'PAID').reduce((acc, o) => acc + (o.amount || 0), 0) * 0.7;
+  const totalRevenue = orders.reduce((acc, o) => acc + ((o.amount || 0) * multiplier), 0);
+  const monthlyRevenueTotal = orders.filter(o => new Date(o.createdAt).getMonth() === new Date().getMonth()).reduce((acc, o) => acc + ((o.amount || 0) * multiplier), 0);
+  const pendingPayouts = orders.filter(o => o.paymentStatus !== 'PAID').reduce((acc, o) => acc + ((o.amount || 0) * multiplier), 0) * 0.7;
 
   const STATUS_COLOR = { Paid: 'var(--green)', Pending: 'var(--amber)', Refunded: 'var(--red)', Scheduled: '#3b82f6', Processing: 'var(--teal)' };
 
   const gatewayCounts = orders.reduce((acc, o) => {
     const gateway = o.gateway || 'Razorpay';
-    acc[gateway] = (acc[gateway] || 0) + (o.amount || 0);
+    acc[gateway] = (acc[gateway] || 0) + ((o.amount || 0) * multiplier);
     return acc;
   }, {});
 
@@ -71,17 +78,17 @@ export function AdminPayments({ projects = [] }) {
     name,
     pct: Math.round((amt / totalAmt) * 100),
     color: name === 'Stripe' ? '#635bff' : name === 'Razorpay' ? '#528ff0' : 'var(--text-dim)',
-    amt: `₹${amt.toLocaleString()}`
+    amt: `${baseSymbol}${amt.toLocaleString()}`
   }));
 
   if (GATEWAY_SPLIT.length === 0) {
-    GATEWAY_SPLIT = [{ name: 'Razorpay', pct: 100, color: '#528ff0', amt: '₹0' }];
+    GATEWAY_SPLIT = [{ name: 'Razorpay', pct: 100, color: '#528ff0', amt: `${baseSymbol}0` }];
   }
 
   const monthlyData = orders.reduce((acc, o) => {
     const date = new Date(o.createdAt);
     const month = date.toLocaleString('default', { month: 'short' });
-    acc[month] = (acc[month] || 0) + (o.amount || 0);
+    acc[month] = (acc[month] || 0) + ((o.amount || 0) * multiplier);
     return acc;
   }, {});
 
@@ -99,16 +106,28 @@ export function AdminPayments({ projects = [] }) {
 
   return (
     <div>
-      <SectionHeader title="Payment & Revenue" subtitle="Track transactions, manage payouts and analyse revenue across all gateways." />
+      <SectionHeader 
+        title="Payment & Revenue" 
+        subtitle="Track transactions, manage payouts and analyse revenue across all gateways." 
+        action={
+          <div style={{ minWidth: 150 }}>
+            <Select 
+              value={displayCurrency} 
+              onChange={setDisplayCurrency} 
+              options={(config?.currencies || []).map(c => ({ label: `View in ${c.currency}`, value: c.currency }))} 
+            />
+          </div>
+        }
+      />
       <SubTabs tabs={['Overview', 'Transactions', 'Writer Payouts', 'Accounts']} active={tab} onChange={setTab} />
 
       {tab === 'Overview' && (
         <div style={{ animation: 'fadeIn .3s ease' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
             {[
-              { label: 'Total Revenue', val: `$${totalRevenue.toLocaleString()}`, sub: 'All time', color: 'var(--teal-light)' },
-              { label: 'This Month', val: `$${monthlyRevenueTotal.toLocaleString()}`, sub: 'Current Month', color: 'var(--green)' },
-              { label: 'Pending Payouts', val: `$${pendingPayouts.toLocaleString()}`, sub: 'Estimated', color: 'var(--amber)' },
+              { label: 'Total Revenue', val: `${baseSymbol}${totalRevenue.toLocaleString()}`, sub: 'All time', color: 'var(--teal-light)' },
+              { label: 'This Month', val: `${baseSymbol}${monthlyRevenueTotal.toLocaleString()}`, sub: 'Current Month', color: 'var(--green)' },
+              { label: 'Pending Payouts', val: `${baseSymbol}${pendingPayouts.toLocaleString()}`, sub: 'Estimated', color: 'var(--amber)' },
               { label: 'Platform Margin', val: '30%', sub: 'Avg. take rate', color: '#8b5cf6' },
             ].map(s => (
               <Card key={s.label} style={{ padding: '18px' }}>
@@ -125,7 +144,7 @@ export function AdminPayments({ projects = [] }) {
               <div style={{ padding: '20px', display: 'flex', alignItems: 'flex-end', gap: 12, height: 160 }}>
                 {monthlyRevenue.map((v, i) => (
                   <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                    <div style={{ fontSize: 10, color: 'var(--teal-light)', fontWeight: 600 }}>${(v / 1000).toFixed(1)}k</div>
+                    <div style={{ fontSize: 10, color: 'var(--teal-light)', fontWeight: 600 }}>{baseSymbol}{(v / 1000).toFixed(1)}k</div>
                     <div style={{ width: '100%', borderRadius: '4px 4px 0 0', background: 'linear-gradient(180deg,var(--teal),rgba(13,148,136,0.3))', height: `${(v / maxRev) * 90}px`, transition: 'height .5s ease', minHeight: 4 }} />
                     <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{months[i]}</div>
                   </div>
@@ -165,7 +184,7 @@ export function AdminPayments({ projects = [] }) {
               t.gateway,
               <Pill label={t.status} color={STATUS_COLOR[t.status]} />,
               t.date,
-              t.writerPayout ? `$${t.writerPayout}` : '—',
+              t.writerPayout ? `${baseSymbol}${t.writerPayout}` : '—',
             ])}
           />
         </Card>
@@ -184,7 +203,7 @@ export function AdminPayments({ projects = [] }) {
               cols={['Writer', 'Amount', 'Currency', 'Method', 'Orders', 'Status', 'Date']}
               rows={PAYOUTS.map(p => [
                 p.writer,
-                `$${p.amount.toLocaleString()}`,
+                `${baseSymbol}${p.amount.toLocaleString()}`,
                 p.currency,
                 p.method,
                 p.orders,
@@ -199,7 +218,7 @@ export function AdminPayments({ projects = [] }) {
               <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Select label="Payout Frequency" value="Monthly" onChange={() => {}} options={['Weekly', 'Bi-weekly', 'Monthly', 'On Request']} />
                 <Select label="Payout Day" value="1" onChange={() => {}} options={['1', '5', '10', '15', '20', '25']} />
-                <Input label="Minimum Payout Threshold ($)" value="50" onChange={() => {}} placeholder="50" />
+                <Input label={`Minimum Payout Threshold (${baseSymbol})`} value="50" onChange={() => {}} placeholder="50" />
                 <Select label="Default Method" value="Bank Transfer" onChange={() => {}} options={['Bank Transfer', 'PayPal', 'Razorpay', 'Wire Transfer']} />
               </div>
               <div style={{ padding: '0 16px 16px' }}>
@@ -218,10 +237,10 @@ export function AdminPayments({ projects = [] }) {
             <CardHeader title="Platform Accounts" />
             <div style={{ padding: 16 }}>
               {[
-                { label: 'Stripe Balance', val: '$4,210.00', sub: 'Available for payout', color: '#635bff' },
-                { label: 'Razorpay Balance', val: '₹1,24,890', sub: 'INR settlement', color: '#528ff0' },
-                { label: 'Platform Revenue', val: '$8,052', sub: 'Commission earned', color: 'var(--teal)' },
-                { label: 'Refunds Issued', val: '$340', sub: 'This month', color: 'var(--red)' },
+                { label: 'Stripe Balance', val: `${baseSymbol}${(4210.00 * multiplier).toLocaleString()}`, sub: 'Available for payout', color: '#635bff' },
+                { label: 'Razorpay Balance', val: `${baseSymbol}${(124890 * multiplier).toLocaleString()}`, sub: `${displayCurrency} settlement`, color: '#528ff0' },
+                { label: 'Platform Revenue', val: `${baseSymbol}${(8052 * multiplier).toLocaleString()}`, sub: 'Commission earned', color: 'var(--teal)' },
+                { label: 'Refunds Issued', val: `${baseSymbol}${(340 * multiplier).toLocaleString()}`, sub: 'This month', color: 'var(--red)' },
               ].map(a => (
                 <div key={a.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                   <div>

@@ -6,7 +6,7 @@ import { createNotification } from '@/lib/notify';
 
 export async function GET(req, { params }) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
@@ -30,7 +30,7 @@ export async function GET(req, { params }) {
 
 export async function PATCH(req, { params }) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;

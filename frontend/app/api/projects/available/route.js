@@ -4,7 +4,7 @@ import { getAuthUser } from '@/lib/auth';
 
 export async function GET(req) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== 'FREELANCER') {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

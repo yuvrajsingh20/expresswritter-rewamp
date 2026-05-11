@@ -10,7 +10,7 @@ import { getAuthUser } from '@/lib/auth';
  */
 export async function POST(req) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const data = await req.json();

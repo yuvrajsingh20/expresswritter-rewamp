@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const user = await getAuthUser();
+    const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ authenticated: false }, { status: 401 });
     }

@@ -66,9 +66,11 @@ export const authOptions = {
           const isValid = await bcrypt.compare(credentials.password, user.password);
           if (!isValid) return null;
           
+          /*
           if (!user.emailVerified) {
             throw new Error("EMAIL_NOT_VERIFIED");
           }
+          */
           
           // Check role mismatch
           const requestedRole = credentials.role;

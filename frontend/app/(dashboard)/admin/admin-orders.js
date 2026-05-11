@@ -16,7 +16,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
   // Filter projects that need assignment (status is CREATED or UNASSIGNED)
   const unassignedProjects = projects.filter(p => p.status === 'CREATED' || p.status === 'UNASSIGNED');
   
-  const handleAssign = async (projectId, writerId) => {
+  const handleAssign = async (projectId, writerId, silent = false) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/projects/${projectId}`, {
@@ -25,11 +25,18 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
         body: JSON.stringify({ freelancerId: writerId, status: 'ASSIGNED' })
       });
       if (res.ok) {
+        const project = projects.find(p => p.id === projectId);
+        const writer = freelancers.find(f => f.id === writerId);
+        const clientName = project?.student?.name || 'the client';
+        const writerName = writer?.name || 'the writer';
+
         // Update local state instead of reload for smoother experience
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, freelancerId: writerId, status: 'ASSIGNED', freelancer: freelancers.find(f => f.id === writerId) } : p));
+        
+        if (!silent) alert(`Success! ${writerName} has been assigned to the order for ${clientName}.`);
         return true;
       } else {
-        alert("Failed to assign writer");
+        if (!silent) alert("Failed to assign writer");
         return false;
       }
     } catch (err) {
@@ -46,10 +53,11 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
     setLoading(true);
     let successCount = 0;
     for (const id of selectedIds) {
-      const success = await handleAssign(id, bulkWriterId);
+      const success = await handleAssign(id, bulkWriterId, true);
       if (success) successCount++;
     }
-    alert(`Successfully assigned ${successCount} orders.`);
+    const writerName = freelancers.find(f => f.id === bulkWriterId)?.name || 'writer';
+    alert(`Successfully assigned ${successCount} orders to ${writerName}.`);
     setSelectedIds([]);
     setBulkWriterId('');
     setLoading(false);
@@ -100,8 +108,8 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}
                 >
                   <option value="">Bulk Assign to...</option>
-                  {freelancers.filter(f => (f.freelancerProfile?.status || 'Active') === 'Active').map(f => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
+                  {freelancers.filter(f => !['Suspended', 'Blocked'].includes(f.freelancerProfile?.status)).map(f => (
+                    <option key={f.id} value={f.id}>{f.name} {f.freelancerProfile?.rating ? `(★ ${f.freelancerProfile.rating})` : '(New)'}</option>
                   ))}
                 </select>
                 <Btn small onClick={handleBulkAssign} disabled={!bulkWriterId || loading}>Apply Batch</Btn>
@@ -129,7 +137,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', padding: '6px 10px', borderRadius: 6, fontSize: 12, outline: 'none' }}
                   >
                     <option value="">Select a Writer...</option>
-                    {freelancers.filter(f => (f.freelancerProfile?.status || 'Active') === 'Active').map(f => (
+                    {freelancers.filter(f => !['Suspended', 'Blocked'].includes(f.freelancerProfile?.status)).map(f => (
                       <option key={f.id} value={f.id}>{f.name} (★ {f.freelancerProfile?.rating || 'New'})</option>
                     ))}
                   </select>
@@ -242,7 +250,7 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: 8, width: isMobile ? '100%' : 'auto' }}>
           <select value={collabId} onChange={e => setCollabId(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12, outline: 'none', width: isMobile ? '100%' : 'auto' }}>
             <option value="">Select Writer to Add...</option>
-            {freelancers.filter(f => (f.freelancerProfile?.status || 'Active') === 'Active').map(f => (
+            {freelancers.filter(f => !['Suspended', 'Blocked'].includes(f.freelancerProfile?.status)).map(f => (
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>

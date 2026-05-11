@@ -40,7 +40,14 @@ const NAV = [
 
 
 /* ── OVERVIEW ── */
-function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }) {
+function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, displayCurrency, setDisplayCurrency, config }) {
+  const baseCurrency = config?.baseCurrency || 'USD';
+  const baseCurrencyConfig = config?.currencies?.find(c => c.currency === baseCurrency) || { rate: 1, symbol: '$' };
+  const currentDisplayConfig = config?.currencies?.find(c => c.currency === displayCurrency) || baseCurrencyConfig;
+  
+  const baseSymbol = currentDisplayConfig.symbol || '$';
+  const multiplier = (currentDisplayConfig.rate || 1) / (baseCurrencyConfig.rate || 1);
+
   const [recentNotifications, setRecentNotifications] = React.useState([]);
   React.useEffect(() => {
     fetch('/api/notifications')
@@ -53,10 +60,10 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }
   const stats = [
     { label: 'Total Orders', val: projects.length, sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
-    { label: 'Monthly Revenue', val: `$${projects.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
+    { label: 'Monthly Revenue', val: `${baseSymbol}${(projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) * multiplier).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
     { label: 'Total Writers', val: freelancers.length, sub: 'Approved partners', color: 'var(--amber)', icon: '✍️' },
     { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p.logs?.length || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
-    { label: 'Avg Project Val', val: `$${projects.length ? (projects.reduce((acc, p) => acc + (p.amount || 0), 0) / projects.length).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
+    { label: 'Avg Project Val', val: `${baseSymbol}${projects.length ? ((projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) / projects.length) * multiplier).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
   ];
 
   const quickLinks = [
@@ -74,9 +81,18 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile }
 
   return (
     <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Admin Overview</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Platform health at a glance. All systems operational.</p>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Admin Overview</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Platform health at a glance. All systems operational.</p>
+        </div>
+        <div style={{ minWidth: 150 }}>
+          <Select 
+            value={displayCurrency} 
+            onChange={setDisplayCurrency} 
+            options={(config?.currencies || []).map(c => ({ label: `View in ${c.currency}`, value: c.currency }))} 
+          />
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, marginBottom: 24 }}>
@@ -274,6 +290,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [config, setConfig] = useState(null);
+  const [displayCurrency, setDisplayCurrency] = useState('USD');
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -296,13 +314,19 @@ export default function App() {
 
     const fetchData = async () => {
       try {
-        const [projRes, freeRes] = await Promise.all([
+        const [projRes, freeRes, confRes] = await Promise.all([
           fetch('/api/projects'),
-          fetch('/api/admin/freelancers')
+          fetch('/api/admin/freelancers'),
+          fetch('/api/admin/config/currency')
         ]);
         const [projData, freeData] = await Promise.all([projRes.json(), freeRes.json()]);
         setProjects(Array.isArray(projData) ? projData : []);
         setFreelancers(Array.isArray(freeData) ? freeData : []);
+        if (confRes.ok) {
+          const confData = await confRes.json();
+          setConfig(confData);
+          setDisplayCurrency(confData?.baseCurrency || 'USD');
+        }
       } catch (err) {
         console.error("Data fetch error:", err);
       } finally {
@@ -333,11 +357,11 @@ export default function App() {
   }, [dark]);
 
   const views = {
-    overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} />,
+    overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} />,
     orders: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} isMobile={isMobile} /></div>,
     integrations: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
     tickets: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
-    payments: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} /></div>,
+    payments: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} /></div>,
     refunds: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
     promos: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
     analytics: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAnalytics projects={projects} freelancersCount={freelancers.length} /></div>,

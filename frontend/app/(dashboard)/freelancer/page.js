@@ -365,27 +365,35 @@ function ChatMessage({ msg, writerAvatar }) {
 /* ═══════════════════════════════════════════════
    ORDER DETAIL / CHAT PANEL
 ═══════════════════════════════════════════════ */
-function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
+function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
   const [input, setInput] = useState('');
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [typing, setTyping] = useState(false);
   const [tab, setTab] = useState('chat');
   const endRef = useRef();
-
-  const { messages, loading, errorAlert, sendMessage } = useChat({
-    projectId: order.id,
-    userId,
-    role: 'FREELANCER',
-    chatType: 'CLIENT_CHAT',
-  });
+  const inputRef = useRef();
 
   useEffect(() => {
     if (endRef.current) endRef.current.parentElement.scrollTop = 99999;
-  }, [messages.length]);
+  }, [order.thread.length]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setTyping(false), 4000);
+    return () => clearTimeout(t);
+  }, [typing]);
 
   const handleSend = () => {
     if (!input.trim()) return;
-    sendMessage(input);
+    onSend(order.id, { from: 'writer', text: input, time: 'Just now' });
     setInput('');
+    setTimeout(() => {
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        const replies = ["Thanks for the update! I'll review and get back to you.", "That's perfect, exactly what I needed.", "Could we also tweak the conclusion slightly?", "Looks great! How soon can I expect the final version?"];
+        onSend(order.id, { from: 'client', alias: `Client #${order.clientCode}`, text: replies[Math.floor(Math.random() * replies.length)], time: 'Just now' });
+      }, 2800);
+    }, 1200);
   };
 
   const TIMELINE = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
@@ -395,7 +403,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', animation: 'slideLeft .3s ease' }}>
       {/* Header */}
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, background: 'var(--surface)' }}>
-        <button onClick={onClose} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', width: 28, height: 28, borderRadius: 6, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)', flexShrink: 0 }}>&times;</button>
+        <button onClick={onClose} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', width: 28, height: 28, borderRadius: 6, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)', flexShrink: 0 }}>←</button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.service}</span>
@@ -410,31 +418,25 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
         </div>
         {/* Status changer */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
-          {order.status === 'New Order' ? (
-            <button onClick={() => onStatusChange(order.id, 'In Progress')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
-          ) : (
-            <>
-              <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color}44`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
-                Update Status <span style={{ fontSize: 10 }}>▾</span>
-              </button>
-              {showStatusMenu &&
-              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px', zIndex: 100, minWidth: 180, boxShadow: '0 16px 48px rgba(0,0,0,0.5)', animation: 'popIn .2s ease' }}>
-                  {ALL_STATUSES.filter((s) => s !== order.status && s !== 'New Order').map((s) => {
-                  const sm = STATUS_META[s];
-                  return (
-                    <div key={s} onClick={() => {onStatusChange(order.id, s);setShowStatusMenu(false);}} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'background .15s', fontSize: 12, fontWeight: 500, color: sm.color }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface2)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: sm.dot, flexShrink: 0 }} />
-                        {s}
-                      </div>);
+          <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color}44`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
+            Update Status <span style={{ fontSize: 10 }}>▾</span>
+          </button>
+          {showStatusMenu &&
+          <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px', zIndex: 100, minWidth: 180, boxShadow: '0 16px 48px rgba(0,0,0,0.5)', animation: 'popIn .2s ease' }}>
+              {ALL_STATUSES.filter((s) => s !== order.status).map((s) => {
+              const sm = STATUS_META[s];
+              return (
+                <div key={s} onClick={() => {onStatusChange(order.id, s);setShowStatusMenu(false);}} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'background .15s', fontSize: 12, fontWeight: 500, color: sm.color }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: sm.dot, flexShrink: 0 }} />
+                    {s}
+                  </div>);
 
-                })}
-                </div>
-              }
-            </>
-          )}
+            })}
+            </div>
+          }
         </div>
       </div>
 
@@ -454,55 +456,38 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
       <>
           {/* Messages */}
           <div className="scrollable" style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-            {/* Assignment Banner */}
-            {order.status === 'New Order' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', background: 'rgba(13,148,136,0.06)', border: '1px solid var(--border-teal)', borderRadius: 8, marginBottom: 10, animation: 'slideDown .3s ease' }}>
-                <span style={{ fontSize: 24 }}>📥</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal-light)', marginBottom: 4 }}>You have been assigned to this order</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Review the brief and files. Accept the assignment above to unlock chat and begin working.</div>
-                </div>
-              </div>
-            )}
             {/* Security banner */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)', borderRadius: 7, marginBottom: 4 }}>
               <span style={{ fontSize: 14 }}>🔐</span>
-              <span style={{ fontSize: 11, color: '#a78bfa', lineHeight: 1.4 }}>This conversation is end-to-end encrypted. Client identity is anonymized. All files are watermarked &amp; tracked.</span>
+              <span style={{ fontSize: 11, color: '#a78bfa', lineHeight: 1.4 }}>This conversation is end-to-end encrypted. Client identity is anonymized. All files are watermarked & tracked.</span>
             </div>
-            {errorAlert && (
-              <div style={{ padding: '8px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: 7, color: '#fb7185', fontSize: 12 }}>⚠️ {errorAlert}</div>
-            )}
-            {loading && <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 12 }}>Loading messages...</div>}
-            {!loading && messages.length === 0 && order.status !== 'New Order' && <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, marginTop: 20 }}>No messages yet. Say hello!</div>}
-            {messages.map((msg) => {
-              if (msg.isSystem) return (
-                <div key={msg.id} style={{ display: 'flex', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 100, background: 'var(--surface2)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>🔒 {msg.content}</span>
+            {order.thread.map((msg, i) => <ChatMessage key={i} msg={msg} writerAvatar={WRITER.avatar} />)}
+            {typing &&
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeIn .3s ease' }}>
+                <Avatar initials={order.clientCode.slice(0, 2)} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '8px 12px', background: 'var(--surface3)', borderRadius: '10px 10px 10px 3px', border: '1px solid var(--border)' }}>
+                  {[0, 1, 2].map((i) => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--text-dim)', display: 'inline-block', animation: `pulse 1.2s ease ${i * 0.2}s infinite` }} />)}
                 </div>
-              );
-              return <ChatMessage key={msg.id} msg={{ from: msg.senderId === userId ? 'writer' : 'client', text: msg.content, time: msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '' }} writerAvatar={WRITER.avatar} />;
-            })}
+                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{order.client} is typing...</span>
+              </div>
+          }
             <div ref={endRef} />
           </div>
 
           {/* Input area */}
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-            {order.status === 'New Order' ? (
-              <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, padding: '10px 0' }}>Chat is disabled until you accept the assignment.</div>
-            ) : (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault();handleSend();}}} placeholder={`Message ${order.client}...`} rows={1} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, resize: 'none', fontFamily: 'var(--font)', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto' }} />
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button title="Attach file" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2, borderRadius: 4, transition: 'color .2s' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
-                    📎</button>
-                  </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault();handleSend();}}} placeholder={`Message ${order.client}...`} rows={1} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, resize: 'none', fontFamily: 'var(--font)', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto' }} />
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button title="Attach file" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2, borderRadius: 4, transition: 'color .2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
+                  📎</button>
                 </div>
-                <button onClick={handleSend} disabled={!input.trim()} style={{ width: 40, height: 40, borderRadius: 8, background: input.trim() ? 'var(--teal)' : 'var(--surface3)', border: `1px solid ${input.trim() ? 'var(--teal)' : 'var(--border)'}`, color: '#fff', fontSize: 18, cursor: input.trim() ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>↑</button>
               </div>
-            )}
+              <button onClick={handleSend} disabled={!input.trim()} style={{ width: 40, height: 40, borderRadius: 8, background: input.trim() ? 'var(--teal)' : 'var(--surface3)', border: `1px solid ${input.trim() ? 'var(--teal)' : 'var(--border)'}`, color: '#fff', fontSize: 18, cursor: input.trim() ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>↑</button>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
               <span style={{ fontSize: 9, color: 'var(--text-dim)' }}>🔒 End-to-end encrypted · Client identity protected · Files auto-watermarked</span>
             </div>
@@ -516,7 +501,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 8 }}>Project Brief</div>
             <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px', fontSize: 13, color: 'var(--text)', lineHeight: 1.7 }}>{order.brief}</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[['Invoice', order.invoiceNum], ['Words', `${order.words.toLocaleString()} words`], ['Price', `$${order.price}`], ['Due', order.due], ['Delivery', order.deliveryType === 'urgent' ? '⚡ Urgent' : '📅 Timeline'], ['NDA', order.hasNDA ? 'Active' : 'Not required']].map(([k, v]) =>
           <div key={k} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
                 <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k}</div>
@@ -560,56 +545,37 @@ function OrderChatPanel({ order, onClose, onStatusChange, userId, isMobile }) {
           <div style={{ position: 'relative', paddingLeft: 24 }}>
             <div style={{ position: 'absolute', left: 7, top: 8, bottom: 8, width: 2, background: 'var(--border)', borderRadius: 2 }} />
             {TIMELINE.map((step, i) => {
-              const done = i < stepIdx; const active = i === stepIdx;
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, position: 'relative' }}>
+            const done = i < stepIdx;const active = i === stepIdx;
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, position: 'relative' }}>
                   <div style={{ position: 'absolute', left: -24, width: 16, height: 16, borderRadius: '50%', background: done ? 'var(--teal)' : active ? 'var(--teal)' : 'var(--surface3)', border: `2px solid ${done || active ? 'var(--teal)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#fff', fontWeight: 700, flexShrink: 0, zIndex: 1, top: 2 }}>{done ? '✓' : i + 1}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: done || active ? 600 : 400, color: done || active ? 'var(--text)' : 'var(--text-dim)' }}>{step}</div>
                     {active && <div style={{ fontSize: 11, color: 'var(--teal-light)', marginTop: 2 }}>Current stage</div>}
                   </div>
                 </div>);
-            })}
+
+          })}
           </div>
         </div>
       }
     </div>);
+
 }
 
 function OrdersView({ projects = [], userId, isMobile }) {
+  const [orders, setOrders] = useState(ORDERS_DATA);
   const [activeOrder, setActiveOrder] = useState(null);
   const [filter, setFilter] = useState('All');
 
-  const MAPPED_ORDERS = projects.map(p => ({
-    id: p.id,
-    invoiceNum: `INV-${p.id.slice(-4).toUpperCase()}`,
-    service: p.serviceType || p.title,
-    client: p.student?.name || 'Client',
-    clientCode: p.student?.id?.slice(-4) || 'XXXX',
-    deliveryType: 'timeline',
-    due: p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A',
-    submitted: new Date(p.createdAt).toLocaleDateString(),
-    words: 1000,
-    price: (p.amount || 0) * 0.7, // Writer gets 70%
-    status: p.status === 'COMPLETED' ? 'Delivered' : p.status === 'REVISION' ? 'Revision' : (p.status === 'ASSIGNED' || p.status === 'CREATED') ? 'New Order' : 'In Progress',
-    progress: p.status === 'COMPLETED' ? 100 : 50,
-    unreadMsgs: 0,
-    hasNDA: true,
-    brief: p.description || "No description provided.",
-    files: [],
-    deliveredFiles: [],
-    thread: (p.logs || []).map(l => ({ type: 'system', text: l.action, time: new Date(l.timestamp).toLocaleString() }))
-  }));
-
   const filterTabs = [
-    { id: 'All', label: 'All', count: MAPPED_ORDERS.length },
-    { id: 'Active', label: 'Active', count: MAPPED_ORDERS.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status)).length },
-    { id: 'Revision', label: 'Revision', count: MAPPED_ORDERS.filter((o) => o.status === 'Revision').length },
-    { id: 'Delivered', label: 'Delivered', count: MAPPED_ORDERS.filter((o) => o.status === 'Delivered').length }
-  ];
+  { id: 'All', label: 'All', count: orders.length },
+  { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status)).length },
+  { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision').length },
+  { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }];
 
 
-  const filtered = MAPPED_ORDERS.filter((o) => {
+  const filtered = orders.filter((o) => {
     if (filter === 'All') return true;
     if (filter === 'Active') return ['New Order', 'In Progress', 'Under Review'].includes(o.status);
     if (filter === 'Revision') return o.status === 'Revision';
@@ -617,36 +583,23 @@ function OrdersView({ projects = [], userId, isMobile }) {
     return true;
   });
 
-  const handleStatusChange = async (id, newStatus) => {
-    const dbStatus = newStatus === 'In Progress' ? 'IN_PROGRESS' : newStatus === 'Delivered' ? 'COMPLETED' : newStatus === 'Revision' ? 'REVISION' : newStatus === 'Quality Check' ? 'QUALITY_CHECK' : newStatus === 'Under Review' ? 'UNDER_REVIEW' : newStatus;
-    try {
-      const res = await fetch(`/api/projects/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: dbStatus })
-      });
-      if (res.ok) {
-        if (newStatus === 'In Progress') {
-          await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: id,
-              content: "Hello! I am your assigned expert writer for this project. I've reviewed your brief and will begin working on it immediately. Please feel free to share any additional details or requirements here.",
-              chatType: 'CLIENT_CHAT'
-            })
-          });
-        }
-        window.location.reload();
-      } else {
-        console.error("Failed to update status");
-      }
-    } catch(err) {
-      console.error(err);
-    }
+  const handleStatusChange = (id, newStatus) => {
+    setOrders((prev) => prev.map((o) => {
+      if (o.id !== id) return o;
+      const systemMsg = { type: 'status', text: `Status updated: ${o.status} → ${newStatus}`, time: 'Just now' };
+      return { ...o, status: newStatus, thread: [...o.thread, systemMsg], progress: newStatus === 'Delivered' ? 100 : newStatus === 'Quality Check' ? 90 : newStatus === 'In Progress' ? 65 : newStatus === 'Revision' ? 75 : o.progress };
+    }));
   };
 
-  const selectedOrder = MAPPED_ORDERS.find((o) => o.id === activeOrder);
+  const handleSend = (id, msg) => {
+    setOrders((prev) => prev.map((o) => {
+      if (o.id !== id) return o;
+      const newUnread = msg.from === 'client' ? o.unreadMsgs + 1 : o.unreadMsgs;
+      return { ...o, thread: [...o.thread, msg], unreadMsgs: msg.from === 'writer' ? 0 : newUnread };
+    }));
+  };
+
+  const selectedOrder = orders.find((o) => o.id === activeOrder);
 
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
@@ -666,13 +619,13 @@ function OrdersView({ projects = [], userId, isMobile }) {
           {/* Filter tabs */}
           <div style={{ display: 'flex', gap: 6 }}>
             {filterTabs.map((t) =>
-              <button key={t.id} onClick={() => setFilter(t.id)} style={{
-                padding: '5px 12px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font)', fontSize: 12, cursor: 'pointer', transition: 'all .2s',
-                borderColor: filter === t.id ? 'var(--teal)' : 'var(--border)',
-                background: filter === t.id ? 'rgba(13,148,136,0.12)' : 'transparent',
-                color: filter === t.id ? 'var(--teal-light)' : 'var(--text-muted)',
-                fontWeight: filter === t.id ? 600 : 400
-              }}>
+            <button key={t.id} onClick={() => setFilter(t.id)} style={{
+              padding: '5px 12px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font)', fontSize: 12, cursor: 'pointer', transition: 'all .2s',
+              borderColor: filter === t.id ? 'var(--teal)' : 'var(--border)',
+              background: filter === t.id ? 'rgba(13,148,136,0.12)' : 'transparent',
+              color: filter === t.id ? 'var(--teal-light)' : 'var(--text-muted)',
+              fontWeight: filter === t.id ? 600 : 400
+            }}>
                 {t.label} {t.count > 0 && <span style={{ fontSize: 10, opacity: .7 }}>({t.count})</span>}
               </button>
             )}
@@ -682,7 +635,7 @@ function OrdersView({ projects = [], userId, isMobile }) {
         {/* List */}
         <div className="scrollable" style={{ flex: 1, padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
           {filtered.map((order) =>
-            <OrderStrip key={order.id} order={order} isActive={activeOrder === order.id} onClick={() => { setActiveOrder(order.id === activeOrder ? null : order.id); }} />
+          <OrderStrip key={order.id} order={order} isActive={activeOrder === order.id} onClick={() => {setActiveOrder(order.id === activeOrder ? null : order.id);setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, unreadMsgs: 0 } : o));}} />
           )}
           {filtered.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-dim)', fontSize: 13 }}>No orders in this category</div>}
         </div>
@@ -690,17 +643,18 @@ function OrdersView({ projects = [], userId, isMobile }) {
 
       {/* Chat / Detail panel */}
       {selectedOrder ?
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} userId={userId} isMobile={isMobile} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} />
         </div> :
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
           <div style={{ fontSize: 48, opacity: .3 }}>💬</div>
           <div style={{ fontSize: 14, fontWeight: 500 }}>Select an order to open the chat</div>
           <div style={{ fontSize: 12, opacity: .6 }}>All conversations are end-to-end encrypted</div>
         </div>
       }
     </div>);
+
 }
 
 function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {

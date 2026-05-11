@@ -3,10 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
 
 export async function GET() {
-  const authUser = await getAuthUser();
-  if (!authUser || authUser.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   try {
     const config = await prisma.systemConfig.findUnique({

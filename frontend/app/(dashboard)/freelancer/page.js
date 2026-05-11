@@ -812,7 +812,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {
    EARNINGS
 ═══════════════════════════════════════════════ */
 function Earnings({ isMobile }) {
-  const [data, setData] = useState({ balance: 0, totalEarned: 0, pending: 0, history: [], projects: [] });
+  const [data, setData] = useState({ balance: 0, totalEarned: 0, pending: 0, history: [], projects: [], currency: 'USD', symbol: '$' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -861,9 +861,9 @@ function Earnings({ isMobile }) {
       {/* Totals */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
         {[
-        { label: 'Total Earned', val: `₹${data.totalEarned.toLocaleString()}`, sub: 'All time', color: 'var(--teal-light)' },
-        { label: 'Available Balance', val: `₹${data.balance.toLocaleString()}`, sub: 'Ready for payout', color: 'var(--green)' },
-        { label: 'Pending Payout', val: `₹${data.pending.toLocaleString()}`, sub: 'Processing', color: 'var(--amber)' }].
+        { label: 'Total Earned', val: `${data.symbol}${data.totalEarned.toLocaleString()}`, sub: 'All time', color: 'var(--teal-light)' },
+        { label: 'Available Balance', val: `${data.symbol}${data.balance.toLocaleString()}`, sub: 'Ready for payout', color: 'var(--green)' },
+        { label: 'Pending Payout', val: `${data.symbol}${data.pending.toLocaleString()}`, sub: 'Processing', color: 'var(--amber)' }].
         map((s, i) =>
         <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 20px' }}>
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>{s.label}</div>
@@ -879,7 +879,7 @@ function Earnings({ isMobile }) {
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 140 }}>
           {chartData.map((d, i) =>
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--teal-light)' }}>₹{(d.amt / 1000).toFixed(1)}k</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--teal-light)' }}>{data.symbol}{(d.amt / 1000).toFixed(1)}k</div>
               <div style={{ width: '100%', borderRadius: '4px 4px 0 0', background: `linear-gradient(180deg,var(--teal),rgba(13,148,136,0.4))`, height: `${d.amt / maxAmt * 100}px`, transition: 'height .6s ease', minHeight: 4, position: 'relative' }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '.8'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
@@ -898,7 +898,7 @@ function Earnings({ isMobile }) {
         {payouts.map((p, i) =>
         <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 0.8fr', gap: isMobile ? 6 : 0, padding: '12px 18px', borderBottom: i < payouts.length - 1 ? '1px solid var(--border)' : 'none', alignItems: isMobile ? 'flex-start' : 'center' }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{p.date}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>₹{p.amount.toLocaleString()}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>{data.symbol}{p.amount.toLocaleString()}</span>
             <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{p.method}</span>
             <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100, background: p.status === 'COMPLETED' || p.status === 'Paid' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', color: p.status === 'COMPLETED' || p.status === 'Paid' ? 'var(--green)' : 'var(--amber)', width: 'fit-content' }}>{p.status}</span>
           </div>
@@ -915,6 +915,8 @@ function Profile({ isMobile, profile, onUpdate }) {
     phone: profile?.phone || '',
     occupation: profile?.occupation || 'Freelancer',
     college: profile?.college || '',
+    country: profile?.freelancerProfile?.country || '',
+    currency: profile?.freelancerProfile?.currency || 'USD',
   });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -927,6 +929,8 @@ function Profile({ isMobile, profile, onUpdate }) {
         phone: profile.phone || '',
         occupation: profile.occupation || 'Freelancer',
         college: profile.college || '',
+        country: profile.freelancerProfile?.country || '',
+        currency: profile.freelancerProfile?.currency || 'USD',
       });
     }
   }, [profile]);
@@ -967,6 +971,7 @@ function Profile({ isMobile, profile, onUpdate }) {
                   <span style={{ fontSize: 11, color: 'var(--gold)' }}>★ 5.0</span>
                   <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>(0 reviews)</span>
                   <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.15)', color: 'var(--teal-light)', fontWeight: 600 }}>Top Writer</span>
+                  {form.country && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>📍 {form.country}</span>}
                 </div>
               </div>
             </div>
@@ -992,6 +997,16 @@ function Profile({ isMobile, profile, onUpdate }) {
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>College / Organization</label>
             <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Country</label>
+              <input value={form.country} disabled style={{ width: '100%', background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text-dim)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)', cursor: 'not-allowed' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Payout Currency</label>
+              <input value={form.currency} disabled style={{ width: '100%', background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text-dim)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)', cursor: 'not-allowed' }} />
+            </div>
           </div>
           <button onClick={handleSave} disabled={loading} style={{ padding: '9px 22px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background .3s' }}>
             {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Profile'}

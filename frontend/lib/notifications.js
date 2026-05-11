@@ -7,7 +7,8 @@ import { sendEmail } from './mail';
  * and Development (Mock Redis).
  */
 export async function dispatchNotification(type, data) {
-  const isMock = process.env.NODE_ENV === 'development' && !process.env.REDIS_URL;
+  // If there's no REDIS_URL, we MUST mock/bypass BullMQ to prevent 500 errors, even in production (e.g. Vercel)
+  const isMock = !process.env.REDIS_URL;
 
   if (isMock) {
     console.log(`💡 Mock Redis detected. Bypassing BullMQ and processing "${type}" notification immediately.`);

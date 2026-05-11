@@ -38,15 +38,24 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { phone, occupation, college } = body;
+    const { phone, occupation, college, name, country, currency } = body;
 
     const updatedUser = await prisma.user.update({
       where: { email: user.email },
       data: {
+        name,
         phone,
         occupation,
         college,
         profileCompleted: true,
+        ...(user.role === 'FREELANCER' ? {
+          freelancerProfile: {
+            update: {
+              country,
+              currency
+            }
+          }
+        } : {})
       },
     });
 

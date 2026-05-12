@@ -7,15 +7,13 @@ import {
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 
-// Ref for auto‑scrolling to latest message
-const messagesEndRef = typeof window !== 'undefined' ? React.createRef() : null;
-
 const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
   const [activeBridge, setActiveBridge] = useState('CLIENT'); // CLIENT, INTERNAL, ADMIN
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const socketRef = React.useRef(null);
+  const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   const bridges = [
     { id: 'CLIENT', name: 'Client Chat', icon: MessageCircle, color: 'text-blue-500', bg: 'bg-blue-50', access: 'Everywhere', type: 'CLIENT_CHAT' },
@@ -26,7 +24,7 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
   useEffect(() => {
     if (!projectId || !currentUserId) return;
 
-    const socket = io();
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     socketRef.current = socket;
 
     socket.emit('join_chat', { 
@@ -36,7 +34,7 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
     });
 
     socket.on('receive_message', (data) => {
-      const currentType = bridges.find(b => b.id === activeBridge).type;
+      const currentType = bridges.find(b => b.id === activeBridge)?.type;
       if (data.chatType === currentType) {
         setMessages((prev) => {
           if (prev.some(m => m.id === data.id)) return prev;

@@ -258,7 +258,7 @@ function ChatMessage({ msg, writerAvatar }) {
       <div style={{ maxWidth: '68%' }}>
         {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias} <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>· Identity Protected</span></div>}
         <div style={{ padding: '9px 13px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'var(--teal)' : 'var(--surface3)', color: isWriter ? '#fff' : 'var(--text)', fontSize: 13, lineHeight: 1.55, border: isWriter ? 'none' : '1px solid var(--border)' }}>
-          {msg.text}
+          {msg.content || msg.text}
         </div>
         <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 3, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)' }}>{msg.time}</div>
       </div>
@@ -320,6 +320,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
           id: savedMessage.id,
           content: savedMessage.content,
           projectId: order.id,
+          senderId: userId,
           senderRole: 'FREELANCER',
           chatType: 'CLIENT_CHAT',
           sender: { ...savedMessage.sender, role: 'FREELANCER' }
@@ -356,7 +357,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
             <button onClick={() => onStatusChange(order.id, 'In Progress')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
           ) : (
             <>
-              <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color}44`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
+              <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color || 'var(--border)'}`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
                 Update Status <span style={{ fontSize: 10 }}>▾</span>
               </button>
               {showStatusMenu &&
@@ -1137,11 +1138,13 @@ export default function App() {
 
       s.on('receive_message', (data) => {
         if (data.chatType === 'CLIENT_CHAT') {
+           // Skip messages sent by this user — already added optimistically via onSend
+           if (data.senderId === session?.user?.id) return;
            setProjects(prev => prev.map(p => {
              if (p.id === data.projectId) {
                const alreadyHas = p.messages?.some(m => m.id === data.id);
                if (alreadyHas) return p;
-               return { ...p, messages: [...(p.messages || []), data] };
+               return { ...p, messages: [...(p.messages || []), { ...data, createdAt: data.timestamp }] };
              }
              return p;
            }));

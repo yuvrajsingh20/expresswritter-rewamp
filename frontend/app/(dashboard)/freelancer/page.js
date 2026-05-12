@@ -11,7 +11,7 @@ import Notifications from "@/components/NotificationsView";
 /* ═══════════════════════════════════════════════
    DATA
 ═══════════════════════════════════════════════ */
-const WRITER = { name: 'Dr. Amara Singh', avatar: 'AS', title: 'Senior Academic Writer', rating: 4.97, reviews: 312, badge: 'Top Writer', joined: 'Jan 2023', completedOrders: 312, earnings: 18940 };
+// Replaced with dynamic userProfile from App component
 
 const STATUS_META = {
   'New Order': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
@@ -25,106 +25,10 @@ const STATUS_META = {
 
 const ALL_STATUSES = ['New Order', 'In Progress', 'Under Review', 'Revision', 'Quality Check', 'Delivered'];
 
-const ORDERS_DATA = [
-  {
-    id: 'XW-48291', invoiceNum: 'INV-2024-0291', service: 'Statement of Purpose',
-    client: 'Client #A204', clientCode: 'A204', deliveryType: 'urgent',
-    due: 'Apr 24, 2026', submitted: 'Apr 20, 2026', words: 800, price: 144,
-    status: 'In Progress', progress: 65, unreadMsgs: 2, hasNDA: true,
-    brief: 'Stanford CS PhD SOP. Focus on computational linguistics research at NYU under Prof. Chen. Target supervisor: Prof. Manning. Tone: scholarly yet personal. 800 words max.',
-    files: [{ name: 'Research_CV_2026.pdf', size: '1.2 MB', secure: true }, { name: 'Brief_Notes.docx', size: '240 KB', secure: false }],
-    deliveredFiles: [],
-    thread: [
-      { type: 'system', text: 'Order XW-48291 created. Client identity protected.', time: 'Apr 20, 9:00 AM' },
-      { from: 'client', alias: 'Client #A204', text: 'Hello! I\'m hoping to apply to Stanford CS PhD. I\'ve attached my CV and some notes about my research background.', time: 'Apr 20, 9:05 AM' },
-      { from: 'writer', text: 'Hello! I\'ve reviewed your materials. Your computational linguistics research is impressive — that\'s a strong angle for Stanford. I\'ll start drafting and have a first version ready by tomorrow.', time: 'Apr 20, 10:12 AM' },
-      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 20, 10:12 AM' },
-      { from: 'client', alias: 'Client #A204', text: 'That sounds great! Should I share anything else? I have a recommendation letter draft too if helpful.', time: 'Apr 20, 11:30 AM' },
-      { from: 'writer', text: 'Yes, please share the LOR draft — it\'ll help me align the SOP narrative. Also, could you list 2-3 research topics you\'d most like to pursue at Stanford?', time: 'Apr 20, 12:04 PM' },
-      { from: 'client', alias: 'Client #A204', text: 'I\'ve uploaded the LOR draft. My research interests are: (1) NLP for low-resource languages, (2) cross-lingual transfer learning, (3) human-computer interaction through language.', time: 'Apr 20, 2:18 PM' },
-      { type: 'file', from: 'client', alias: 'Client #A204', fileName: 'LOR_Draft_Chen.pdf', size: '890 KB', time: 'Apr 20, 2:18 PM' },
-      { from: 'writer', text: 'Perfect — these are exactly the right research directions for Prof. Manning\'s lab. I\'ve incorporated all three themes into a cohesive narrative. Draft ready for your review.', time: 'Apr 21, 9:40 AM' },
-      { type: 'file', from: 'writer', fileName: 'SOP_Draft_v1_SECURE.pdf', size: '1.1 MB', watermarked: true, time: 'Apr 21, 9:41 AM' }]
-
-  },
-  {
-    id: 'XW-47103', invoiceNum: 'INV-2024-0261', service: 'LinkedIn Profile Rewrite',
-    client: 'Client #B118', clientCode: 'B118', deliveryType: 'timeline',
-    due: 'Apr 22, 2026', submitted: 'Apr 19, 2026', words: 500, price: 75,
-    status: 'Quality Check', progress: 90, unreadMsgs: 1, hasNDA: false,
-    brief: 'Senior Product Manager at a FAANG company. Needs complete LinkedIn overhaul — headline, about, experience bullets. Target: VP/Director roles at Series B–D startups.',
-    files: [{ name: 'Current_LinkedIn_Export.pdf', size: '540 KB', secure: false }],
-    deliveredFiles: [{ name: 'LinkedIn_Rewrite_FINAL.docx', size: '320 KB', watermarked: true }],
-    thread: [
-      { type: 'system', text: 'Order XW-47103 created. Client identity protected.', time: 'Apr 19, 3:00 PM' },
-      { from: 'client', alias: 'Client #B118', text: 'Hi! I need a complete LinkedIn overhaul. I\'m currently a Sr. PM at a top tech company, looking to move to VP/Director roles at startups.', time: 'Apr 19, 3:10 PM' },
-      { from: 'writer', text: 'Great brief! I\'ve done a deep audit of your current profile. The headline is underselling you significantly. I\'ll rewrite with your target audience in mind.', time: 'Apr 19, 4:00 PM' },
-      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 19, 4:00 PM' },
-      { from: 'writer', text: 'Your profile rewrite is ready. I\'ve optimised for 14 keywords relevant to startup VP/Director searches. The headline now leads with impact, not job title.', time: 'Apr 20, 10:00 AM' },
-      { type: 'file', from: 'writer', fileName: 'LinkedIn_Rewrite_FINAL.docx', size: '320 KB', watermarked: true, time: 'Apr 20, 10:01 AM' },
-      { type: 'status', text: 'Status updated: In Progress → Quality Check', time: 'Apr 20, 10:01 AM' },
-      { from: 'client', alias: 'Client #B118', text: 'This is incredible! The headline is perfect. Just one small tweak — can we soften the tone in the About section slightly? It feels slightly aggressive.', time: 'Apr 20, 2:00 PM' }]
-
-  },
-  {
-    id: 'XW-44302', invoiceNum: 'INV-2024-0234', service: 'Research Proposal — ML in Healthcare',
-    client: 'Client #C056', clientCode: 'C056', deliveryType: 'timeline',
-    due: 'Apr 28, 2026', submitted: 'Apr 18, 2026', words: 2000, price: 280,
-    status: 'Revision', progress: 80, unreadMsgs: 3, hasNDA: true,
-    brief: 'PhD research proposal for UCL. Topic: applying transformer models to early disease detection in NHS imaging data. Must follow UCL proposal format. 2000 words.',
-    files: [{ name: 'UCL_Proposal_Guidelines.pdf', size: '2.1 MB', secure: false }, { name: 'Research_Context.docx', size: '890 KB', secure: false }],
-    deliveredFiles: [{ name: 'Research_Proposal_v1_SECURE.pdf', size: '2.8 MB', watermarked: true }],
-    thread: [
-      { type: 'system', text: 'Order XW-44302 created. NDA active. Client identity protected.', time: 'Apr 18, 10:00 AM' },
-      { from: 'client', alias: 'Client #C056', text: 'I need a research proposal for UCL PhD. My topic is transformer models for NHS imaging. The guidelines doc has the exact format required.', time: 'Apr 18, 10:20 AM' },
-      { from: 'writer', text: 'Hello! I\'ve reviewed the UCL guidelines carefully. This is a strong research topic — very timely given NHS digital transformation. I\'ll structure it in 5 sections as required.', time: 'Apr 18, 11:00 AM' },
-      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 18, 11:00 AM' },
-      { from: 'writer', text: 'First draft ready. I\'ve included a comprehensive literature review covering ViT, DeiT, and recent NHS imaging studies. The methodology section details the proposed transformer architecture.', time: 'Apr 20, 8:30 AM' },
-      { type: 'file', from: 'writer', fileName: 'Research_Proposal_v1_SECURE.pdf', size: '2.8 MB', watermarked: true, time: 'Apr 20, 8:31 AM' },
-      { type: 'status', text: 'Status updated: In Progress → Revision', time: 'Apr 21, 9:00 AM' },
-      { from: 'client', alias: 'Client #C056', text: 'The proposal is very strong overall! Three revision points: (1) Section 3 methodology needs more detail on data preprocessing pipeline, (2) add a Gantt chart for timeline, (3) the bibliography needs APA 7th edition formatting.', time: 'Apr 21, 9:05 AM' },
-      { from: 'client', alias: 'Client #C056', text: 'Also, could you strengthen the significance statement in the introduction? It needs to be more compelling for the committee.', time: 'Apr 21, 9:08 AM' },
-      { from: 'client', alias: 'Client #C056', text: 'Happy to jump on a call if that helps clarify the methodology section.', time: 'Apr 21, 9:10 AM' }]
-
-  },
-  {
-    id: 'XW-43109', invoiceNum: 'INV-2024-0219', service: 'Business Proposal — SaaS Startup',
-    client: 'Client #D302', clientCode: 'D302', deliveryType: 'urgent',
-    due: 'Apr 26, 2026', submitted: 'Apr 22, 2026', words: 1200, price: 240,
-    status: 'New Order', progress: 0, unreadMsgs: 0, hasNDA: false,
-    brief: 'Investor pitch document for B2B SaaS startup automating payroll for SMEs. Need: executive summary, problem/solution, market size, business model, team. Professional and compelling.',
-    files: [{ name: 'Company_Deck_Draft.pdf', size: '3.4 MB', secure: false }],
-    deliveredFiles: [],
-    thread: [
-      { type: 'system', text: 'Order XW-43109 created. Client identity protected.', time: 'Apr 22, 8:00 AM' },
-      { from: 'client', alias: 'Client #D302', text: 'Hi! We\'re a B2B SaaS startup and need an investor-ready business proposal. I\'ve attached our rough deck for context. Urgent — needed by Thursday.', time: 'Apr 22, 8:15 AM' }]
-
-  },
-  {
-    id: 'XW-41890', invoiceNum: 'INV-2024-0201', service: 'Academic Essay — Philosophy of Mind',
-    client: 'Client #E741', clientCode: 'E741', deliveryType: 'timeline',
-    due: 'Apr 15, 2026', submitted: 'Apr 10, 2026', words: 3000, price: 360,
-    status: 'Delivered', progress: 100, unreadMsgs: 0, hasNDA: false,
-    brief: '3000-word essay on functionalism vs biological naturalism (Searle). Include analysis of the Chinese Room argument. Harvard referencing. Masters level.',
-    files: [{ name: 'Essay_Guidelines.pdf', size: '210 KB', secure: false }],
-    deliveredFiles: [{ name: 'Philosophy_Essay_FINAL.pdf', size: '1.9 MB', watermarked: true }],
-    thread: [
-      { type: 'system', text: 'Order XW-41890 created. Client identity protected.', time: 'Apr 10, 2:00 PM' },
-      { from: 'client', alias: 'Client #E741', text: 'Hi, I need a Masters-level philosophy essay on functionalism vs biological naturalism. The Chinese Room argument should be central.', time: 'Apr 10, 2:10 PM' },
-      { from: 'writer', text: 'Excellent topic! Searle vs Dennett is one of the richest debates in philosophy of mind. I\'ll structure it as: (1) functionalism overview, (2) biological naturalism, (3) Chinese Room analysis, (4) critique and synthesis.', time: 'Apr 10, 3:00 PM' },
-      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 10, 3:00 PM' },
-      { type: 'status', text: 'Status updated: In Progress → Quality Check', time: 'Apr 13, 9:00 AM' },
-      { type: 'file', from: 'writer', fileName: 'Philosophy_Essay_FINAL.pdf', size: '1.9 MB', watermarked: true, time: 'Apr 13, 9:01 AM' },
-      { type: 'status', text: 'Status updated: Quality Check → Delivered', time: 'Apr 14, 10:00 AM' },
-      { from: 'client', alias: 'Client #E741', text: 'This is absolutely outstanding. The analysis of the Chinese Room is the best I\'ve read. My professor gave it an A. Thank you so much!', time: 'Apr 15, 4:00 PM' },
-      { from: 'writer', text: 'Wonderful news! Thank you for trusting me with this — it was genuinely a pleasure to write. Best of luck with the rest of your programme! ⭐', time: 'Apr 15, 4:30 PM' }]
-
-  }];
+// Replaced with dynamic projects from App component
 
 
-const EARNINGS_DATA = [
-  { month: 'Nov', amt: 1240 }, { month: 'Dec', amt: 1890 }, { month: 'Jan', amt: 2100 },
-  { month: 'Feb', amt: 1750 }, { month: 'Mar', amt: 2480 }, { month: 'Apr', amt: 1980 }];
+// Replaced with dynamic earnings data from API
 
 
 /* ═══════════════════════════════════════════════
@@ -234,10 +138,11 @@ function OrderStrip({ order, isActive, onClick }) {
   return (
     <div onClick={onClick} style={{
       padding: '0', cursor: 'pointer', borderRadius: 8,
-      border: `1px solid ${isActive ? 'var(--teal)' : 'var(--border)'}`,
+      borderWidth: '1px', borderStyle: 'solid',
+      borderColor: isActive ? 'var(--teal)' : 'var(--border)',
       background: isActive ? 'rgba(13,148,136,0.06)' : 'var(--surface2)',
-      transition: 'all .2s', overflow: 'hidden',
-      boxShadow: isActive ? '0 0 0 1px rgba(13,148,136,0.2)' : 'none', borderColor: "var(--border)"
+      transition: 'all .2s', overflow: 'hidden', flexShrink: 0,
+      boxShadow: isActive ? '0 0 0 1px rgba(13,148,136,0.2)' : 'none'
     }}
       onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.3)'; e.currentTarget.style.background = 'var(--surface3)'; } }}
       onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface2)'; } }}>
@@ -245,7 +150,7 @@ function OrderStrip({ order, isActive, onClick }) {
       {/* Accent top bar = status color */}
       <div style={{ height: 2, background: m.color, opacity: 0.7 }} />
 
-      <div style={{ padding: '12px 14px', fontFamily: "\"Google Sans\"", borderRadius: "0px" }}>
+      <div style={{ padding: '16px 18px', fontFamily: "\"Google Sans\"", borderRadius: "0px" }}>
         {/* Row 1: invoice + badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.04em', fontWeight: 500 }}>{order.invoiceNum}</span>
@@ -258,7 +163,7 @@ function OrderStrip({ order, isActive, onClick }) {
 
         {/* Row 2: service name + client */}
         <div style={{ marginBottom: 6 }}>
-          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.service}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, lineHeight: 1.4 }}>{order.service}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -365,7 +270,7 @@ function ChatMessage({ msg, writerAvatar }) {
 /* ═══════════════════════════════════════════════
    ORDER DETAIL / CHAT PANEL
 ═══════════════════════════════════════════════ */
-function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
+function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket, userName }) {
   const [input, setInput] = useState('');
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -374,26 +279,55 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
   const inputRef = useRef();
 
   useEffect(() => {
-    if (endRef.current) endRef.current.parentElement.scrollTop = 99999;
-  }, [order.thread.length]);
+    if (endRef.current && endRef.current.parentElement) {
+       endRef.current.parentElement.scrollTop = 99999;
+    }
+  }, [order.thread?.length]);
 
   useEffect(() => {
     const t = setTimeout(() => setTyping(false), 4000);
     return () => clearTimeout(t);
   }, [typing]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
-    onSend(order.id, { from: 'writer', text: input, time: 'Just now' });
+    const msgText = input;
     setInput('');
-    setTimeout(() => {
-      setTyping(true);
-      setTimeout(() => {
-        setTyping(false);
-        const replies = ["Thanks for the update! I'll review and get back to you.", "That's perfect, exactly what I needed.", "Could we also tweak the conclusion slightly?", "Looks great! How soon can I expect the final version?"];
-        onSend(order.id, { from: 'client', alias: `Client #${order.clientCode}`, text: replies[Math.floor(Math.random() * replies.length)], time: 'Just now' });
-      }, 2800);
-    }, 1200);
+    
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: msgText,
+          senderId: userId,
+          senderRole: 'FREELANCER',
+          chatType: 'CLIENT_CHAT',
+          projectId: order.id,
+        })
+      });
+      
+      const savedMessage = await res.json();
+      onSend(order.id, { 
+        id: savedMessage.id,
+        from: 'writer', 
+        text: savedMessage.content, 
+        time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      });
+
+      if (socket) {
+        socket.emit('send_message', {
+          id: savedMessage.id,
+          content: savedMessage.content,
+          projectId: order.id,
+          senderRole: 'FREELANCER',
+          chatType: 'CLIENT_CHAT',
+          sender: { ...savedMessage.sender, role: 'FREELANCER' }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
 
   const TIMELINE = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
@@ -467,7 +401,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
               <span style={{ fontSize: 14 }}>🔐</span>
               <span style={{ fontSize: 11, color: '#a78bfa', lineHeight: 1.4 }}>This conversation is end-to-end encrypted. Client identity is anonymized. All files are watermarked & tracked.</span>
             </div>
-            {order.thread.map((msg, i) => <ChatMessage key={i} msg={msg} writerAvatar={WRITER.avatar} />)}
+            {(order.thread || []).map((msg, i) => <ChatMessage key={msg.id || i} msg={msg} writerAvatar={userName?.split(' ').map(n => n[0]).join('').toUpperCase()} />)}
             {typing &&
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeIn .3s ease' }}>
                 <Avatar initials={order.clientCode.slice(0, 2)} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />
@@ -573,8 +507,60 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
 
 }
 
-function OrdersView({ projects = [], userId, isMobile }) {
-  const [orders, setOrders] = useState(ORDERS_DATA);
+function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
+  const mapDBStatusToUI = (status) => {
+    switch (status) {
+      case 'CREATED': return 'New Order';
+      case 'ASSIGNED':
+      case 'IN_PROGRESS': return 'In Progress';
+      case 'REVIEW':
+      case 'QUALITY_CHECK': return 'Quality Check';
+      case 'UNDER_REVIEW': return 'Under Review';
+      case 'REVISION': return 'Revision';
+      case 'COMPLETED': return 'Delivered';
+      case 'CLOSED': return 'Closed';
+      default: return 'In Progress';
+    }
+  };
+
+  const mapProjectsToOrders = useCallback((rawProjects) => {
+    return (rawProjects || []).map(p => ({
+      id: p.id,
+      invoiceNum: `XW-${p.id.slice(-5).toUpperCase()}`,
+      service: p.serviceType || p.title,
+      client: p.student?.name || `Client #${p.studentId?.slice(-4)}`,
+      clientCode: p.studentId?.slice(-4),
+      deliveryType: p.deadline && (new Date(p.deadline) - new Date()) < 86400000 * 2 ? 'urgent' : 'timeline',
+      due: p.deadline ? new Date(p.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No Date',
+      submitted: new Date(p.createdAt).toLocaleDateString(),
+      words: 0, 
+      price: p.amount || 0,
+      status: mapDBStatusToUI(p.status),
+      progress: p.status === 'COMPLETED' ? 100 : p.status === 'REVIEW' || p.status === 'QUALITY_CHECK' ? 90 : p.status === 'CREATED' ? 0 : 50,
+      unreadMsgs: p.messages?.filter(m => !m.read && m.senderId !== userId).length || 0,
+      hasNDA: p.hasNDA || false,
+      brief: p.description || 'No brief provided.',
+      files: p.attachments || [],
+      deliveredFiles: (p.attachments || []).filter(a => a.type === 'DELIVERY'),
+      thread: (p.messages || []).map(m => ({
+        id: m.id,
+        type: m.isSystem ? 'system' : 'text',
+        from: m.senderId === userId ? 'writer' : 'client',
+        alias: p.student?.name || `Client #${p.studentId?.slice(-4)}`,
+        text: m.content,
+        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        fileName: m.attachments?.[0]?.name,
+        size: m.attachments?.[0]?.size
+      }))
+    }));
+  }, [userId]);
+
+  const [orders, setOrders] = useState(() => mapProjectsToOrders(projects));
+
+  useEffect(() => {
+    setOrders(mapProjectsToOrders(projects));
+  }, [projects, mapProjectsToOrders]);
+
   const [activeOrder, setActiveOrder] = useState(null);
   const [filter, setFilter] = useState('All');
 
@@ -675,7 +661,7 @@ function OrdersView({ projects = [], userId, isMobile }) {
       {/* Chat / Detail panel */}
       {selectedOrder ?
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} />
+          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} userId={userId} socket={socket} userName={userName} />
         </div> :
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
@@ -688,7 +674,7 @@ function OrdersView({ projects = [], userId, isMobile }) {
 
 }
 
-function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {
+function Overview({ setActive, projects = [], userName = "Writer", isMobile, session, userProfile }) {
   const [recentNotifications, setRecentNotifications] = useState([]);
   useEffect(() => {
     fetch('/api/notifications')
@@ -700,12 +686,17 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile }) {
   }, []);
   const active = projects.filter((o) => o.status !== 'COMPLETED');
   const earnings = projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7;
+  
+  // Calculate unread from real projects
+  const unreadCount = projects.reduce((acc, p) => {
+    return acc + (p.messages?.filter(m => !m.read && m.senderId !== session?.user?.id).length || 0);
+  }, 0);
 
   const stats = [
     { label: 'Active Orders', val: active.length, icon: '⚡', color: 'var(--teal)', sub: 'Requires attention' },
-    { label: 'Unread Messages', val: 0, icon: '💬', color: 'var(--amber)', sub: 'From clients' },
-    { label: 'Total Earnings', val: `$${earnings.toLocaleString()}`, icon: '💰', color: 'var(--green)', sub: 'All time' },
-    { label: 'Avg Rating', val: '4.95', icon: '★', color: 'var(--gold)', sub: 'Top Writer' }];
+    { label: 'Unread Messages', val: unreadCount, icon: '💬', color: 'var(--amber)', sub: 'From clients' },
+    { label: 'Total Earnings', val: `$${earnings.toFixed(2)}`, icon: '💰', color: 'var(--green)', sub: 'All time' },
+    { label: 'Avg Rating', val: (userProfile?.freelancerProfile?.rating || 5.0).toFixed(1), icon: '★', color: 'var(--gold)', sub: 'Top Writer' }];
 
 
   return (
@@ -828,16 +819,11 @@ function Earnings({ isMobile }) {
       }
       return acc;
     }, []).slice(-6)
-    : EARNINGS_DATA;
+    : [];
 
   const maxAmt = Math.max(...chartData.map((d) => d.amt)) || 1;
 
-  const payouts = data.history.length > 0 ? data.history : [
-    { date: 'Apr 1, 2026', amount: 1240, method: 'Bank Transfer', status: 'Paid' },
-    { date: 'Mar 1, 2026', amount: 2480, method: 'Bank Transfer', status: 'Paid' },
-    { date: 'Feb 1, 2026', amount: 1750, method: 'PayPal', status: 'Paid' },
-    { date: 'Jan 1, 2026', amount: 2100, method: 'Bank Transfer', status: 'Paid' }
-  ]; // Fallback if empty
+  const payouts = data.history || [];
 
   return (
     <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
@@ -1072,7 +1058,8 @@ export default function App() {
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -1132,13 +1119,36 @@ export default function App() {
     }
   }, [active]);
 
+  useEffect(() => {
+    if (socket && projects.length > 0 && session?.user?.id) {
+      projects.forEach(p => {
+        socket.emit('join_chat', { projectId: p.id, role: session.user.role, userId: session.user.id });
+      });
+    }
+  }, [socket, projects, session?.user?.id]);
+
   // Socket listener for real-time project refresh
   useEffect(() => {
     if (session?.user?.id) {
-      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
-      socket.emit('join_chat', { userId: session.user.id, role: session.user.role });
+      const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
+      setSocket(s);
+      socketRef.current = s;
+      s.emit('join_chat', { userId: session.user.id, role: session.user.role });
 
-      socket.on('new_notification', (data) => {
+      s.on('receive_message', (data) => {
+        if (data.chatType === 'CLIENT_CHAT') {
+           setProjects(prev => prev.map(p => {
+             if (p.id === data.projectId) {
+               const alreadyHas = p.messages?.some(m => m.id === data.id);
+               if (alreadyHas) return p;
+               return { ...p, messages: [...(p.messages || []), data] };
+             }
+             return p;
+           }));
+        }
+      });
+
+      s.on('new_notification', (data) => {
         if (data.type === 'new_job' || data.type === 'assignment' || data.type === 'revision') {
           // Re-fetch projects to update dashboard instantly
           fetch('/api/projects')
@@ -1151,15 +1161,15 @@ export default function App() {
       });
 
       return () => {
-        socket.disconnect();
+        socketRef.current?.disconnect();
       };
     }
   }, [session?.user?.id]);
 
   const userName = userProfile?.name || session?.user?.name || "Writer";
   const views = {
-    overview: <Overview setActive={setActive} projects={projects} userName={userName} isMobile={isMobile} />,
-    orders: <OrdersView projects={projects} userId={session?.user?.id} isMobile={isMobile} />,
+    overview: <Overview setActive={setActive} projects={projects} userName={userName} isMobile={isMobile} session={session} userProfile={userProfile} />,
+    orders: <OrdersView projects={projects} userId={session?.user?.id} isMobile={isMobile} userName={userName} socket={socket} />,
     earnings: <Earnings isMobile={isMobile} />,
     profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />

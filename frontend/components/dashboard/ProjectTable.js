@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  FileText, Clock, ExternalLink, 
+import {
+  FileText, Clock, ExternalLink,
   MoreHorizontal, Eye, User,
   AlertCircle, Plus, Check, X, UserPlus, ChevronRight, ShieldCheck
 } from 'lucide-react';
@@ -36,7 +36,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
         });
 
         alert("Success: Specialist mapped to project node.");
-        window.location.reload(); 
+        window.location.reload();
       }
     } catch (error) {
       console.error("Assignment failed:", error);
@@ -58,7 +58,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
       console.error("Collaborator operation failed:", error);
     }
   };
-  
+
   const getStatusStyle = (status) => {
     const styles = {
       CREATED: 'bg-blue-50 text-blue-600 border-blue-100',
@@ -100,9 +100,9 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
   const handlePayout = async (project) => {
     const amount = prompt(`Enter payout amount for ${project.freelancer.name}:`);
     if (!amount || isNaN(amount)) return;
-    
+
     const description = prompt("Enter payout description (optional):");
-    
+
     try {
       const res = await fetch('/api/admin/invoices', {
         method: 'POST',
@@ -171,7 +171,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                     </span>
                   )}
                 </td>
-                
+
                 <td className="px-4 py-5">
                   <div className="flex flex-col gap-2">
                     {/* Lead Writer */}
@@ -181,7 +181,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                           <ShieldCheck size={14} className="shrink-0" /> {project.freelancer.name} (Lead)
                         </div>
                         {role === 'ADMIN' && (
-                          <button 
+                          <button
                             onClick={() => handlePayout(project)}
                             className="text-[9px] font-bold text-blue-600 hover:underline text-left ml-5"
                           >
@@ -190,7 +190,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                         )}
                       </div>
                     ) : (
-                      <select 
+                      <select
                         onChange={(e) => handleAssign(project.id, e.target.value)}
                         className="bg-orange-600 text-white text-[10px] font-bold rounded px-2 py-1.5 cursor-pointer hover:bg-orange-700 transition-all border-none w-full max-w-[120px]"
                         defaultValue=""
@@ -209,7 +209,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
                           <User size={12} className="shrink-0" /> {collab.name}
                         </div>
                         {role === 'ADMIN' && (
-                          <button 
+                          <button
                             onClick={() => handleCollaborator(project.id, collab.id, 'REMOVE')}
                             className="text-red-500 hover:text-red-700"
                           >
@@ -221,7 +221,7 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
                     {/* Add Collaborator Action */}
                     {role === 'ADMIN' && project.freelancer && (
-                      <select 
+                      <select
                         onChange={(e) => {
                           if (e.target.value) handleCollaborator(project.id, e.target.value, 'ADD');
                         }}

@@ -111,7 +111,7 @@ export default function SpecialistConsole() {
   useEffect(() => {
     if (!id || !user?.id) return;
     
-    const socket = io();
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     socketRef.current = socket;
 
     socket.emit('join_chat', { 
@@ -151,14 +151,19 @@ export default function SpecialistConsole() {
     const userId = user?.id || session?.user?.id;
     if (!userId) return;
 
-    const tmpMsg = {
+    const optimisticMsg = {
+      id: `tmp-${Date.now()}`,
       content: newMessage,
       senderId: userId,
       senderRole: 'FREELANCER',
       chatType: 'CLIENT_CHAT',
       projectId: id,
+      timestamp: new Date(),
+      createdAt: new Date()
     };
+    setMessages(prev => [...prev, optimisticMsg]);
 
+    const msgText = newMessage;
     setNewMessage("");
 
     try {
@@ -166,10 +171,19 @@ export default function SpecialistConsole() {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tmpMsg)
+        body: JSON.stringify({
+          content: msgText,
+          senderId: userId,
+          senderRole: 'FREELANCER',
+          chatType: 'CLIENT_CHAT',
+          projectId: id,
+        })
       });
       
       const savedMessage = await res.json();
+
+      // Replace optimistic message with real saved one
+      setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...savedMessage, timestamp: new Date(savedMessage.createdAt) } : m));
 
       // 2. Emit via socket
       if (socketRef.current) {
@@ -183,6 +197,7 @@ export default function SpecialistConsole() {
           });
       }
     } catch (error) {
+      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
       console.error("Message delivery failed:", error);
       setErrorAlert("Failed to send message.");
       setTimeout(() => setErrorAlert(null), 5000);

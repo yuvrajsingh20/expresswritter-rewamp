@@ -26,6 +26,11 @@ export async function GET(req) {
            { senderId: receiverId, receiverId: null, chatType: 'ADMIN_CHAT' }
         ] : [])
       ];
+    } else if (senderId) {
+      where.OR = [
+        { senderId },
+        { receiverId: senderId }
+      ];
     } else if (receiverId) {
       where.receiverId = receiverId;
     }
@@ -66,7 +71,7 @@ export async function POST(req) {
       },
       include: {
         sender: {
-          select: { name: true, image: true }
+          select: { name: true, image: true, role: true }
         }
       }
     });
@@ -93,7 +98,8 @@ export async function POST(req) {
           title: 'New message',
           msg: `${session.user.name || 'Someone'} sent you a message`,
           icon: '💬',
-          link: projectId ? `/dashboard/orders/${projectId}` : `/dashboard/messages`
+          link: projectId ? `/dashboard/orders/${projectId}` : `/dashboard/messages`,
+          sender: newMessage.sender
         });
       }
     } catch (notifyErr) {

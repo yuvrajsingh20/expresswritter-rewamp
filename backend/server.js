@@ -166,7 +166,7 @@ io.on("connection", (socket) => {
 
   socket.on("status_update", (data) => {
     const { projectId, status } = data;
-    io.to(projectId).emit("project_status_changed", data);
+    io.to(`project_${projectId}`).emit("project_status_changed", data);
     logger.info(`Status updated for ${chalk.blue(projectId)}: ${chalk.bold(status)}`);
   });
 

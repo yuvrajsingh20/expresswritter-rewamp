@@ -25,7 +25,7 @@ export default function FreelancerChatInbox() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io();
+    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     setSocket(s);
     return () => s.disconnect();
   }, []);
@@ -49,7 +49,7 @@ export default function FreelancerChatInbox() {
     const fetchAdminMessages = async () => {
       if (!session?.user?.id) return;
       try {
-        const res = await fetch(`/api/messages?receiverId=${session.user.id}&type=ADMIN_CHAT`);
+        const res = await fetch(`/api/messages?senderId=${session.user.id}&type=ADMIN_CHAT`);
         const data = await res.json();
         setAdminMessages(data);
       } catch (e) { console.error(e); }
@@ -170,25 +170,25 @@ export default function FreelancerChatInbox() {
                                   <Link 
                                       key={proj.id}
                                       href={`/freelancer/projects/${proj.id}`}
-                                      className="grid grid-cols-12 gap-4 items-center p-6 border-b border-slate-50 hover:bg-slate-50/50 transition-all group"
+                                      className="grid grid-cols-12 gap-4 items-center p-8 border-b border-slate-50 hover:bg-slate-50/50 transition-all group"
                                   >
                                       <div className="col-span-5 px-4 flex items-center gap-6">
                                           <div className="w-12 h-12 bg-white border border-slate-100 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
                                               <User size={20} />
                                           </div>
                                           <div>
-                                              <h4 className="text-sm font-black text-slate-900 tracking-tight">{proj.title}</h4>
-                                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">NODE: #{proj.studentId.slice(-6).toUpperCase()}</p>
+                                              <h4 className="text-[15px] font-black text-slate-900 leading-snug">{proj.title}</h4>
+                                              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">NODE: #{proj.studentId.slice(-6).toUpperCase()}</p>
                                           </div>
                                       </div>
                                       <div className="col-span-2">
-                                          <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-100">
+                                          <span className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-black uppercase tracking-widest border border-blue-100">
                                               {proj.serviceType}
                                           </span>
                                       </div>
                                       <div className="col-span-3 flex items-center gap-2">
-                                          <Clock size={12} className="text-slate-400" />
-                                          <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest italic">Live Stream</span>
+                                          <Clock size={14} className="text-slate-400" />
+                                          <span className="text-[12px] text-slate-500 font-black uppercase tracking-widest italic">Live Stream</span>
                                       </div>
                                       <div className="col-span-2 px-4 flex justify-end">
                                           <div className="h-10 px-6 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#002D5B] flex items-center gap-2 group-hover:bg-[#002D5B] group-hover:text-white transition-all shadow-sm">

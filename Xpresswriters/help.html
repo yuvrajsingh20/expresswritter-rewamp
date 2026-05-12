@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xpresswriters — Help Center</title>
+<script src="site-shell.js"></script>
+<script>document.write(window.XW_FONT)</script>
+<style id="base-style"></style>
+<style>
+.hero{padding:64px 32px 48px;text-align:center;background:radial-gradient(60% 80% at 50% 0%,rgba(13,148,136,0.15),transparent);border-bottom:1px solid var(--border)}
+.hero h1{font-size:42px;font-weight:700;letter-spacing:-0.02em;margin-bottom:10px}
+.hero p{font-size:15px;color:var(--text-muted);max-width:560px;margin:0 auto 28px;font-weight:300}
+.search{max-width:640px;margin:0 auto;position:relative}
+.search input{width:100%;padding:18px 22px 18px 52px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:15px;outline:none;font-family:var(--font);transition:border .15s}
+.search input:focus{border-color:var(--teal)}
+.search .ico{position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text-dim)}
+.search .kbd{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-dim);background:var(--surface2);padding:3px 7px;border-radius:4px;border:1px solid var(--border)}
+.shortcuts{max-width:1080px;margin:36px auto 0;padding:0 32px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.shortcut{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 18px;text-decoration:none;color:var(--text);transition:all .15s;display:flex;flex-direction:column;gap:8px}
+.shortcut:hover{border-color:var(--teal);transform:translateY(-1px)}
+.shortcut-ico{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.shortcut h3{font-size:13.5px;font-weight:700}
+.shortcut p{font-size:11.5px;color:var(--text-muted);font-weight:300;line-height:1.5}
+.main{max-width:1080px;margin:48px auto;padding:0 32px;display:grid;grid-template-columns:240px 1fr;gap:48px}
+.side{position:sticky;top:80px;align-self:start}
+.side h4{font-size:10.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px}
+.side a{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;color:var(--text-muted);text-decoration:none;font-size:13px;transition:all .15s;margin-bottom:1px}
+.side a:hover,.side a.active{background:rgba(13,148,136,0.12);color:var(--teal-light)}
+.side a .count{margin-left:auto;font-size:10.5px;color:var(--text-dim);background:var(--surface);padding:2px 7px;border-radius:8px}
+.cat-title{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.cat-title .ico{width:36px;height:36px;border-radius:8px;background:rgba(13,148,136,0.15);color:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:16px}
+.cat-title h2{font-size:22px;font-weight:700;letter-spacing:-0.01em}
+.cat-sub{font-size:13px;color:var(--text-muted);margin-bottom:22px;font-weight:300}
+.faq{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:30px}
+.q{padding:16px 20px;border-bottom:1px solid var(--border2);cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;transition:background .15s}
+.q:last-child{border-bottom:none}
+.q:hover{background:var(--surface2)}
+.q.open{background:var(--surface2)}
+.q h3{font-size:14px;font-weight:600;flex:1}
+.q .arr{font-size:12px;color:var(--text-muted);transition:transform .2s;flex-shrink:0;margin-top:2px}
+.q.open .arr{transform:rotate(180deg);color:var(--teal-light)}
+.a{max-height:0;overflow:hidden;transition:max-height .25s ease;padding:0 20px;font-size:13px;color:var(--text-muted);line-height:1.7;font-weight:300}
+.q.open + .a{max-height:600px;padding:0 20px 18px}
+.a p{margin-bottom:8px}
+.a a{color:var(--teal-light)}
+.no-results{padding:40px 24px;text-align:center;color:var(--text-muted);background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.contact-cta{max-width:1080px;margin:0 auto 60px;padding:0 32px}
+.contact-cta-box{background:linear-gradient(135deg,rgba(13,148,136,0.12),rgba(13,148,136,0.04));border:1px solid rgba(13,148,136,0.3);border-radius:14px;padding:36px 40px;display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap}
+.contact-cta-box h3{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin-bottom:6px}
+.contact-cta-box p{font-size:13px;color:var(--text-muted);font-weight:300}
+.contact-cta-box .actions{display:flex;gap:10px}
+.btn{padding:11px 20px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .15s}
+.btn-primary{background:var(--teal);color:#fff;border:1px solid var(--teal)}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal-light)}
+</style>
+</head>
+<body>
+<script>document.getElementById('base-style').textContent=window.XW_CSS;document.write(window.XW_NAV('help'));</script>
+
+<div class="hero">
+  <h1>How can we help?</h1>
+  <p>Browse 80+ articles, ask the AI assistant, or talk to a human — we usually reply within an hour.</p>
+  <div class="search">
+    <span class="ico">🔍</span>
+    <input id="q" placeholder="Search e.g. 'change my password', 'refund', 'plagiarism report'…"/>
+    <span class="kbd">⌘K</span>
+  </div>
+</div>
+
+<div class="shortcuts">
+  <a href="track.html" class="shortcut"><div class="shortcut-ico" style="background:rgba(13,148,136,0.15);color:var(--teal-light)">📦</div><h3>Track an Order</h3><p>Check status without logging in</p></a>
+  <a href="#refunds" class="shortcut"><div class="shortcut-ico" style="background:rgba(244,63,94,0.15);color:var(--red)">💸</div><h3>Request a Refund</h3><p>Money-back guarantee details</p></a>
+  <a href="#account" class="shortcut"><div class="shortcut-ico" style="background:rgba(167,139,250,0.15);color:var(--violet)">🔐</div><h3>Account &amp; Login</h3><p>Password, MFA, devices</p></a>
+  <a href="about.html#contact" class="shortcut"><div class="shortcut-ico" style="background:rgba(34,197,94,0.15);color:var(--green)">💬</div><h3>Contact Support</h3><p>Email, WhatsApp, or call</p></a>
+</div>
+
+<div class="main">
+  <aside class="side">
+    <h4>Categories</h4>
+    <a href="#orders" data-cat="orders" class="active">📋 Orders &amp; Delivery <span class="count">14</span></a>
+    <a href="#payments" data-cat="payments">💳 Payments &amp; Billing <span class="count">9</span></a>
+    <a href="#refunds" data-cat="refunds">💸 Refunds &amp; Revisions <span class="count">11</span></a>
+    <a href="#account" data-cat="account">🔐 Account &amp; Security <span class="count">12</span></a>
+    <a href="#quality" data-cat="quality">✓ Quality &amp; Plagiarism <span class="count">8</span></a>
+    <a href="#writers" data-cat="writers">✍️ For Writers <span class="count">15</span></a>
+    <a href="#samples" data-cat="samples">📄 Samples &amp; Pricing <span class="count">7</span></a>
+    <h4 style="margin-top:24px">Resources</h4>
+    <a href="legal.html">⚖ Legal Documents</a>
+    <a href="#">📖 Writing Tips Blog</a>
+    <a href="#">🎓 University Guides</a>
+    <a href="#">🛠 API Docs</a>
+  </aside>
+
+  <main id="content">
+    <!-- Orders -->
+    <div data-cat="orders">
+      <div class="cat-title"><div class="ico">📋</div><h2>Orders &amp; Delivery</h2></div>
+      <p class="cat-sub">Everything about placing, tracking, and receiving your orders.</p>
+      <div class="faq">
+        <div class="q"><h3>How do I place an order?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Browse <a href="products.html">all services</a>, pick a variant, add any optional fast-track or +500 words add-ons, then proceed to checkout. You'll write your brief during checkout, pay securely, and a matching writer is assigned within 30 minutes (or 5 minutes for fast-track orders).</p></div>
+
+        <div class="q"><h3>What's the typical turnaround time?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Standard delivery is <strong>3–5 business days</strong> for orders under 2,000 words. Fast-track (+50% surcharge) reduces this to <strong>24–48 hours</strong>. Larger projects (thesis, books) follow a milestone-based schedule agreed during the brief.</p></div>
+
+        <div class="q"><h3>Can I change my brief after ordering?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes, until your writer accepts the order. Once accepted, small clarifications can be sent via in-app chat. Major scope changes may require a top-up payment — your writer will let you know upfront.</p></div>
+
+        <div class="q"><h3>How will I know when my order is ready?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>You'll receive notifications via the platform, email, and (if enabled) WhatsApp. The status will move to <strong>Delivered</strong> on your dashboard, and you'll have 14 days to review before payment is auto-released.</p></div>
+
+        <div class="q"><h3>Can I pick a specific writer?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes — Pro members can request any writer they've worked with before from <strong>Dashboard → My Writers</strong>. Otherwise our matching algorithm assigns the best-fit writer based on subject expertise and current workload.</p></div>
+
+        <div class="q"><h3>What file formats do you deliver in?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>By default: <strong>DOCX, PDF, and plain text</strong>. For LinkedIn or web content we also provide formatted HTML. Specify in your brief if you need anything else (Markdown, LaTeX, etc.).</p></div>
+      </div>
+    </div>
+
+    <!-- Payments -->
+    <div data-cat="payments" style="display:none">
+      <div class="cat-title"><div class="ico" style="background:rgba(245,158,11,0.15);color:var(--amber)">💳</div><h2>Payments &amp; Billing</h2></div>
+      <p class="cat-sub">Accepted methods, GST, invoices, and currency.</p>
+      <div class="faq">
+        <div class="q"><h3>What payment methods do you accept?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>India: <strong>Razorpay</strong> handles UPI (GPay, PhonePe, Paytm), all major debit/credit cards, net-banking, and EMI on orders above ₹3,000.<br/>International: <strong>Stripe</strong> for cards, Apple Pay, Google Pay, and SEPA. Crypto via partner gateway for orders above $200.</p></div>
+
+        <div class="q"><h3>Is GST included?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>All listed prices are <strong>exclusive of 18% GST</strong> as per Indian tax law. The full breakdown (subtotal + platform fee + GST) is shown at checkout, and a GST-compliant invoice is auto-generated.</p></div>
+
+        <div class="q"><h3>Can I get an invoice with my company name?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes. Add your company name and GSTIN in <strong>Settings → Billing</strong> before placing the order. All future invoices will use these details and you can claim input tax credit.</p></div>
+
+        <div class="q"><h3>Do you support multiple currencies?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Pricing is shown in INR by default. We auto-detect your country and show converted prices in USD, EUR, GBP, AUD, or CAD. The final charge is processed in your local currency by Stripe.</p></div>
+      </div>
+    </div>
+
+    <!-- Refunds -->
+    <div data-cat="refunds" style="display:none">
+      <div class="cat-title"><div class="ico" style="background:rgba(244,63,94,0.15);color:var(--red)">💸</div><h2>Refunds &amp; Revisions</h2></div>
+      <p class="cat-sub">Our money-back guarantee in plain English.</p>
+      <div class="faq">
+        <div class="q"><h3>What's your refund policy?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Full refund if we can't match you with a writer, the deliverable is late, or it fails our plagiarism/AI standards. Partial refunds for cancellations after a writer is assigned. Full details in our <a href="legal.html#refund">Refund Policy</a>.</p></div>
+
+        <div class="q"><h3>How many revisions are included?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Up to <strong>3 free revisions</strong> within 14 days of delivery. After that, additional revisions are billed at the per-100-word rate of your service tier. Substantial scope changes are quoted separately.</p></div>
+
+        <div class="q"><h3>How long do refunds take?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Wallet credit: <strong>instant + 5% bonus</strong>. Original payment method: 5–7 business days depending on your bank. International cards may take up to 10 days.</p></div>
+
+        <div class="q"><h3>Can I cancel after the writer started?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes, but cancellation refunds are pro-rated. 70% before the first draft, 30% after first draft, and case-by-case after a full draft is submitted. The writer is compensated for work completed.</p></div>
+      </div>
+    </div>
+
+    <!-- Account -->
+    <div data-cat="account" style="display:none">
+      <div class="cat-title"><div class="ico" style="background:rgba(167,139,250,0.15);color:var(--violet)">🔐</div><h2>Account &amp; Security</h2></div>
+      <p class="cat-sub">Login, password, MFA, and data.</p>
+      <div class="faq">
+        <div class="q"><h3>How do I reset my password?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Go to <a href="auth.html">Sign in</a> → "Forgot password" — enter your email and we'll send a reset link. The link expires in 1 hour.</p></div>
+
+        <div class="q"><h3>How do I enable two-factor authentication?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>In <strong>Settings → Security → Two-Factor Authentication</strong>. We support TOTP apps (Google Authenticator, Authy), SMS, and email codes. We strongly recommend an authenticator app over SMS.</p></div>
+
+        <div class="q"><h3>How do I delete my account?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Settings → Account → Delete account. We immediately suspend access and queue your data for deletion within 30 days (or longer where tax law requires retention). Active orders must be completed first.</p></div>
+
+        <div class="q"><h3>Can I download all my data?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes — Settings → Privacy → Export my data. You'll receive a ZIP with your profile, orders, messages, and invoices in JSON + DOCX formats within 24 hours.</p></div>
+
+        <div class="q"><h3>What if I see a sign-in I didn't make?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Immediately: Settings → Security → Active Sessions → "Sign out everywhere", then change your password. Contact <a href="/cdn-cgi/l/email-protection#1b687e786e69726f625b636b697e68686c69726f7e696835787476"><span class="__cf_email__" data-cfemail="285b4d4b5d5a415c516850585a4d5b5b5f5a415c4d5a5b064b4745">[email&#160;protected]</span></a> and we'll audit your account.</p></div>
+      </div>
+    </div>
+
+    <!-- Quality -->
+    <div data-cat="quality" style="display:none">
+      <div class="cat-title"><div class="ico" style="background:rgba(34,197,94,0.15);color:var(--green)">✓</div><h2>Quality &amp; Plagiarism</h2></div>
+      <p class="cat-sub">How we guarantee originality and quality.</p>
+      <div class="faq">
+        <div class="q"><h3>Do you check for plagiarism?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes — every order is scanned with <strong>Turnitin</strong> (or Copyscape for non-academic work). We guarantee under 10% similarity. The full report is attached to your delivery email.</p></div>
+
+        <div class="q"><h3>Do you use AI to write?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Our writers are human. AI tools may be used as research assistants, but every deliverable is written by the assigned writer and scanned with <strong>GPTZero + Originality.ai</strong> to keep AI-detection scores under 15%.</p></div>
+
+        <div class="q"><h3>How are writers vetted?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>4-step gauntlet: degree verification → portfolio review → 90-minute skill test (writing + grammar + subject-matter) → 3 supervised paid trial orders. Only 8% of applicants pass.</p></div>
+      </div>
+    </div>
+
+    <!-- Writers -->
+    <div data-cat="writers" style="display:none">
+      <div class="cat-title"><div class="ico" style="background:rgba(59,130,246,0.15);color:var(--blue)">✍️</div><h2>For Writers</h2></div>
+      <p class="cat-sub">Joining as a freelance writer, payouts, and policies.</p>
+      <div class="faq">
+        <div class="q"><h3>How do I become a writer?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Apply via <a href="writer-onboarding.html">our onboarding flow</a>. You'll upload your portfolio, take a 90-min skill test, and complete 3 supervised trial orders before going live.</p></div>
+
+        <div class="q"><h3>How much can I earn?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Active writers earn ₹40,000–₹2,50,000/month depending on speciality and availability. Pay ranges from ₹0.80/word (entry) to ₹4.50/word (PhD/medical). Top earners take on 4–8 orders/week.</p></div>
+
+        <div class="q"><h3>When are payouts processed?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Weekly, every Monday — funds are released 7 days after order delivery (the client review window). Direct UPI/IMPS within India, Wise/PayPal internationally.</p></div>
+
+        <div class="q"><h3>Can I choose which orders to take?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes. Orders matching your speciality appear in your dashboard; you have 30 minutes to accept before they go to the next-best-fit writer. No penalty for declining.</p></div>
+      </div>
+    </div>
+
+    <!-- Samples -->
+    <div data-cat="samples" style="display:none">
+      <div class="cat-title"><div class="ico" style="background:rgba(13,148,136,0.15);color:var(--teal-light)">📄</div><h2>Samples &amp; Pricing</h2></div>
+      <p class="cat-sub">See our work and understand our pricing model.</p>
+      <div class="faq">
+        <div class="q"><h3>Can I see sample work?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>Yes — every category has watermarked samples on its product page. Pro members get access to our private gallery of 500+ examples across SOPs, LORs, blogs, and visa documents.</p></div>
+
+        <div class="q"><h3>Why is your pricing tiered by service?</h3><span class="arr">▼</span></div>
+        <div class="a"><p>An MBA admissions essay requires different expertise than a blog post. We tier by speciality so you pay fair-market rates for the level of writer your project needs — no inflated "premium tier" tricks.</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="contact-cta">
+  <div class="contact-cta-box">
+    <div>
+      <h3>Still need help?</h3>
+      <p>Our support team is online 24/7 and replies in under an hour on average.</p>
+    </div>
+    <div class="actions">
+      <a href="about.html#contact" class="btn btn-outline">📧 Email us</a>
+      <a href="about.html#contact" class="btn btn-primary">💬 Start live chat</a>
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>document.write(window.XW_FOOTER)</script>
+<script>
+const links=document.querySelectorAll('.side a[data-cat]');
+const blocks=document.querySelectorAll('#content > div[data-cat]');
+function showCat(c){
+  links.forEach(l=>l.classList.toggle('active',l.dataset.cat===c));
+  blocks.forEach(b=>b.style.display=b.dataset.cat===c?'block':'none');
+}
+links.forEach(l=>l.addEventListener('click',e=>{e.preventDefault();history.replaceState(null,'','#'+l.dataset.cat);showCat(l.dataset.cat);window.scrollTo({top:document.querySelector('.main').offsetTop-80,behavior:'smooth'});}));
+if(location.hash){const c=location.hash.slice(1);if([...links].some(l=>l.dataset.cat===c))showCat(c);}
+
+// Accordion
+document.querySelectorAll('.q').forEach(q=>q.addEventListener('click',()=>q.classList.toggle('open')));
+
+// Search
+const search=document.getElementById('q');
+search.addEventListener('input',e=>{
+  const term=e.target.value.toLowerCase().trim();
+  const allQ=document.querySelectorAll('.q');
+  if(!term){blocks.forEach(b=>b.style.display=b.dataset.cat===document.querySelector('.side a.active').dataset.cat?'block':'none');allQ.forEach(q=>q.style.display='flex');document.querySelectorAll('.a').forEach(a=>a.style.display='block');return;}
+  blocks.forEach(b=>b.style.display='block');
+  let found=0;
+  allQ.forEach(q=>{
+    const text=(q.textContent+q.nextElementSibling.textContent).toLowerCase();
+    const m=text.includes(term);
+    q.style.display=m?'flex':'none';
+    q.nextElementSibling.style.display=m?'block':'none';
+    if(m)found++;
+  });
+});
+window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();search.focus();}});
+</script>
+</body>
+</html>

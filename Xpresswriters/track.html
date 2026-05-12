@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xpresswriters — Track Order</title>
+<script src="site-shell.js"></script>
+<script>document.write(window.XW_FONT)</script>
+<style id="base-style"></style>
+<style>
+.wrap{max-width:880px;margin:0 auto;padding:48px 32px 80px}
+.hero{text-align:center;margin-bottom:36px}
+.eyebrow{display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal-light);padding:4px 12px;border-radius:5px;background:rgba(13,148,136,0.15);border:1px solid rgba(13,148,136,0.3);margin-bottom:16px}
+.hero h1{font-size:38px;font-weight:700;letter-spacing:-0.02em;margin-bottom:10px}
+.hero p{font-size:14.5px;color:var(--text-muted);max-width:500px;margin:0 auto;font-weight:300}
+
+.form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;margin-bottom:32px}
+.tabs{display:flex;gap:6px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:24px}
+.tab{flex:1;padding:9px 14px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s}
+.tab.active{background:var(--teal);color:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.field label{display:block;font-size:11.5px;font-weight:600;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.02em}
+.field input{width:100%;padding:13px 15px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border .15s}
+.field input:focus{border-color:var(--teal)}
+.btn{width:100%;padding:14px;border-radius:8px;background:var(--teal);color:#fff;border:none;font-weight:600;font-size:14px;cursor:pointer;font-family:var(--font);transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px}
+.btn:hover{background:var(--teal-dark)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.help{font-size:12px;color:var(--text-muted);text-align:center;margin-top:14px}
+.help a{color:var(--teal-light)}
+
+.result{display:none;animation:slideUp .3s ease}
+.result.show{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.order-head{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 30px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:18px}
+.inv-id{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:var(--text-muted);letter-spacing:0.04em;margin-bottom:8px}
+.order-head h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin-bottom:6px}
+.order-meta{font-size:13px;color:var(--text-muted);font-weight:300}
+.status-pill{padding:7px 14px;border-radius:7px;font-size:11.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;display:inline-flex;align-items:center;gap:7px}
+.status-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px currentColor;opacity:0.3}
+
+.progress-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px 30px;margin-bottom:18px}
+.progress-card h3{font-size:14px;font-weight:700;letter-spacing:-0.01em;margin-bottom:24px;color:var(--text)}
+.timeline{position:relative;padding-left:0}
+.t-step{display:grid;grid-template-columns:38px 1fr auto;gap:16px;padding-bottom:24px;position:relative}
+.t-step:not(:last-child)::before{content:'';position:absolute;left:18px;top:38px;bottom:0;width:2px;background:var(--border2)}
+.t-step.done:not(:last-child)::before{background:var(--teal)}
+.t-step.active:not(:last-child)::before{background:linear-gradient(180deg,var(--teal),var(--border2))}
+.t-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;border:2px solid var(--border2);background:var(--surface2);color:var(--text-dim)}
+.t-step.done .t-dot{border-color:var(--teal);background:rgba(13,148,136,0.15);color:var(--teal-light)}
+.t-step.active .t-dot{border-color:var(--teal);background:var(--teal);color:#fff;box-shadow:0 0 0 4px rgba(13,148,136,0.2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(13,148,136,0.2)}50%{box-shadow:0 0 0 8px rgba(13,148,136,0.1)}}
+.t-body h4{font-size:13.5px;font-weight:600;margin-bottom:4px}
+.t-step.active .t-body h4{color:var(--teal-light)}
+.t-body p{font-size:12px;color:var(--text-muted);font-weight:300;line-height:1.6}
+.t-time{font-size:11px;color:var(--text-dim);font-weight:500;white-space:nowrap;margin-top:8px}
+
+.bar-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.bar-info{flex:1;min-width:200px}
+.bar-info-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px}
+.bar-info-row span:first-child{color:var(--text-muted);font-weight:500}
+.bar-info-row span:last-child{font-weight:600}
+.bar-track{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;margin-top:14px}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-light));border-radius:4px;transition:width 1s ease}
+
+.writer-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 26px;margin-bottom:18px;display:flex;align-items:center;gap:16px}
+.w-av{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#0f766e);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;flex-shrink:0}
+.w-body{flex:1;min-width:0}
+.w-name{font-size:14.5px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:8px}
+.w-verify{padding:2px 7px;border-radius:4px;background:rgba(13,148,136,0.18);color:var(--teal-light);font-size:9.5px;font-weight:700;letter-spacing:0.04em}
+.w-role{font-size:11.5px;color:var(--text-muted);font-weight:300}
+.w-stats{display:flex;gap:14px;font-size:11px;color:var(--text-muted);margin-top:6px}
+.w-stats strong{color:var(--text);font-weight:600}
+
+.actions-row{display:flex;gap:10px;flex-wrap:wrap}
+.action{flex:1;min-width:140px;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12.5px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;cursor:pointer;font-family:var(--font)}
+.action:hover{border-color:var(--teal);color:var(--teal-light);transform:translateY(-1px)}
+
+.subscribe{margin-top:20px;padding:20px 24px;background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);border-radius:11px;display:flex;align-items:center;gap:14px}
+.subscribe-ico{font-size:24px}
+.subscribe-body{flex:1;font-size:12.5px;color:var(--text-muted);font-weight:300;line-height:1.55}
+.subscribe-body strong{color:var(--text);font-weight:600;display:block;margin-bottom:2px}
+.toggle{position:relative;width:42px;height:24px;border-radius:12px;background:var(--surface3);cursor:pointer;flex-shrink:0;transition:background .2s}
+.toggle.on{background:var(--teal)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle.on::after{left:21px}
+
+.empty{display:none;padding:14px 16px;background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.25);border-radius:8px;color:var(--red);font-size:12.5px;font-weight:500;margin-bottom:14px;align-items:center;gap:8px}
+.empty.show{display:flex;animation:slideUp .25s}
+
+.demo-hints{margin-top:28px;padding:18px 22px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text-muted)}
+.demo-hints strong{color:var(--text);font-weight:600;display:block;margin-bottom:6px;font-size:11px;letter-spacing:0.06em;text-transform:uppercase}
+.demo-hints code{display:inline-block;padding:2px 7px;background:var(--surface3);border:1px solid var(--border);border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px;color:var(--teal-light);margin:0 2px;cursor:pointer}
+.demo-hints code:hover{border-color:var(--teal)}
+</style>
+</head>
+<body>
+<script>document.getElementById('base-style').textContent=window.XW_CSS;document.write(window.XW_NAV('track'));</script>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="eyebrow">Public Tracker</span>
+    <h1>Track your order</h1>
+    <p>No login needed — just your invoice number and the email used at checkout. Get live status, ETA, and writer updates.</p>
+  </div>
+
+  <div class="form" id="form-card">
+    <div class="tabs">
+      <button class="tab active" data-tab="invoice">By Invoice Number</button>
+      <button class="tab" data-tab="phone">By Phone (OTP)</button>
+    </div>
+    <div class="empty" id="empty">⚠️ No order found. Check your invoice number or use code <code style="background:var(--surface3);padding:1px 6px;border-radius:3px">XW-48291</code> from the demo hints below.</div>
+    <form id="tab-invoice" onsubmit="lookup(event)">
+      <div class="row">
+        <div class="field"><label>Invoice / Order ID</label><input id="inv" placeholder="XW-48291" required/></div>
+        <div class="field"><label>Email used at checkout</label><input id="email" type="email" placeholder="you@email.com" required/></div>
+      </div>
+      <button class="btn" type="submit">Track order →</button>
+    </form>
+    <form id="tab-phone" style="display:none" onsubmit="event.preventDefault();alert('OTP sent! (Demo)')">
+      <div class="row">
+        <div class="field"><label>Country</label><input value="+91 India" readonly/></div>
+        <div class="field"><label>Phone number</label><input placeholder="98765 43210" required/></div>
+      </div>
+      <button class="btn" type="submit">Send OTP →</button>
+    </form>
+    <p class="help">Lost your invoice? <a href="auth.html">Sign in</a> to see all your orders, or <a href="about.html#contact">contact support</a>.</p>
+  </div>
+
+  <div class="demo-hints">
+    <strong>🎬 Demo invoice IDs — click to auto-fill</strong>
+    Try: <code onclick="setInv('XW-48291')">XW-48291</code> (In Progress) ·
+    <code onclick="setInv('XW-48180')">XW-48180</code> (Quality Check) ·
+    <code onclick="setInv('XW-48039')">XW-48039</code> (Delivered) ·
+    <code onclick="setInv('XW-47991')">XW-47991</code> (Writer Assigned)
+  </div>
+
+  <div class="result" id="result">
+    <div class="order-head">
+      <div>
+        <div class="inv-id" id="r-inv">INV-XW-48291</div>
+        <h2 id="r-service">Statement of Purpose — Masters</h2>
+        <div class="order-meta" id="r-meta">Placed Apr 24 · 1,500 words · Due Apr 30, 6:00 PM IST</div>
+      </div>
+      <div class="status-pill" id="r-status" style="color:var(--amber);background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3)">In Progress</div>
+    </div>
+
+    <div class="progress-card">
+      <h3>Order Timeline</h3>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="bar-card">
+      <div class="bar-info">
+        <div class="bar-info-row"><span>Progress</span><span id="r-pct">62%</span></div>
+        <div class="bar-info-row"><span>Estimated Delivery</span><span id="r-eta">Apr 30, 6:00 PM IST</span></div>
+        <div class="bar-track"><div class="bar-fill" id="r-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="writer-card" id="writer-card">
+      <div class="w-av" id="w-av">AS</div>
+      <div class="w-body">
+        <div class="w-name"><span id="w-name">Dr. Amara Singh</span><span class="w-verify">✓ Verified</span></div>
+        <div class="w-role" id="w-role">PhD English Lit · Cambridge · 8 yrs</div>
+        <div class="w-stats">
+          <span>⭐ <strong id="w-rate">4.97</strong> (412 orders)</span>
+          <span>🎯 <strong id="w-otd">99%</strong> on-time</span>
+          <span>🔄 <strong id="w-rep">42%</strong> repeat clients</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <a href="auth.html" class="action">💬 Message writer</a>
+      <a href="invoices.html" class="action">🧾 Download invoice</a>
+      <a href="auth.html" class="action">📋 Full dashboard view</a>
+    </div>
+
+    <div class="subscribe">
+      <div class="subscribe-ico">🔔</div>
+      <div class="subscribe-body"><strong>Get updates without logging in</strong>We'll email + WhatsApp you when your order changes status.</div>
+      <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
+</div>
+
+<script>document.write(window.XW_FOOTER)</script>
+<script>
+// Tabs
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
+  document.getElementById('tab-invoice').style.display=t.dataset.tab==='invoice'?'block':'none';
+  document.getElementById('tab-phone').style.display=t.dataset.tab==='phone'?'block':'none';
+}));
+
+const ORDERS={
+  'XW-48291':{service:'Statement of Purpose — Masters',meta:'Placed Apr 24 · 1,500 words · Due Apr 30, 6:00 PM IST',status:'In Progress',statusColor:'amber',step:2,pct:62,eta:'Apr 30, 6:00 PM IST',writer:{n:'Dr. Amara Singh',av:'AS',role:'PhD English Lit · Cambridge · 8 yrs',rate:'4.97',otd:'99%',rep:'42%'}},
+  'XW-48180':{service:'Thesis Editing — 12,000 words',meta:'Placed Apr 20 · 12,000 words · Due May 2, 12:00 PM',status:'Quality Check',statusColor:'violet',step:3,pct:88,eta:'May 2, 12:00 PM IST',writer:{n:'Sofía Ramírez',av:'SR',role:'MA Editorial · Oxford · 6 yrs',rate:'4.94',otd:'97%',rep:'38%'}},
+  'XW-48039':{service:'LinkedIn Profile Rewrite — Executive',meta:'Placed Apr 18 · 750 words · Delivered Apr 22',status:'Delivered',statusColor:'green',step:4,pct:100,eta:'Delivered Apr 22, 4:18 PM IST',writer:{n:'Marcus Webb',av:'MW',role:'MBA · Wharton · 11 yrs corporate comms',rate:'4.96',otd:'100%',rep:'58%'}},
+  'XW-47991':{service:'Visa SOP — Canada Student',meta:'Placed Apr 28 · 1,200 words · Due May 3, 9:00 AM',status:'Writer Assigned',statusColor:'blue',step:1,pct:18,eta:'May 3, 9:00 AM IST',writer:{n:'Priya Mehta',av:'PM',role:'MA Migration Studies · Toronto · 5 yrs',rate:'4.92',otd:'98%',rep:'31%'}},
+};
+const COLORS={amber:'#f59e0b',violet:'#a78bfa',green:'#22c55e',blue:'#3b82f6'};
+const STEPS=[
+  {t:'Order Placed',d:'Payment confirmed, brief locked'},
+  {t:'Writer Assigned',d:'Matched with the best-fit specialist'},
+  {t:'In Progress',d:'Writer drafting your deliverable'},
+  {t:'Quality Check',d:'Plagiarism + AI scan + editorial review'},
+  {t:'Delivered',d:'Available in your dashboard for review'},
+];
+const TIMES=['Apr 24, 10:00 AM','Apr 24, 10:42 AM','Apr 25, 9:00 AM','—','—'];
+
+function setInv(id){document.getElementById('inv').value=id;document.getElementById('email').value='demo@xpresswriters.com';}
+
+function lookup(e){
+  e.preventDefault();
+  const inv=document.getElementById('inv').value.trim().toUpperCase();
+  const o=ORDERS[inv];
+  if(!o){document.getElementById('empty').classList.add('show');document.getElementById('result').classList.remove('show');return;}
+  document.getElementById('empty').classList.remove('show');
+  document.getElementById('form-card').style.display='none';
+  const r=document.getElementById('result');
+  r.classList.add('show');
+
+  document.getElementById('r-inv').textContent='INV-'+inv;
+  document.getElementById('r-service').textContent=o.service;
+  document.getElementById('r-meta').textContent=o.meta;
+  const sp=document.getElementById('r-status');
+  sp.textContent=o.status;
+  sp.style.color=COLORS[o.statusColor];
+  sp.style.background=COLORS[o.statusColor]+'1f';
+  sp.style.border='1px solid '+COLORS[o.statusColor]+'4d';
+
+  document.getElementById('r-pct').textContent=o.pct+'%';
+  document.getElementById('r-eta').textContent=o.eta;
+  setTimeout(()=>document.getElementById('r-fill').style.width=o.pct+'%',100);
+
+  const tl=document.getElementById('timeline');
+  tl.innerHTML='';
+  STEPS.forEach((s,i)=>{
+    const state=i<o.step?'done':i===o.step?'active':'';
+    tl.innerHTML+=`<div class="t-step ${state}">
+      <div class="t-dot">${i<o.step?'✓':i+1}</div>
+      <div class="t-body"><h4>${s.t}</h4><p>${s.d}</p></div>
+      <div class="t-time">${i<o.step?TIMES[i]:i===o.step?'Now':'Pending'}</div>
+    </div>`;
+  });
+
+  document.getElementById('w-av').textContent=o.writer.av;
+  document.getElementById('w-name').textContent=o.writer.n;
+  document.getElementById('w-role').textContent=o.writer.role;
+  document.getElementById('w-rate').textContent=o.writer.rate;
+  document.getElementById('w-otd').textContent=o.writer.otd;
+  document.getElementById('w-rep').textContent=o.writer.rep;
+}
+</script>
+</body>
+</html>

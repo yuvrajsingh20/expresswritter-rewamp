@@ -141,7 +141,7 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (!id || !user?.id) return;
     
-    const socket = io();
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     socketRef.current = socket;
 
     socket.emit('join_chat', { 
@@ -919,10 +919,10 @@ export default function OrderDetailsPage() {
                                     <div className={`px-5 py-4 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${
                                         isMe ? 'bg-[#002D5B] text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none'
                                     }`}>
-                                        {msg.content}
+                                        {msg.content || msg.text}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'CLIENT CONSOLE' : (msg.sender?.role === 'FREELANCER' ? `SPECIALIST: ${msg.sender.name}` : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
+                                        {isMe ? 'CLIENT CONSOLE' : ((msg.sender?.role === 'FREELANCER' || msg.senderRole === 'FREELANCER') ? `SPECIALIST: ${msg.sender?.name || 'Assigned'}` : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
                                     </span>
                                 </div>
                             </motion.div>

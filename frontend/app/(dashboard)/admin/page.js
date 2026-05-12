@@ -22,21 +22,21 @@ import { signOut } from "next-auth/react";
 
 /* ── NAV ITEMS ── */
 const NAV = [
-{ id: 'overview', label: 'Overview', icon: '⊞', group: 'Main' },
-{ id: 'orders', label: 'Order Requests', icon: '📥', group: 'Main' },
-{ id: 'analytics', label: 'Analytics & ROI', icon: '📈', group: 'Main' },
-{ id: 'integrations', label: 'API Integrations', icon: '🔌', group: 'Platform' },
-{ id: 'tickets', label: 'Ticketing', icon: '🎫', group: 'Platform' },
-{ id: 'payments', label: 'Payments', icon: '💰', group: 'Platform' },
-{ id: 'refunds', label: 'Refund Claims', icon: '↩️', group: 'Platform' },
-{ id: 'promos', label: 'Promo Engine', icon: '🏷️', group: 'Platform' },
-{ id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
-{ id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
-{ id: 'users', label: 'User Management', icon: '👤', group: 'People' },
-{ id: 'audit', label: 'Audit Logs', icon: '📜', group: 'System' },
-{ id: 'seo', label: 'SEO & Marketing', icon: '🔍', group: 'System' },
-{ id: 'workflow', label: 'Order Workflow', icon: '⟳', group: 'System' },
-{ id: 'theme', label: 'Theme & Appearance', icon: '🎨', group: 'System' }];
+  { id: 'overview', label: 'Overview', icon: '⊞', group: 'Main' },
+  { id: 'orders', label: 'Order Requests', icon: '📥', group: 'Main' },
+  { id: 'analytics', label: 'Analytics & ROI', icon: '📈', group: 'Main' },
+  { id: 'integrations', label: 'API Integrations', icon: '🔌', group: 'Platform' },
+  { id: 'tickets', label: 'Ticketing', icon: '🎫', group: 'Platform' },
+  { id: 'payments', label: 'Payments', icon: '💰', group: 'Platform' },
+  { id: 'refunds', label: 'Refund Claims', icon: '↩️', group: 'Platform' },
+  { id: 'promos', label: 'Promo Engine', icon: '🏷️', group: 'Platform' },
+  { id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
+  { id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
+  { id: 'users', label: 'User Management', icon: '👤', group: 'People' },
+  { id: 'audit', label: 'Audit Logs', icon: '📜', group: 'System' },
+  { id: 'seo', label: 'SEO & Marketing', icon: '🔍', group: 'System' },
+  { id: 'workflow', label: 'Order Workflow', icon: '⟳', group: 'System' },
+  { id: 'theme', label: 'Theme & Appearance', icon: '🎨', group: 'System' }];
 
 
 /* ── OVERVIEW ── */
@@ -44,7 +44,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
   const baseCurrency = config?.baseCurrency || 'USD';
   const baseCurrencyConfig = config?.currencies?.find(c => c.currency === baseCurrency) || { rate: 1, symbol: '$' };
   const currentDisplayConfig = config?.currencies?.find(c => c.currency === displayCurrency) || baseCurrencyConfig;
-  
+
   const baseSymbol = currentDisplayConfig.symbol || '$';
   const multiplier = (currentDisplayConfig.rate || 1) / (baseCurrencyConfig.rate || 1);
 
@@ -87,10 +87,10 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
           <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Platform health at a glance. All systems operational.</p>
         </div>
         <div style={{ minWidth: 150 }}>
-          <Select 
-            value={displayCurrency} 
-            onChange={setDisplayCurrency} 
-            options={(config?.currencies || []).map(c => ({ label: `View in ${c.currency}`, value: c.currency }))} 
+          <Select
+            value={displayCurrency}
+            onChange={setDisplayCurrency}
+            options={(config?.currencies || []).map(c => ({ label: `View in ${c.currency}`, value: c.currency }))}
           />
         </div>
       </div>
@@ -182,21 +182,21 @@ function AdminSidebar({ active, setActive, dark }) {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
         {groups.map((group) =>
-        <div key={group} style={{ marginBottom: 16 }}>
+          <div key={group} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', padding: '0 8px', marginBottom: 4 }}>{group}</div>
             {NAV.filter((n) => n.group === group).map((item) =>
-          <button key={item.id} onClick={() => setActive(item.id)} style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 7,
-            border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13,
-            fontWeight: active === item.id ? 600 : 400, marginBottom: 1, transition: 'all .2s', position: 'relative',
-            background: active === item.id ? 'linear-gradient(90deg,rgba(13,148,136,0.18) 0%,rgba(13,148,136,0.05) 100%)' : 'transparent',
-            color: active === item.id ? 'var(--teal-light)' : 'var(--text-muted)'
-          }}>
+              <button key={item.id} onClick={() => setActive(item.id)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 7,
+                border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13,
+                fontWeight: active === item.id ? 600 : 400, marginBottom: 1, transition: 'all .2s', position: 'relative',
+                background: active === item.id ? 'linear-gradient(90deg,rgba(13,148,136,0.18) 0%,rgba(13,148,136,0.05) 100%)' : 'transparent',
+                color: active === item.id ? 'var(--teal-light)' : 'var(--text-muted)'
+              }}>
                 {active === item.id && <div style={{ position: 'absolute', left: 0, top: '18%', bottom: '18%', width: 3, borderRadius: 2, background: 'var(--teal)' }} />}
                 <span style={{ fontSize: 15 }}>{item.icon}</span>
                 <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
               </button>
-          )}
+            )}
           </div>
         )}
       </nav>
@@ -336,23 +336,23 @@ export default function App() {
     fetchData();
   }, []);
 
-  useEffect(() => {localStorage.setItem('xw_admin_section', section);}, [section]);
+  useEffect(() => { localStorage.setItem('xw_admin_section', section); }, [section]);
 
   useEffect(() => {
     localStorage.setItem('xw_admin_dark', dark);
     const r = document.documentElement.style;
     if (dark) {
-      r.setProperty('--bg','#09090f'); r.setProperty('--surface','#0d0d1c');
-      r.setProperty('--surface2','#121224'); r.setProperty('--surface3','#181830');
-      r.setProperty('--surface4','#1e1e3a'); r.setProperty('--border','rgba(255,255,255,0.07)');
-      r.setProperty('--text','#eefcfb'); r.setProperty('--text-muted','#6b9e9a');
-      r.setProperty('--text-dim','#2e4d4a');
+      r.setProperty('--bg', '#09090f'); r.setProperty('--surface', '#0d0d1c');
+      r.setProperty('--surface2', '#121224'); r.setProperty('--surface3', '#181830');
+      r.setProperty('--surface4', '#1e1e3a'); r.setProperty('--border', 'rgba(255,255,255,0.07)');
+      r.setProperty('--text', '#eefcfb'); r.setProperty('--text-muted', '#6b9e9a');
+      r.setProperty('--text-dim', '#2e4d4a');
     } else {
-      r.setProperty('--bg','#f4f6f9'); r.setProperty('--surface','#ffffff');
-      r.setProperty('--surface2','#f0f2f7'); r.setProperty('--surface3','#e6eaf2');
-      r.setProperty('--surface4','#dde1ee'); r.setProperty('--border','rgba(0,0,0,0.08)');
-      r.setProperty('--text','#0f1923'); r.setProperty('--text-muted','#4a6670');
-      r.setProperty('--text-dim','#94a8b3');
+      r.setProperty('--bg', '#f4f6f9'); r.setProperty('--surface', '#ffffff');
+      r.setProperty('--surface2', '#f0f2f7'); r.setProperty('--surface3', '#e6eaf2');
+      r.setProperty('--surface4', '#dde1ee'); r.setProperty('--border', 'rgba(0,0,0,0.08)');
+      r.setProperty('--text', '#0f1923'); r.setProperty('--text-muted', '#4a6670');
+      r.setProperty('--text-dim', '#94a8b3');
     }
   }, [dark]);
 
@@ -391,8 +391,8 @@ export default function App() {
       </div>
 
       {isMobile && sidebarOpen && (
-        <div 
-          onClick={() => setSidebarOpen(false)} 
+        <div
+          onClick={() => setSidebarOpen(false)}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }}
         />
       )}
@@ -478,16 +478,16 @@ function AdminSEO() {
         <Card>
           <CardHeader title="Global Meta Tags" />
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Input label="Default Page Title" value={config.title} onChange={v => setConfig({...config, title: v})} />
-            <Input label="Meta Description" value={config.desc} onChange={v => setConfig({...config, desc: v})} />
-            <Input label="Keywords" value={config.keywords} onChange={v => setConfig({...config, keywords: v})} />
+            <Input label="Default Page Title" value={config.title} onChange={v => setConfig({ ...config, title: v })} />
+            <Input label="Meta Description" value={config.desc} onChange={v => setConfig({ ...config, desc: v })} />
+            <Input label="Keywords" value={config.keywords} onChange={v => setConfig({ ...config, keywords: v })} />
           </div>
         </Card>
         <Card>
           <CardHeader title="Indexing & Robots" />
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Toggle label="Enable Search Engine Indexing (Robots.txt)" value={config.indexing} onChange={v => setConfig({...config, indexing: v})} />
-            <Toggle label="Generate Sitemap daily" value={config.sitemap} onChange={v => setConfig({...config, sitemap: v})} />
+            <Toggle label="Enable Search Engine Indexing (Robots.txt)" value={config.indexing} onChange={v => setConfig({ ...config, indexing: v })} />
+            <Toggle label="Generate Sitemap daily" value={config.sitemap} onChange={v => setConfig({ ...config, sitemap: v })} />
             <Btn variant="outline" small>Force Sitemap Regeneration</Btn>
           </div>
         </Card>

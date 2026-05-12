@@ -330,7 +330,7 @@ export function EagleEyePanel({ isMobile }) {
   const [live, setLive] = React.useState([]);
   const socketRef = React.useRef(null);
   React.useEffect(() => {
-    const s = io();
+    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     socketRef.current = s;
     s.emit('join_chat', { role: 'ADMIN', userId: 'admin' });
     s.on('flagged_message', (d) => setFlagged(p => [d, ...p].slice(0, 50)));
@@ -395,7 +395,7 @@ export function DirectChatPanel({ freelancers, isMobile }) {
   const endRef = React.useRef(null);
   React.useEffect(() => {
     fetch('/api/auth/session').then(r => r.json()).then(s => { if (s && s.user && s.user.id) setAdminId(s.user.id); });
-    const s = io();
+    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     socketRef.current = s;
     s.on('receive_message', (data) => {
       if (data.chatType === 'ADMIN_CHAT') setMessages(p => p.some(m => m.id === data.id) ? p : [...p, { id: data.id, content: data.content, from: 'them', time: new Date(data.timestamp) }]);

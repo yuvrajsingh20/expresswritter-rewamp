@@ -1,802 +1,465 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSession } from "next-auth/react";
 import './(auth)/landing.css';
 
 /* ─── DATA ─── */
+const STATS = [
+  { k: '12,400+', l: 'Orders Delivered' },
+  { k: '1,200+', l: 'Vetted Writers' },
+  { k: '4.9 / 5', l: 'Avg. Rating' },
+  { k: '98%', l: 'On-Time Rate' },
+];
+
 const SERVICES = [
-  { id: 'sop', icon: '🎓', label: 'Statement of Purpose: Academic', desc: 'Compelling SOP for top universities worldwide', color: '#7c3aed' },
-  { id: 'essay', icon: '📝', label: 'Academic Essays', desc: 'Research-backed essays for any subject or level', color: '#6d28d9' },
-  { id: 'lor', icon: '📜', label: 'Academic Letter of Recommendation(LOR)', desc: 'Professional LORs that open doors', color: '#5b21b6' },
-  { id: 'resume', icon: '📄', label: 'Admission Focussed Resume', desc: 'ATS-optimised resumes for every industry', color: '#7c3aed' },
-  { id: 'linkedin', icon: '💼', label: 'Linkedin Profile Management', desc: 'Profiles that attract recruiters & opportunities', color: '#8b5cf6' },
-  { id: 'email', icon: '✉️', label: 'Email Templates', desc: 'Cold outreach, campaigns & business emails', color: '#a78bfa' },
-  { id: 'thesis', icon: '🔬', label: 'Thesis & Dissertation', desc: 'End-to-end thesis writing & editing', color: '#7c3aed' },
-  { id: 'ppt', icon: '📊', label: 'Presentations (PPT)', desc: 'Pitch decks, research & corporate slides', color: '#6d28d9' },
-  { id: 'research', icon: '🧪', label: 'Research Proposal', desc: 'Structured proposals with solid literature reviews', color: '#5b21b6' },
-  { id: 'article', icon: '🗞️', label: 'Articles', desc: 'SEO articles, op-eds & thought leadership pieces', color: '#7c3aed' },
-  { id: 'blog', icon: '✍️', label: 'Blog Posts', desc: 'Engaging, rankable blog content for any niche', color: '#8b5cf6' },
-  { id: 'proposal', icon: '📋', label: 'Business Proposals', desc: 'Winning proposals & executive summaries', color: '#a78bfa' },
+  { icon: '🎓', cat: 'Academic', name: 'Statement of Purpose', price: 'from ₹4,499', desc: 'Admission-ready SOPs for Bachelors, Masters, MBA & PhD', pop: true },
+  { icon: '📝', cat: 'Academic', name: 'Personal Statement', price: 'from ₹2,499', desc: 'UK, EU & global admission essays' },
+  { icon: '📜', cat: 'Academic', name: 'Letters of Recommendation', price: 'from ₹1,499', desc: 'Faculty, employer, supervisor LORs' },
+  { icon: '🛂', cat: 'Visa', name: 'Visa SOP & Appeals', price: 'from ₹3,999', desc: 'Country-specific Visa SOPs · rejection appeals', pop: true },
+  { icon: '✉️', cat: 'Visa', name: 'Invitation Letters', price: 'from ₹699', desc: 'Embassy-grade visit visa documents' },
+  { icon: '💼', cat: 'Career', name: 'Resume & CV', price: 'from ₹1,999', desc: 'ATS-optimized resumes for every industry', pop: true },
+  { icon: '💎', cat: 'Career', name: 'LinkedIn Profile', price: 'from ₹1,499', desc: 'Full rewrite with keyword strategy' },
+  { icon: '📖', cat: 'Career', name: 'Cover Letters', price: 'from ₹899', desc: 'Tailored to each role and ATS-friendly' },
+  { icon: '✍️', cat: 'Content', name: 'Blog & SEO Articles', price: 'from ₹0.50/word', desc: 'Long-form, SEO-optimized content' },
+  { icon: '🧬', cat: 'Content', name: 'Thesis & Dissertation', price: 'from ₹15,000', desc: 'PhD-level research writing & editing' },
+  { icon: '📊', cat: 'Business', name: 'Business Proposals', price: 'from ₹4,999', desc: 'Pitch decks, RFPs, investor proposals' },
+  { icon: '📑', cat: 'Business', name: 'White Papers & Reports', price: 'from ₹0.80/word', desc: 'Authoritative B2B and research reports' },
+];
+
+const STEPS = [
+  { n: '01', t: 'Choose Service', d: 'Pick from 12 categories. Clear pricing, real timelines, no surprises.', icon: '🎯' },
+  { n: '02', t: 'Brief Your Writer', d: 'Upload your requirements. Smart matching pairs you with a vetted expert.', icon: '📋' },
+  { n: '03', t: 'Track in Real-Time', d: 'Watch progress, message your writer, request milestones from your dashboard.', icon: '📡' },
+  { n: '04', t: 'Approve & Pay', d: 'Get unlimited revisions on your draft. Pay only when you\'re 100% happy.', icon: '✓' },
 ];
 
 const WRITERS = [
-  { name: 'Dr. Amara Singh', avatar: 'AS', specialty: 'Academic & SOP', rating: 4.97, reviews: 312, badge: 'Top Writer', skills: ['SOP', 'Thesis', 'Research Proposal'], turnaround: '24h', price: 250, bio: 'PhD in English Literature, 8 years helping students secure admits at Harvard, MIT, Oxford.' },
-  { name: 'James Whitfield', avatar: 'JW', specialty: 'Resume & Career', rating: 4.95, reviews: 487, badge: 'Elite', skills: ['Resume', 'LinkedIn', 'Cover Letter'], turnaround: '12h', price: 200, bio: 'Former HR Director. 3000+ resumes crafted. 94% interview callback rate.' },
-  { name: 'Priya Nair', avatar: 'PN', specialty: 'Content & Blog', rating: 4.92, reviews: 256, badge: 'Rising Star', skills: ['Blog', 'Article', 'SEO'], turnaround: '48h', price: 150, bio: 'Content strategist with bylines in Forbes, HuffPost. Expert in long-form SEO content.' },
-  { name: 'Marcus Chen', avatar: 'MC', specialty: 'Business Writing', rating: 4.98, reviews: 198, badge: 'Top Writer', skills: ['Proposal', 'Email', 'PPT'], turnaround: '36h', price: 300, bio: 'MBA from Wharton. Helped 50+ startups craft investor-ready pitches and proposals.' },
-  { name: 'Sophie Laurent', avatar: 'SL', specialty: 'Academic Essays', rating: 4.91, reviews: 341, badge: 'Elite', skills: ['Essay', 'LOR', 'Thesis'], turnaround: '24h', price: 220, bio: 'Published researcher. Expert in humanities, social science & interdisciplinary writing.' },
-  { name: 'Rahul Desai', avatar: 'RD', specialty: 'Technical Writing', rating: 4.94, reviews: 175, badge: 'Verified', skills: ['Research Proposal', 'Thesis', 'Article'], turnaround: '48h', price: 180, bio: 'STEM background. Specialises in grant proposals, technical reports & whitepapers.' },
+  { n: 'Dr. Amara Singh', av: 'AS', c: '#0d9488', spec: 'SOP · MBA Admissions', exp: '9 yrs · 340 orders', rate: 4.98, price: '₹7,999+', badge: 'Elite', tags: ['PhD Stanford', 'Wharton MBA', 'Top 1%'] },
+  { n: 'Marcus Webb', av: 'MW', c: '#3b82f6', spec: 'Content · SEO', exp: '7 yrs · 520 orders', rate: 4.92, price: '₹0.60/word', badge: 'Top Writer', tags: ['SaaS', 'Fintech', 'B2B'] },
+  { n: 'Sofía Ramírez', av: 'SR', c: '#a78bfa', spec: 'Thesis · Research', exp: '12 yrs · 180 orders', rate: 5.0, price: '₹18,000+', badge: 'PhD', tags: ['Sciences', 'APA/MLA', 'LaTeX'] },
+  { n: 'James Chen', av: 'JC', c: '#f59e0b', spec: 'Resume · LinkedIn', exp: '6 yrs · 680 orders', rate: 4.95, price: '₹2,499+', badge: 'Top Writer', tags: ['Tech', 'FAANG', 'Executive'] },
+  { n: 'Priya Mehta', av: 'PM', c: '#22c55e', spec: 'Visa SOP · LOR', exp: '5 yrs · 410 orders', rate: 4.96, price: '₹3,999+', badge: 'Verified', tags: ['Canada', 'Australia', 'UK'] },
+  { n: 'Daniel Okonkwo', av: 'DO', c: '#f43f5e', spec: 'Business Proposals', exp: '10 yrs · 220 orders', rate: 4.94, price: '₹6,999+', badge: 'Elite', tags: ['VC Pitches', 'RFPs', 'Strategy'] },
+];
+
+const FEATURES = [
+  { icon: '🛡️', t: 'Plagiarism-Free Guarantee', d: 'Turnitin-style report included on every delivery. 100% original or refund.' },
+  { icon: '🔒', t: 'NDA-Protected', d: 'Every writer signs a confidentiality agreement. Your work is yours, forever.' },
+  { icon: '⚡', t: 'Express Delivery', d: '24-hour rush option available on most services. Late = full refund, no questions.' },
+  { icon: '♾️', t: 'Unlimited Revisions', d: 'Revise until you\'re satisfied. We don\'t close orders until you say so.' },
+  { icon: '💬', t: 'Direct Writer Chat', d: 'Talk to your writer 1-on-1 inside our messaging platform. No middlemen.' },
+  { icon: '💸', t: 'Money-Back Promise', d: 'Not happy after revisions? Full refund within 7 days, no fine print.' },
 ];
 
 const TESTIMONIALS = [
-  { name: 'Meera Krishnan', role: 'Admitted to Stanford MBA', text: 'My SOP was completely transformed. Went from rejections to Stanford, Wharton, and LBS admits in one cycle. Absolutely life-changing service.', rating: 5 },
-  { name: 'David Okeke', role: 'Senior Product Manager', text: 'My LinkedIn profile views tripled in 2 weeks. Got headhunted by a FAANG company. Worth every penny — the writers here truly understand personal branding.', rating: 5 },
-  { name: 'Ananya Patel', role: 'PhD Candidate, UCL', text: 'The research proposal writer was exceptional. Deep academic knowledge, perfect structure, and delivered 3 days before deadline. My supervisor was impressed.', rating: 5 },
-  { name: 'Tom Brennan', role: 'Startup Founder', text: 'Raised $800K after using Xpresswriters for our investor pitch deck. Marcus understood our vision instantly and made it compelling. Highly recommend.', rating: 5 },
+  { q: 'My SOP went from rejections to Stanford, Wharton, and LBS admits in one cycle. The writer understood my engineering background and translated it into a story admissions actually wanted to read.', n: 'Meera Krishnan', r: "Admitted Stanford MBA '26", c: '#0d9488' },
+  { q: "I've worked with three other content agencies. Xpresswriters is the first one where I didn't have to rewrite half the draft. They actually researched our space.", n: 'Daniel Park', r: 'Marketing Director, FinTech SaaS', c: '#3b82f6' },
+  { q: 'My Canadian visa was rejected twice. The appeal SOP from Priya got me approved in 3 weeks. I genuinely cannot recommend this service enough — they saved my career path.', n: 'Aditi Kapoor', r: 'Software Engineer, Toronto', c: '#a78bfa' },
 ];
 
-const TRACK_STEPS = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
-
-const PRICING = [
-  { name: 'Starter', price: 799, desc: 'For one-off content needs', features: ['1 order at a time', 'Standard delivery (72h)', '1 free revision', 'Basic writer matching', 'Email support'], cta: 'Get Started', highlight: false },
-  { name: 'Pro', price: 2499, desc: 'For students & professionals', features: ['5 orders/month', 'Express delivery (24h)', '3 free revisions', 'Priority writer matching', 'Live chat support', 'Order tracking dashboard'], cta: 'Go Pro', highlight: true },
-  { name: 'Business', price: 6999, desc: 'For teams & businesses', features: ['Unlimited orders', 'Rush delivery (12h)', 'Unlimited revisions', 'Dedicated account manager', 'CRM dashboard', 'Team collaboration tools', 'Analytics & reporting'], cta: 'Contact Sales', highlight: false },
+const FAQ = [
+  { q: 'How is Xpresswriters different from other writing services?', a: "We're a marketplace, not a content mill. You see the actual writer's profile, ratings, and portfolio before you hire. Every order has a real human accountable to you — no anonymous teams, no rewrites by junior staff." },
+  { q: 'Is the work AI-generated?', a: 'No. We\'re an AI-detection-friendly platform — every delivery passes GPTZero, Originality.ai, and Turnitin. Writers may use AI as a research tool, but the writing is human and original.' },
+  { q: "What if I'm not happy with the draft?", a: "Unlimited free revisions within scope. If that still doesn't work, you can request a writer change or a full refund within 7 days of delivery — no questions, no fine print." },
+  { q: 'How fast can you deliver?', a: 'Most services have a 24-48 hour express option. A 1,500-word SOP can be turned around in 24 hours; complex thesis chapters need 5-10 days. Every product page shows exact timelines.' },
+  { q: 'Do you guarantee admission / visa approval?', a: 'No ethical writing service can guarantee outcomes — those depend on your profile, target school, and a dozen other factors. What we guarantee is the highest-quality document we can produce for your case.' },
 ];
 
-/* ─── COMPONENTS ─── */
-
-// ── Navbar ──
-function Navbar({ onOrderClick, isMobile }) {
-  const [scrolled, setScrolled] = useState(false);
-
+/* ─── HERO ─── */
+function Hero() {
+  const [counts, setCounts] = useState({ orders: 0, writers: 0, rating: 0 });
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    const dur = 1600; const t0 = Date.now();
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      setCounts({ orders: Math.floor(12400 * e), writers: Math.floor(1200 * e), rating: (4.9 * e).toFixed(1) });
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    tick();
   }, []);
-
   return (
-    <nav style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-      padding: '0 5%',
-      background: scrolled ? 'rgba(13,13,26,0.92)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(20px)' : 'none',
-      borderBottom: scrolled ? '1px solid var(--border)' : 'none',
-      transition: 'all 0.3s',
-      height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--violet)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: '-0.02em' }}>X</div>
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #f0eeff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Xpresswriters</span>
+    <section style={{ position: 'relative', minHeight: '82vh', padding: '80px 32px 100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <div className="hero-bg">
+        <div className="hero-grid" />
+        <div className="hero-orb1" />
+        <div className="hero-orb2" />
       </div>
+      <div className="container" style={{ textAlign: 'center', position: 'relative', zIndex: 1, maxWidth: 920 }}>
+        <div className="fade-up eyebrow" style={{ justifyContent: 'center' }}>India's most-trusted writing marketplace</div>
+        <h1 className="h1 fade-up" style={{ marginBottom: 24, animationDelay: '.05s' }}>
+          Words that work. <br />
+          Writers who <span className="shimmer">deliver.</span>
+        </h1>
+        <p className="lead fade-up" style={{ margin: '0 auto 36px', fontSize: 18, animationDelay: '.1s' }}>
+          Connect with 1,200+ vetted freelance writers across 12 service categories — from SOPs and resumes to thesis chapters and B2B content. Plagiarism-free, NDA-protected, on time.
+        </p>
+        <div className="fade-up" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', animationDelay: '.15s' }}>
+          <Link className="btn-teal" href="/login">Browse Services →</Link>
+          <Link className="btn-outline-teal" href="/login">Sign in / Sign up</Link>
+        </div>
 
-      {!isMobile && (
-        <div style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
-          {['Services', 'Writers', 'Pricing', 'How it Works'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s' }}
-              onMouseEnter={e => e.target.style.color='var(--text)'}
-              onMouseLeave={e => e.target.style.color='var(--text-muted)'}
-            >{item}</a>
+        <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 32, marginTop: 72, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', animationDelay: '.2s' }}>
+          {[
+            { k: counts.orders.toLocaleString() + '+', l: 'Orders delivered' },
+            { k: counts.writers.toLocaleString() + '+', l: 'Vetted writers' },
+            { k: counts.rating + '/5', l: 'Avg. rating' },
+            { k: '98%', l: 'On-time rate' },
+          ].map((s, i) => (<div key={i}>
+            <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--teal-light)' }}>{s.k}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500, letterSpacing: '0.03em' }}>{s.l}</div>
+          </div>))}
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── TRUST MARQUEE ─── */
+function TrustBar() {
+  const items = ['🎓 University of Cambridge applicants', '💼 Goldman Sachs alumni', '✈️ Canadian Embassy approved', '📚 Stanford GSB admits', '🚀 Y Combinator founders', '🏆 Fulbright scholars', '🌍 IELTS 8+ holders', '💎 LinkedIn Top Voices'];
+  const doubled = [...items, ...items];
+  return (
+    <section style={{ padding: '40px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 18, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Trusted by professionals at</div>
+      <div className="marquee">
+        <div className="marquee-track">{doubled.map((it, i) => <div key={i} style={{ fontSize: 13.5, color: 'var(--text-muted)', whiteSpace: 'nowrap', fontWeight: 500 }}>{it}</div>)}</div>
+        <div className="marquee-track" aria-hidden>{doubled.map((it, i) => <div key={i} style={{ fontSize: 13.5, color: 'var(--text-muted)', whiteSpace: 'nowrap', fontWeight: 500 }}>{it}</div>)}</div>
+      </div>
+    </section>);
+}
+
+/* ─── SERVICES GRID ─── */
+function Services() {
+  const cats = ['All', 'Academic', 'Visa', 'Career', 'Content', 'Business'];
+  const [tab, setTab] = useState('All');
+  const filtered = tab === 'All' ? SERVICES : SERVICES.filter(s => s.cat === tab);
+  return (
+    <section className="section" id="services">
+      <div className="container">
+        <div className="section-head">
+          <div className="eyebrow" style={{ justifyContent: 'center' }}>What we write</div>
+          <h2 className="h2" style={{ marginBottom: 14 }}>Every type of content, <span className="gradient-text">crafted by experts</span></h2>
+          <p className="lead">12 service categories, transparent pricing, real human writers — not AI. Browse below or jump to the catalog.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 36, flexWrap: 'wrap' }}>
+          {cats.map(c => (
+            <button key={c} onClick={() => setTab(c)} style={{ padding: '8px 16px', borderRadius: 7, border: tab === c ? '1.5px solid var(--teal)' : '1.5px solid var(--border)', background: tab === c ? 'rgba(13,148,136,0.12)' : 'transparent', color: tab === c ? 'var(--teal-light)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s' }}>{c}</button>
           ))}
         </div>
-      )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
+          {filtered.map((s, i) => (
+            <Link key={i} href="/login" className="card" style={{ textDecoration: 'none', color: 'var(--text)', position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {s.pop && <div style={{ position: 'absolute', top: 14, right: 14, padding: '3px 8px', borderRadius: 4, background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)', color: 'var(--teal-light)', fontSize: 9, fontWeight: 700, letterSpacing: '0.06em' }}>POPULAR</div>}
+              <div style={{ width: 42, height: 42, borderRadius: 9, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{s.icon}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{s.cat}</div>
+              <h3 className="h3" style={{ fontSize: 16 }}>{s.name}</h3>
+              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.55, flex: 1 }}>{s.desc}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingTop: 12, borderTop: '1px solid var(--border2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{s.price}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Browse →</span>
+              </div>
+            </Link>))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 36 }}>
+          <Link className="btn-outline-teal" href="/login">View all 12 services & pricing →</Link>
+        </div>
+      </div>
+    </section>);
+}
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <Link href="/login" style={{ padding: '9px 12px', fontSize: 14, color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
-          onMouseEnter={e => e.target.style.color='var(--text)'}
-          onMouseLeave={e => e.target.style.color='var(--text-muted)'}
-        >Login</Link>
-        {!isMobile && (
-          <Link href="/dashboard" style={{ padding: '9px 20px', fontSize: 14, borderRadius: 6, border: '1.5px solid var(--border)', color: 'var(--violet-light)', textDecoration: 'none', fontWeight: 500, display: 'inline-block' }}>Dashboard</Link>
-        )}
-        <button className="btn-primary" style={{ padding: '9px 20px', fontSize: 14 }} onClick={onOrderClick}>Place Order</button>
+/* ─── HOW IT WORKS ─── */
+function HowItWorks() {
+  return (
+    <section className="section" style={{ background: 'linear-gradient(180deg,transparent,rgba(13,148,136,0.04),transparent)' }} id="how">
+      <div className="container">
+        <div className="section-head">
+          <div className="eyebrow" style={{ justifyContent: 'center' }}>Process</div>
+          <h2 className="h2" style={{ marginBottom: 14 }}>From brief to delivery in <span className="gradient-text">four clean steps</span></h2>
+          <p className="lead">No back-and-forth emails, no opaque pricing, no surprises. Every step happens inside your dashboard.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16, position: 'relative' }}>
+          {STEPS.map((s, i) => (<div key={i} className="card" style={{ padding: '24px 22px', position: 'relative' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-dim)', marginBottom: 12 }}>STEP {s.n}</div>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{s.icon}</div>
+            <h3 className="h3" style={{ fontSize: 17, marginBottom: 8 }}>{s.t}</h3>
+            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.6 }}>{s.d}</p>
+          </div>))}
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── WRITERS MARKETPLACE ─── */
+function WritersMarketplace() {
+  return (
+    <section className="section" id="writers">
+      <div className="container">
+        <div className="section-head">
+          <div className="eyebrow" style={{ justifyContent: 'center' }}>The marketplace</div>
+          <h2 className="h2" style={{ marginBottom: 14 }}>Hand-picked writers, <span className="gradient-text">real portfolios</span></h2>
+          <p className="lead">Every writer is verified: PhD or 5+ years of professional experience, English fluency tested, sample work reviewed, NDA signed.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
+          {WRITERS.map((w, i) => (<div key={i} className="card" style={{ padding: '22px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+              <div style={{ width: 54, height: 54, borderRadius: '50%', background: w.c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#fff', flexShrink: 0, boxShadow: `0 0 0 3px ${w.c}25` }}>{w.av}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>{w.n}</span>
+                  <span style={{ fontSize: 11, color: '#fbbf24' }}>✓</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--teal-light)', fontWeight: 500 }}>{w.spec}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{w.exp}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
+              {w.tags.map((t, j) => <span key={j} style={{ padding: '3px 8px', borderRadius: 4, background: 'var(--surface2)', border: '1px solid var(--border2)', fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>{t}</span>)}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border2)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>⭐ {w.rate}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{w.badge}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{w.price}</div>
+                <Link href="/login" style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'none' }}>Hire →</Link>
+              </div>
+            </div>
+          </div>))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 36 }}>
+          <Link className="btn-outline-teal" href="/login">Browse 1,200+ writers →</Link>
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── FEATURES (Why us) ─── */
+function Features() {
+  return (
+    <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <div className="container">
+        <div className="section-head">
+          <div className="eyebrow" style={{ justifyContent: 'center' }}>Why Xpresswriters</div>
+          <h2 className="h2" style={{ marginBottom: 14 }}>The fine print, <span className="gradient-text">in your favor</span></h2>
+          <p className="lead">Six promises we put in writing. If we break one, the order is on us.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 14 }}>
+          {FEATURES.map((f, i) => (<div key={i} style={{ padding: '24px 22px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', gap: 14 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 9, background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{f.icon}</div>
+            <div>
+              <h3 className="h3" style={{ fontSize: 15, marginBottom: 6 }}>{f.t}</h3>
+              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.6 }}>{f.d}</p>
+            </div>
+          </div>))}
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── LIVE DASHBOARD PREVIEW ─── */
+function DashboardPreview() {
+  return (
+    <section className="section">
+      <div className="container" style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 48, alignItems: 'center' }}>
+        <div>
+          <div className="eyebrow">Your Command Center</div>
+          <h2 className="h2" style={{ marginBottom: 18 }}>A real dashboard. <span className="gradient-text">Not an inbox.</span></h2>
+          <p className="lead" style={{ marginBottom: 24 }}>Track every order, message every writer, download every invoice, manage every revision — all in one place. Live notifications, real-time status, transparent everything.</p>
+          <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 28 }}>
+            {['Live order tracking with milestones', 'Direct chat with your writer (1-on-1, no agents)', 'Invoices & receipts ready for tax filing', 'Notification center · Mobile-first design'].map((x, i) => (<li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--text)' }}><span style={{ color: 'var(--teal-light)', fontWeight: 700, flexShrink: 0 }}>✓</span>{x}</li>))}
+          </ul>
+          <Link className="btn-teal" href="/login">See live demo →</Link>
+        </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,0.4)' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+            {['#f43f5e', '#f59e0b', '#22c55e'].map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 5, background: c }} />)}
+            <div style={{ marginLeft: 'auto', fontSize: 10.5, color: 'var(--text-dim)' }}>dashboard.xpresswriters.com</div>
+          </div>
+          {/* Stat tiles */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
+            {[
+              { l: 'Active', v: '2', c: 'var(--teal-light)' },
+              { l: 'Completed', v: '18', c: 'var(--green)' },
+              { l: 'Spent', v: '$1.2k', c: 'var(--text)' },
+            ].map((s, i) => (<div key={i} style={{ padding: '12px 14px', background: 'var(--bg)', border: '1px solid var(--border2)', borderRadius: 8 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 500, letterSpacing: '0.04em' }}>{s.l.toUpperCase()}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: s.c }}>{s.v}</div>
+            </div>))}
+          </div>
+          {/* Live order strip */}
+          <div style={{ padding: '14px 16px', background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 8, marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>SOP — Stanford GSB</div>
+                <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>INV-2024-0184 · Dr. Amara Singh</div>
+              </div>
+              <span style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(13,148,136,0.2)', color: 'var(--teal-light)', fontSize: 10, fontWeight: 600 }}>In Progress</span>
+            </div>
+            <div style={{ height: 4, borderRadius: 2, background: 'var(--surface3)', overflow: 'hidden' }}><div style={{ width: '72%', height: '100%', background: 'linear-gradient(90deg,var(--teal),var(--teal-light))' }} /></div>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 6, fontWeight: 600 }}>72% · 2 days remaining</div>
+          </div>
+          {/* Notification row */}
+          <div style={{ padding: '10px 14px', background: 'var(--bg)', border: '1px solid var(--border2)', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--teal-light)', animation: 'pulse 2s ease infinite', flexShrink: 0 }} />
+            <div style={{ fontSize: 11.5, flex: 1 }}><strong style={{ fontWeight: 600 }}>Marcus Webb</strong> <span style={{ color: 'var(--text-muted)' }}>sent you a new draft — Blog Post</span></div>
+            <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>2m</span>
+          </div>
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── TESTIMONIALS ─── */
+function Testimonials() {
+  const [active, setActive] = useState(0);
+  useEffect(() => { const t = setInterval(() => setActive(a => (a + 1) % TESTIMONIALS.length), 6000); return () => clearInterval(t); }, []);
+  return (
+    <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <div className="container">
+        <div className="section-head">
+          <div className="eyebrow" style={{ justifyContent: 'center' }}>Real stories</div>
+          <h2 className="h2" style={{ marginBottom: 14 }}>Work that <span className="gradient-text">moves careers</span></h2>
+        </div>
+        <div style={{ maxWidth: 780, margin: '0 auto' }}>
+          {TESTIMONIALS.map((t, i) => (<div key={i} style={{ display: i === active ? 'block' : 'none', textAlign: 'center', animation: 'fadeUp .5s ease both' }}>
+            <div style={{ fontSize: 32, color: 'var(--teal)', marginBottom: 14, lineHeight: 1 }}>"</div>
+            <p style={{ fontSize: 18, lineHeight: 1.6, fontWeight: 300, color: 'var(--text)', marginBottom: 26 }}>{t.q}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: t.c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14 }}>{t.n.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{t.n}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.r}</div>
+              </div>
+            </div>
+          </div>))}
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 36 }}>
+            {TESTIMONIALS.map((_, i) => (<button key={i} onClick={() => setActive(i)} style={{ width: i === active ? 28 : 8, height: 8, borderRadius: 4, border: 'none', background: i === active ? 'var(--teal)' : 'var(--border)', cursor: 'pointer', transition: 'all .3s' }} />))}
+          </div>
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── BECOME A WRITER CTA ─── */
+function WriterCTA() {
+  return (
+    <section className="section">
+      <div className="container">
+        <div style={{ padding: '48px 40px', borderRadius: 14, background: 'linear-gradient(135deg,rgba(13,148,136,0.12),rgba(13,148,136,0.04))', border: '1px solid rgba(13,148,136,0.3)', display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 36, alignItems: 'center' }}>
+          <div>
+            <div className="eyebrow">For freelancers</div>
+            <h2 className="h2" style={{ marginBottom: 14 }}>Write for clients who <span className="gradient-text">actually pay on time</span></h2>
+            <p className="lead" style={{ marginBottom: 22 }}>Join 1,200+ writers earning ₹40,000-2,00,000/month. Set your own rates, work on what you love, get paid in 48 hours.</p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <Link className="btn-teal" href="/login">Apply to write →</Link>
+              <Link className="btn-outline-teal" href="/login">See writer dashboard</Link>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { k: '₹2L+', l: 'Top earner/mo' },
+              { k: '48 hr', l: 'Payout time' },
+              { k: '0%', l: 'Hidden fees' },
+              { k: '1,200+', l: 'Active writers' },
+            ].map((s, i) => (<div key={i} style={{ padding: '18px 18px', background: 'var(--bg)', border: '1px solid var(--border2)', borderRadius: 10 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--teal-light)', letterSpacing: '-0.02em' }}>{s.k}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, fontWeight: 500 }}>{s.l}</div>
+            </div>))}
+          </div>
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── FAQ ─── */
+function FAQSection() {
+  const [open, setOpen] = useState(0);
+  return (
+    <section className="section" id="faq">
+      <div className="container" style={{ maxWidth: 820 }}>
+        <div className="section-head">
+          <div className="eyebrow" style={{ justifyContent: 'center' }}>Common questions</div>
+          <h2 className="h2">Questions, <span className="gradient-text">answered honestly</span></h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {FAQ.map((f, i) => (<div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+            <button onClick={() => setOpen(open === i ? -1 : i)} style={{ width: '100%', padding: '18px 22px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text)', fontFamily: 'var(--font)', fontSize: 14, fontWeight: 600, textAlign: 'left' }}>
+              {f.q}
+              <span style={{ fontSize: 18, color: 'var(--teal-light)', transition: 'transform .2s', transform: open === i ? 'rotate(45deg)' : 'rotate(0)' }}>+</span>
+            </button>
+            {open === i && <div style={{ padding: '0 22px 20px', fontSize: 13.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.7, animation: 'fadeUp .25s ease both' }}>{f.a}</div>}
+          </div>))}
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── FINAL CTA ─── */
+function FinalCTA() {
+  return (
+    <section style={{ padding: '120px 32px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,rgba(13,148,136,0.18) 0%,transparent 60%)', pointerEvents: 'none' }} />
+      <div className="container" style={{ maxWidth: 720, position: 'relative' }}>
+        <h2 className="h1" style={{ fontSize: 'clamp(32px,4.5vw,56px)', marginBottom: 20 }}>Ready to <span className="gradient-text">work with a real writer?</span></h2>
+        <p className="lead" style={{ margin: '0 auto 32px', fontSize: 17 }}>Pick a service, brief your writer, watch it come together. The first revision is on us either way.</p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }} href="/login">Browse Services →</Link>
+          <Link className="btn-outline-teal" style={{ fontSize: 15, padding: '15px 30px' }} href="/login">Track an order</Link>
+        </div>
+      </div>
+    </section>);
+}
+
+/* ─── NAVBAR ─── */
+function Navbar() {
+  return (
+    <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', position: 'fixed', top: 0, left: 0, right: 0, background: 'rgba(13, 13, 26, 0.8)', backdropFilter: 'blur(10px)', zIndex: 100, borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+        <Link href="/" style={{ fontWeight: 700, fontSize: 20, color: 'var(--text)', textDecoration: 'none' }}>Xpresswriters</Link>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <Link href="/about" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>About</Link>
+          <Link href="/help" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Help</Link>
+          <Link href="/legal" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Legal</Link>
+          <Link href="/products" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Products</Link>
+          <Link href="/report" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Report</Link>
+          <Link href="/review" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Review</Link>
+          <Link href="/track" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Track</Link>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '16px' }}>
+        <Link href="/login" className="btn-outline-teal">Login</Link>
+        <Link href="/login" className="btn-teal">Get Started</Link>
       </div>
     </nav>
   );
 }
 
-// ── Hero ──
-function Hero({ onOrderClick }) {
-  const [count, setCount] = useState({ writers: 0, orders: 0, rating: 0 });
-
-  useEffect(() => {
-    const targets = { writers: 1200, orders: 48000, rating: 4.97 };
-    let frame;
-    let start;
-    const duration = 2000;
-    const animate = (ts) => {
-      if (!start) start = ts;
-      const p = Math.min((ts - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - p, 3);
-      setCount({
-        writers: Math.floor(ease * targets.writers),
-        orders: Math.floor(ease * targets.orders),
-        rating: parseFloat((ease * targets.rating).toFixed(2)),
-      });
-      if (p < 1) frame = requestAnimationFrame(animate);
-    };
-    const timer = setTimeout(() => { frame = requestAnimationFrame(animate); }, 400);
-    return () => { clearTimeout(timer); cancelAnimationFrame(frame); };
-  }, []);
-
+/* ─── FOOTER ─── */
+function Footer() {
   return (
-    <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '120px 5% 80px', overflow: 'hidden', textAlign: 'center' }}>
-      {/* Glow orbs */}
-      <div className="orb" style={{ width: 600, height: 600, background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', top: '-100px', left: '50%', transform: 'translateX(-50%)' }} />
-      <div className="orb" style={{ width: 300, height: 300, background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', bottom: '100px', right: '5%', opacity: 0.2 }} />
-
-      {/* Badge */}
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(124,58,237,0.12)', border: '1px solid var(--border)', borderRadius: 100, padding: '6px 16px', marginBottom: 32, animation: 'fadeIn 0.6s ease' }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-        <span style={{ fontSize: 13, color: 'var(--violet-light)', fontWeight: 500 }}>48,000+ orders delivered · Trusted by students in 90+ countries</span>
-      </div>
-
-      {/* Headline */}
-      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(42px,6vw,88px)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', marginBottom: 28, maxWidth: 900, animation: 'fadeUp 0.7s ease 0.1s both' }}>
-        Words that work.<br />
-        <span style={{ fontStyle: 'italic', background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #f5c842 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200% auto', animation: 'shimmer 4s linear infinite' }}>Writers who deliver.</span>
-      </h1>
-
-      <p style={{ fontSize: 'clamp(16px,2vw,21px)', color: 'var(--text-muted)', maxWidth: 620, lineHeight: 1.7, marginBottom: 48, animation: 'fadeUp 0.7s ease 0.2s both', fontWeight: 300 }}>
-        Connect with expert content writers for SOPs, resumes, essays, theses, blogs & more. Place your order in minutes. Get delivery-ready content.
-      </p>
-
-      {/* CTAs */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 72, flexWrap: 'wrap', justifyContent: 'center', animation: 'fadeUp 0.7s ease 0.3s both' }}>
-        <button className="btn-primary" style={{ fontSize: 16, padding: '16px 36px', borderRadius: 6 }} onClick={onOrderClick}>Place Your Order →</button>
-        <button className="btn-outline" style={{ fontSize: 16, padding: '16px 36px', borderRadius: 6 }}>Browse Writers</button>
-      </div>
-
-      {/* Stats */}
-      <div style={{ display: 'flex', gap: 'clamp(24px,5vw,72px)', animation: 'fadeUp 0.7s ease 0.4s both' }}>
-        {[
-          { label: 'Expert Writers', val: `${count.writers.toLocaleString()}+` },
-          { label: 'Orders Delivered', val: `${count.orders.toLocaleString()}+` },
-          { label: 'Average Rating', val: `⭐ ${count.rating}` },
-        ].map(s => (
-          <div key={s.label} style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>{s.val}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, fontWeight: 400 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Scroll indicator */}
-      <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, animation: 'float 2.5s ease-in-out infinite' }}>
-        <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Scroll</div>
-        <div style={{ width: 1, height: 40, background: 'linear-gradient(to bottom, var(--violet), transparent)' }} />
-      </div>
-    </section>
-  );
-}
-
-// ── Marquee ──
-function Marquee() {
-  const items = ['Statement of Purpose', 'Academic Essays', 'LOR', 'Resume & CV', 'LinkedIn Profile', 'Thesis Writing', 'Blog Posts', 'Research Proposals', 'Business Proposals', 'PPT Presentations', 'SEO Articles', 'Professional Emails'];
-  const doubled = [...items, ...items];
-  return (
-    <div style={{ overflow: 'hidden', padding: '20px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'rgba(124,58,237,0.04)', position: 'relative' }}>
-      <div style={{ display: 'flex', gap: 48, animation: 'marquee 30s linear infinite', width: 'max-content' }}>
-        {doubled.map((item, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>{item}</span>
-            <span style={{ color: 'var(--violet)', fontSize: 18 }}>◆</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Services ──
-function Services({ onOrderClick }) {
-  const [hovered, setHovered] = useState(null);
-  return (
-    <section id="services" style={{ padding: '100px 5%' }}>
-      <div style={{ textAlign: 'center', marginBottom: 64 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>What we write</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 16 }}>Every type of content,<br /><em>crafted to perfection</em></h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 17, maxWidth: 520, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>12 service categories, 1200+ vetted writers, one seamless platform.</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20, maxWidth: 1200, margin: '0 auto' }}>
-        {SERVICES.map((svc, i) => (
-          <div key={svc.id}
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-            onClick={() => onOrderClick(svc)}
-            style={{
-              background: hovered === i ? 'var(--surface2)' : 'var(--surface)',
-              border: hovered === i ? '1.5px solid var(--violet)' : '1.5px solid var(--border)',
-              borderRadius: 8, padding: '28px 26px', cursor: 'pointer',
-              transition: 'all 0.25s',
-              transform: hovered === i ? 'translateY(-4px)' : 'none',
-              boxShadow: hovered === i ? '0 16px 40px rgba(124,58,237,0.2)' : 'none',
-              position: 'relative', overflow: 'hidden',
-            }}>
-            {hovered === i && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--violet), var(--violet-light))' }} />}
-            <div style={{ fontSize: 36, marginBottom: 14, display: 'block' }}>{svc.icon}</div>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, marginBottom: 8, letterSpacing: '-0.01em' }}>{svc.label}</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 300 }}>{svc.desc}</p>
-            <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--violet-light)', fontSize: 13, fontWeight: 500, opacity: hovered === i ? 1 : 0, transition: 'opacity 0.2s' }}>
-              Order now <span>→</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ── How It Works ──
-function HowItWorks({ onOrderClick }) {
-  const steps = [
-    { n: '01', icon: '🎯', title: 'Choose Your Service', desc: 'Browse 12 service categories. Select exactly what you need — SOP, resume, thesis, blog, and more.' },
-    { n: '02', icon: '✍️', title: 'Match with a Writer', desc: 'Our smart system matches you with a vetted expert. Review profiles, portfolios, and ratings before confirming.' },
-    { n: '03', icon: '🚀', title: 'Receive & Revise', desc: 'Get your content on time, every time. Request revisions until you\'re 100% satisfied. Zero compromise.' },
-  ];
-  return (
-    <section id="how-it-works" style={{ padding: '100px 5%', background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.05), transparent)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 64 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>Process</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em' }}>Three steps to<br /><em>brilliant content</em></h2>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32, maxWidth: 1100, margin: '0 auto 48px' }}>
-        {steps.map((step, i) => (
-          <div key={i} style={{ position: 'relative' }}>
-            <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '40px 32px', textAlign: 'center', transition: 'all 0.3s' }}>
-              <div style={{ width: 64, height: 64, borderRadius: 8, background: 'rgba(124,58,237,0.15)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>{step.icon}</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 900, color: 'rgba(124,58,237,0.12)', lineHeight: 1, marginBottom: 12 }}>{step.n}</div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 12, letterSpacing: '-0.01em' }}>{step.title}</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{step.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <button className="btn-primary" style={{ fontSize: 16, padding: '16px 40px' }} onClick={() => onOrderClick()}>Start Your Order →</button>
-      </div>
-    </section>
-  );
-}
-
-// ── Writers Marketplace ──
-function Writers({ onOrderClick }) {
-  const [filter, setFilter] = useState('All');
-  const categories = ['All', 'Academic', 'Career', 'Content', 'Business'];
-  const catMap = { Academic: ['SOP', 'Thesis', 'Essay', 'Research Proposal'], Career: ['Resume', 'LinkedIn'], Content: ['Blog', 'Article', 'SEO'], Business: ['Proposal', 'Email', 'PPT'] };
-
-  const filtered = filter === 'All' ? WRITERS : WRITERS.filter(w => w.skills.some(s => catMap[filter]?.some(c => s.includes(c) || c.includes(s))));
-
-  return (
-    <section id="writers" style={{ padding: '100px 5%' }}>
-      <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>The talent</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 16 }}>Meet our expert<br /><em>writers</em></h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 17, maxWidth: 480, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>Every writer is vetted through a rigorous 5-step quality process. Only the top 3% make it in.</p>
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 48, flexWrap: 'wrap' }}>
-        {categories.map(c => (
-          <button key={c} onClick={() => setFilter(c)} style={{
-            padding: '8px 22px', borderRadius: 100, border: '1.5px solid',
-            borderColor: filter === c ? 'var(--violet)' : 'var(--border)',
-            background: filter === c ? 'var(--violet)' : 'transparent',
-            color: filter === c ? '#fff' : 'var(--text-muted)',
-            fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
-            fontFamily: 'var(--font-body)',
-          }}>{c}</button>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24, maxWidth: 1200, margin: '0 auto' }}>
-        {filtered.map((w, i) => (
-          <WriterCard key={i} writer={w} onOrder={() => onOrderClick({ writerName: w.name })} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function WriterCard({ writer: w, onOrder }) {
-  const [hovered, setHovered] = useState(false);
-  const badgeColors = { 'Top Writer': '#7c3aed', 'Elite': '#f5c842', 'Rising Star': '#22c55e', 'Verified': '#38bdf8' };
-  return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{
-      background: hovered ? 'var(--surface2)' : 'var(--surface)',
-      border: `1.5px solid ${hovered ? 'var(--violet)' : 'var(--border)'}`,
-      borderRadius: 10, padding: 28, transition: 'all 0.25s',
-      transform: hovered ? 'translateY(-4px)' : 'none',
-      boxShadow: hovered ? '0 16px 40px rgba(124,58,237,0.2)' : 'none',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
-        <div style={{ width: 54, height: 54, borderRadius: 8, background: 'linear-gradient(135deg, var(--violet), var(--violet-light))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0, fontFamily: 'var(--font-display)' }}>{w.avatar}</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontWeight: 600, fontSize: 16 }}>{w.name}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100, background: `${badgeColors[w.badge]}22`, color: badgeColors[w.badge] }}>{w.badge}</span>
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{w.specialty}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-            <span style={{ color: 'var(--gold)', fontSize: 13 }}>★ {w.rating}</span>
-            <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>({w.reviews} reviews)</span>
-          </div>
-        </div>
-      </div>
-
-      <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20, fontWeight: 300 }}>{w.bio}</p>
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
-        {w.skills.map(s => (
-          <span key={s} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 100, background: 'rgba(124,58,237,0.1)', border: '1px solid var(--border)', color: 'var(--violet-light)' }}>{s}</span>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-        <div>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>From</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700 }}>₹{w.price}<span style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontWeight: 300 }}>/100 words</span></div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Turnaround</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--green)' }}>⚡ {w.turnaround}</div>
-        </div>
-      </div>
-
-      <button className="btn-primary" style={{ width: '100%', marginTop: 16, padding: '11px 0', borderRadius: 10, opacity: hovered ? 1 : 0.85 }} onClick={onOrder}>
-        Hire {w.name.split(' ')[0]}
-      </button>
-    </div>
-  );
-}
-
-// ── Order Tracking ──
-function OrderTracking() {
-  const [activeStep, setActiveStep] = useState(2);
-  useEffect(() => {
-    const interval = setInterval(() => setActiveStep(s => s < TRACK_STEPS.length - 1 ? s + 1 : 0), 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <section style={{ padding: '60px 5%', background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 10 }}>Live Order Tracking</div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Always know where your order stands</h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 40, fontWeight: 300 }}>Real-time updates at every stage of the writing process</p>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', marginBottom: 20 }}>
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 3, background: 'var(--surface2)', transform: 'translateY(-50%)', zIndex: 0 }} />
-          <div style={{ position: 'absolute', top: '50%', left: 0, height: 3, background: 'linear-gradient(90deg, var(--violet), var(--violet-light))', transform: 'translateY(-50%)', zIndex: 1, transition: 'width 1s ease', width: `${(activeStep / (TRACK_STEPS.length - 1)) * 100}%` }} />
-
-          {TRACK_STEPS.map((step, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, zIndex: 2, position: 'relative' }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, transition: 'all 0.5s',
-                background: i <= activeStep ? 'var(--violet)' : 'var(--surface2)',
-                border: `2px solid ${i <= activeStep ? 'var(--violet)' : 'var(--border)'}`,
-                color: i <= activeStep ? '#fff' : 'var(--text-dim)',
-                boxShadow: i === activeStep ? '0 0 0 6px rgba(124,58,237,0.2)' : 'none',
-                animation: i === activeStep ? 'trackPulse 2s infinite' : 'none',
-              }}>
-                {i < activeStep ? '✓' : i + 1}
-              </div>
-              <div style={{ fontSize: 12, color: i <= activeStep ? 'var(--text)' : 'var(--text-dim)', fontWeight: i === activeStep ? 600 : 400, whiteSpace: 'nowrap', transition: 'color 0.3s' }}>{step}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ padding: '12px 24px', background: 'rgba(124,58,237,0.08)', borderRadius: 10, border: '1px solid var(--border)', display: 'inline-block' }}>
-          <span style={{ color: 'var(--violet-light)', fontSize: 13, fontWeight: 500 }}>
-            Current status: <strong style={{ color: 'var(--text)' }}>{TRACK_STEPS[activeStep]}</strong>
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Testimonials ──
-function Testimonials() {
-  const [active, setActive] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setActive(a => (a + 1) % TESTIMONIALS.length), 5000);
-    return () => clearInterval(t);
-  }, []);
-
-  return (
-    <section id="testimonials" style={{ padding: '100px 5%', position: 'relative', overflow: 'hidden' }}>
-      <div className="orb" style={{ width: 400, height: 400, background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', bottom: 0, left: '10%', opacity: 0.2 }} />
-      <div style={{ textAlign: 'center', marginBottom: 64 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>Social Proof</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em' }}>Stories of<br /><em>transformation</em></h2>
-      </div>
-
-      <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-        {TESTIMONIALS.map((t, i) => (
-          <div key={i} style={{
-            display: i === active ? 'block' : 'none',
-            animation: 'fadeUp 0.5s ease',
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: 24, opacity: 0.3, fontFamily: 'serif', color: 'var(--violet-light)' }}>"</div>
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(18px,2.5vw,24px)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 36, color: 'var(--text)' }}>{t.text}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center' }}>
-              <div style={{ width: 46, height: 46, borderRadius: 6, background: 'linear-gradient(135deg, var(--violet), var(--violet-light))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 15, fontFamily: 'var(--font-display)' }}>{t.name[0]}</div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{t.name}</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 300 }}>{t.role}</div>
-              </div>
-              <div style={{ color: 'var(--gold)', fontSize: 14, letterSpacing: 2 }}>{'★'.repeat(t.rating)}</div>
-            </div>
-          </div>
-        ))}
-
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 40 }}>
-          {TESTIMONIALS.map((_, i) => (
-            <button key={i} onClick={() => setActive(i)} style={{
-              width: i === active ? 28 : 8, height: 8, borderRadius: 4,
-              background: i === active ? 'var(--violet)' : 'var(--border)',
-              border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0,
-            }} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Pricing ──
-function Pricing({ onOrderClick }) {
-  return (
-    <section id="pricing" style={{ padding: '100px 5%', background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.04), transparent)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 64 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--violet-light)', marginBottom: 14 }}>Pricing</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em' }}>Simple, transparent<br /><em>pricing</em></h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 17, maxWidth: 420, margin: '16px auto 0', lineHeight: 1.7, fontWeight: 300 }}>No hidden fees. No subscriptions lock-in. Cancel anytime.</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, maxWidth: 980, margin: '0 auto' }}>
-        {PRICING.map((plan, i) => (
-          <div key={i} style={{
-            background: plan.highlight ? 'linear-gradient(145deg, var(--violet), #5b21b6)' : 'var(--surface)',
-            border: `1.5px solid ${plan.highlight ? 'transparent' : 'var(--border)'}`,
-            borderRadius: 10, padding: '40px 32px', position: 'relative', overflow: 'hidden',
-            transform: plan.highlight ? 'scale(1.04)' : 'none',
-            boxShadow: plan.highlight ? '0 24px 60px rgba(124,58,237,0.4)' : 'none',
-          }}>
-            {plan.highlight && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--gold)', color: '#0d0d1a', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, letterSpacing: '0.08em' }}>POPULAR</div>}
-            <div style={{ fontSize: 14, fontWeight: 600, color: plan.highlight ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', marginBottom: 4 }}>{plan.name}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 52, fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 4 }}>₹{plan.price}<span style={{ fontSize: 18, fontWeight: 400, fontFamily: 'var(--font-body)' }}>/mo</span></div>
-            <div style={{ fontSize: 13, color: plan.highlight ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)', marginBottom: 32, fontWeight: 300 }}>{plan.desc}</div>
-            <div style={{ marginBottom: 32 }}>
-              {plan.features.map(f => (
-                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <span style={{ color: plan.highlight ? '#a78bfa' : 'var(--green)', fontSize: 14 }}>✓</span>
-                  <span style={{ fontSize: 14, color: plan.highlight ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontWeight: 300 }}>{f}</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => onOrderClick()} style={{
-              width: '100%', padding: '13px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
-              background: plan.highlight ? 'rgba(255,255,255,0.15)' : 'var(--violet)',
-              color: '#fff', fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-body)',
-              transition: 'all 0.2s', backdropFilter: 'blur(10px)',
-            }}
-            onMouseEnter={e => e.target.style.background = plan.highlight ? 'rgba(255,255,255,0.25)' : '#6d28d9'}
-            onMouseLeave={e => e.target.style.background = plan.highlight ? 'rgba(255,255,255,0.15)' : 'var(--violet)'}
-            >{plan.cta}</button>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ── Order Modal ──
-function OrderModal({ isOpen, onClose, initialService }) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ category: initialService?.label || '', turnaround: '72h', wordCount: 500, details: '', deadline: '', budget: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const { data: session } = useSession();
-
-  useEffect(() => { if (initialService) setForm(f => ({ ...f, category: initialService.label || '' })); }, [initialService]);
-  useEffect(() => { if (isOpen) { setStep(1); setSubmitted(false); setSubmitting(false); } }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const turnaroundOptions = [
-    { label: '12 Hours', id: '12h', price: '+80%', badge: 'Rush' },
-    { label: '24 Hours', id: '24h', price: '+40%', badge: 'Express' },
-    { label: '72 Hours', id: '72h', price: 'Standard', badge: '' },
-    { label: '7 Days', id: '7d', price: '-10%', badge: 'Economy' },
-  ];
-
-  const handleSubmit = () => {
-    setSubmitting(true);
-    
-    // Save to localStorage
-    const pendingOrder = {
-      ...form,
-      estPrice: Math.round((form.wordCount / 100) * 200 * (form.turnaround === '12h' ? 1.8 : form.turnaround === '24h' ? 1.4 : form.turnaround === '7d' ? 0.9 : 1))
-    };
-    localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
-    
-    // Redirect to login with callback to student dashboard checkout
-    if (session) {
-      window.location.href = `/student?action=checkout`;
-    } else {
-      window.location.href = `/login?callbackUrl=/student?action=checkout`;
-    }
-  };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }} />
-      <div style={{ position: 'relative', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '40px', width: '100%', maxWidth: 580, maxHeight: '90vh', overflowY: 'auto', animation: 'fadeUp 0.3s ease' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'var(--surface2)', border: 'none', color: 'var(--text-muted)', width: 32, height: 32, borderRadius: 8, cursor: 'pointer', fontSize: 16, fontFamily: 'var(--font-body)' }}>✕</button>
-
-        {submitted ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: 64, marginBottom: 20, animation: 'float 2s ease-in-out infinite' }}>🎉</div>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>Order Placed!</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.7, marginBottom: 28, fontWeight: 300 }}>Your order has been received. We're matching you with the perfect writer — you'll hear back within 30 minutes.</p>
-            <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 6, padding: '16px 24px', marginBottom: 24 }}>
-              <div style={{ color: 'var(--green)', fontWeight: 600, fontSize: 14 }}>✓ Order #XW-{Math.floor(Math.random()*90000)+10000}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>Confirmation sent to your email</div>
-            </div>
-            <button className="btn-primary" onClick={onClose}>Close & Track Order</button>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 36 }}>
-              {[1,2,3].map(s => (
-                <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? 'var(--violet)' : 'var(--surface2)', transition: 'background 0.3s' }} />
-              ))}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Step {step} of 3</div>
-
-            {step === 1 && (
-              <div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>What do you need?</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28, fontWeight: 300 }}>Select a service category to begin</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 28, maxHeight: 340, overflowY: 'auto' }}>
-                  {SERVICES.map(svc => (
-                    <div key={svc.id} onClick={() => setForm(f => ({ ...f, category: svc.label }))} style={{
-                      padding: '14px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 10,
-                      background: form.category === svc.label ? 'rgba(124,58,237,0.15)' : 'var(--surface2)',
-                      border: `1.5px solid ${form.category === svc.label ? 'var(--violet)' : 'var(--border)'}`,
-                    }}>
-                      <span style={{ fontSize: 20 }}>{svc.icon}</span>
-                      <span style={{ fontSize: 13, fontWeight: form.category === svc.label ? 600 : 400, color: form.category === svc.label ? 'var(--text)' : 'var(--text-muted)' }}>{svc.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <button className="btn-primary" style={{ width: '100%', padding: '14px 0' }} disabled={!form.category} onClick={() => setStep(2)}>Continue →</button>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Order details</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28, fontWeight: 300 }}>Tell us more so we can match the perfect writer</p>
-
-                <div style={{ marginBottom: 24 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>TURNAROUND TIME</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    {turnaroundOptions.map(t => (
-                      <div key={t.id} onClick={() => setForm(f => ({ ...f, turnaround: t.id }))} style={{
-                        padding: '12px 14px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s',
-                        background: form.turnaround === t.id ? 'rgba(124,58,237,0.15)' : 'var(--surface2)',
-                        border: `1.5px solid ${form.turnaround === t.id ? 'var(--violet)' : 'var(--border)'}`,
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 14, fontWeight: form.turnaround === t.id ? 600 : 400 }}>{t.label}</span>
-                          {t.badge && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 100, background: 'rgba(124,58,237,0.2)', color: 'var(--violet-light)' }}>{t.badge}</span>}
-                        </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>{t.price}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>APPROXIMATE WORD COUNT: <span style={{ color: 'var(--violet-light)' }}>{form.wordCount.toLocaleString()}</span></label>
-                  <input type="range" min={100} max={10000} step={100} value={form.wordCount} onChange={e => setForm(f => ({ ...f, wordCount: +e.target.value }))} style={{ width: '100%', accentColor: 'var(--violet)', cursor: 'pointer' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}><span>100</span><span>10,000</span></div>
-                </div>
-
-                <div style={{ marginBottom: 24 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>BRIEF / REQUIREMENTS</label>
-                  <textarea value={form.details} onChange={e => setForm(f => ({ ...f, details: e.target.value }))} placeholder="Describe what you need. The more detail, the better the match..." style={{ width: '100%', height: 100, background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '12px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font-body)', resize: 'vertical', outline: 'none' }} />
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button className="btn-outline" style={{ flex: 1 }} onClick={() => setStep(1)}>← Back</button>
-                  <button className="btn-primary" style={{ flex: 2 }} onClick={() => setStep(3)}>Continue →</button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Confirm & pay</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28, fontWeight: 300 }}>Review your order summary</p>
-
-                <div style={{ background: 'var(--surface2)', borderRadius: 6, padding: 24, marginBottom: 24 }}>
-                  {[
-                    { label: 'Service', val: form.category },
-                    { label: 'Word Count', val: `${form.wordCount.toLocaleString()} words` },
-                    { label: 'Turnaround', val: turnaroundOptions.find(t => t.id === form.turnaround)?.label },
-                    { label: 'Est. Price', val: `₹${Math.round((form.wordCount / 100) * 200 * (form.turnaround === '12h' ? 1.8 : form.turnaround === '24h' ? 1.4 : form.turnaround === '7d' ? 0.9 : 1))}` },
-                  ].map(row => (
-                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                      <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{row.label}</span>
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>{row.val}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--violet-light)', marginBottom: 4 }}>🔄 Revision Policy</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 300 }}>Unlimited revisions within 7 days of delivery. We guarantee satisfaction — or a full refund.</div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button className="btn-outline" style={{ flex: 1 }} onClick={() => setStep(2)}>← Back</button>
-                  <button className="btn-primary" style={{ flex: 2, opacity: submitting ? 0.7 : 1 }} onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? '⏳ Processing...' : '🔒 Place Order'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Live Chat ──
-function LiveChat() {
-  const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState([{ from: 'bot', text: 'Hi! 👋 How can we help you today? Ask us about our services, pricing, or writers.' }]);
-  const [input, setInput] = useState('');
-  const endRef = useRef(null);
-
-  const autoReplies = [
-    'Great question! Our expert writers are available 24/7. What service are you looking for?',
-    'We offer a 100% satisfaction guarantee with unlimited revisions. Anything else?',
-    'Most orders are matched with a writer within 30 minutes! Shall I help you place an order?',
-    'Our top writers have helped students get into Harvard, Stanford, and Oxford. Want to know more?',
-  ];
-
-  const send = () => {
-    if (!input.trim()) return;
-    setMsgs(m => [...m, { from: 'user', text: input }]);
-    setInput('');
-    setTimeout(() => {
-      setMsgs(m => [...m, { from: 'bot', text: autoReplies[Math.floor(Math.random() * autoReplies.length)] }]);
-    }, 1200);
-  };
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
-
-  return (
-    <>
-      {open && (
-        <div style={{ position: 'fixed', bottom: 90, right: 24, width: 340, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, zIndex: 3000, animation: 'slideIn 0.3s ease', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--violet), #5b21b6)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>X</div>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>Xpresswriters Support</div>
-                <div style={{ fontSize: 12, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} /> Online</div>
-              </div>
-            </div>
-            <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 8, width: 28, height: 28, cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)' }}>✕</button>
-          </div>
-          <div style={{ height: 280, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {msgs.map((m, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: m.from === 'user' ? 'flex-end' : 'flex-start' }}>
-                <div style={{ maxWidth: '80%', padding: '10px 14px', borderRadius: m.from === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: m.from === 'user' ? 'var(--surface2)' : 'var(--surface)', fontSize: 13, lineHeight: 1.5, color: 'var(--text)' }}>{m.text}</div>
-              </div>
-            ))}
-            <div ref={endRef} />
-          </div>
-          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="Type a message..." style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px', color: 'var(--text)', fontSize: 13, fontFamily: 'var(--font-body)', outline: 'none' }} />
-            <button onClick={send} style={{ background: 'var(--violet)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', fontSize: 18 }}>↑</button>
-          </div>
-        </div>
-      )}
-
-      <button onClick={() => setOpen(o => !o)} style={{ position: 'fixed', bottom: 24, right: 24, width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--violet), #5b21b6)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: '0 8px 30px rgba(124,58,237,0.5)', zIndex: 3000, animation: open ? 'none' : 'pulse 3s ease-in-out infinite', transition: 'all 0.3s' }}>
-        {open ? '✕' : '💬'}
-      </button>
-    </>
-  );
-}
-
-// ── Footer ──
-function Footer({ isMobile }) {
-  const links = {
-    Services: ['Statement of Purpose', 'Resume & CV', 'Thesis Writing', 'Academic Essays', 'LinkedIn Profile'],
-    Company: ['About Us', 'How it Works', 'Blog', 'Careers', 'Press'],
-    Support: ['Help Center', 'Contact Us', 'Track Order', 'Revision Policy', 'Refund Policy'],
-  };
-  return (
-    <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '72px 5% 40px' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 64 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--violet)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#fff' }}>X</div>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18 }}>Xpresswriters</span>
-            </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.7, marginBottom: 24, maxWidth: 260, fontWeight: 300 }}>Words that work. Writers who deliver. The world's most trusted content writing platform.</p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {['Twitter', 'LinkedIn', 'Instagram'].map(s => (
-                <div key={s} style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', fontSize: 13, color: 'var(--text-muted)' }}>{s[0]}</div>
-              ))}
-            </div>
-          </div>
-          {Object.entries(links).map(([cat, items]) => (
-            <div key={cat}>
-              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 20 }}>{cat}</div>
-              {items.map(item => (
-                <div key={item} style={{ marginBottom: 10 }}>
-                  <a href="#" style={{ fontSize: 14, color: 'var(--text-dim)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 300 }}
-                    onMouseEnter={e => e.target.style.color = 'var(--text)'}
-                    onMouseLeave={e => e.target.style.color = 'var(--text-dim)'}
-                  >{item}</a>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>© 2026 Xpresswriters. All rights reserved.</span>
-          <div style={{ display: 'flex', gap: 24 }}>
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(l => (
-              <a key={l} href="#" style={{ fontSize: 13, color: 'var(--text-dim)', textDecoration: 'none' }}>{l}</a>
-            ))}
-          </div>
-        </div>
-      </div>
+    <footer style={{ padding: '48px 32px', background: 'var(--surface)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+      <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>© 2026 Xpresswriters. All rights reserved.</div>
     </footer>
   );
 }
 
-export default function LandingPage() {
-  const [orderOpen, setOrderOpen] = useState(false);
-  const [orderService, setOrderService] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleOrder = (svc = null) => { setOrderService(svc); setOrderOpen(true); };
-
+/* ─── APP ─── */
+export default function App() {
   return (
-    <div className="landing-page">
-      <Navbar onOrderClick={handleOrder} isMobile={isMobile} />
-      <Hero onOrderClick={handleOrder} />
-      <Marquee />
-      <Services onOrderClick={handleOrder} />
-      <HowItWorks onOrderClick={handleOrder} />
-      <Writers onOrderClick={handleOrder} />
-      <OrderTracking />
+    <div className="landing-page-container">
+      <Navbar />
+      <Hero />
+      <TrustBar />
+      <Services />
+      <HowItWorks />
+      <WritersMarketplace />
+      <Features />
+      <DashboardPreview />
       <Testimonials />
-      <Pricing onOrderClick={handleOrder} />
-      <Footer isMobile={isMobile} />
-      <LiveChat />
-      <OrderModal isOpen={orderOpen} onClose={() => setOrderOpen(false)} initialService={orderService} />
-    </div>
-  );
+      <WriterCTA />
+      <FAQSection />
+      <FinalCTA />
+      <Footer />
+    </div>);
 }

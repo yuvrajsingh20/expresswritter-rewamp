@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xpresswriters — Services & Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="products-data.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a14;--surface:#13131f;--surface2:#1a1a2a;--surface3:#21213a;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.05);
+  --teal:#0d9488;--teal-light:#2dd4bf;
+  --text:#eefcfb;--text-muted:#8ba39f;--text-dim:#3e5a56;
+  --green:#22c55e;--red:#f43f5e;--amber:#f59e0b;--gold:#f5c842;
+  --font:'Google Sans',system-ui,sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--teal);border-radius:3px}
+::-webkit-scrollbar-track{background:var(--surface)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideLeft{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo}=React;
+const CATALOG=window.CATALOG, CATEGORIES=window.CATEGORIES;
+const fmt=n=>typeof n==='number'?`₹${n.toLocaleString('en-IN')}`:n;
+
+/* ─── BUTTONS ─── */
+function Btn({children,onClick,variant='primary',size='md',icon,disabled,full}){
+  const [hov,setHov]=useState(false);
+  const v={
+    primary:{bg:hov?'#0f766e':'var(--teal)',c:'#fff',b:'transparent'},
+    outline:{bg:hov?'rgba(13,148,136,0.08)':'transparent',c:'var(--text)',b:hov?'var(--teal)':'var(--border)'},
+    ghost:{bg:hov?'var(--surface2)':'transparent',c:'var(--text-muted)',b:'transparent'},
+    gold:{bg:hov?'#d4b53c':'var(--gold)',c:'#0a0a14',b:'transparent'},
+  }[variant];
+  const s={sm:{p:'7px 12px',f:11.5},md:{p:'10px 18px',f:13},lg:{p:'14px 26px',f:14}}[size];
+  return(<button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} disabled={disabled} style={{padding:s.p,borderRadius:7,border:`1.5px solid ${v.b}`,background:v.bg,color:v.c,fontSize:s.f,fontWeight:600,cursor:disabled?'not-allowed':'pointer',fontFamily:'var(--font)',display:full?'flex':'inline-flex',alignItems:'center',justifyContent:'center',gap:7,transition:'all .15s',opacity:disabled?0.5:1,width:full?'100%':'auto'}}>{icon&&<span>{icon}</span>}{children}</button>);
+}
+
+/* ─── NAVBAR ─── */
+function Navbar({cart,onCartClick,onLogin}){
+  return(<nav style={{position:'sticky',top:0,zIndex:50,background:'rgba(10,10,20,0.85)',backdropFilter:'blur(20px)',borderBottom:'1px solid var(--border)',padding:'14px 32px',display:'flex',alignItems:'center',gap:14}}>
+    <a href="index.html" style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none',color:'var(--text)'}}>
+      <div style={{width:32,height:32,borderRadius:8,background:'linear-gradient(135deg,var(--teal),#0f766e)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:15,color:'#fff'}}>X</div>
+      <span style={{fontWeight:700,fontSize:16,letterSpacing:'-0.01em'}}>Xpresswriters</span>
+    </a>
+    <div style={{display:'flex',gap:18,marginLeft:28}}>
+      {[['Services','products.html',true],['How it Works','#how'],['Writers','index.html#writers'],['Pricing','#'],['Blog','#']].map(([l,h,act])=>(
+        <a key={l} href={h} style={{fontSize:13.5,color:act?'var(--teal-light)':'var(--text-muted)',textDecoration:'none',fontWeight:act?600:500,padding:'6px 0',borderBottom:act?'2px solid var(--teal)':'2px solid transparent'}}>{l}</a>
+      ))}
+    </div>
+    <div style={{flex:1}}/>
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <button onClick={onCartClick} style={{position:'relative',width:38,height:38,borderRadius:8,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',cursor:'pointer',fontSize:16,fontFamily:'var(--font)'}}>🛒
+        {cart.length>0&&<span style={{position:'absolute',top:-4,right:-4,minWidth:18,height:18,padding:'0 5px',borderRadius:9,background:'var(--teal)',color:'#fff',fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid var(--bg)',animation:cart.length>0?'bounce .4s ease':'none'}}>{cart.length}</span>}
+      </button>
+      <Btn variant="ghost" onClick={onLogin}>Sign In</Btn>
+      <Btn variant="primary" onClick={onLogin}>Get Started</Btn>
+    </div>
+  </nav>);
+}
+
+/* ─── HERO ─── */
+function Hero({stats}){
+  return(<div style={{padding:'56px 32px 36px',maxWidth:1320,margin:'0 auto',position:'relative'}}>
+    <div style={{position:'absolute',top:-100,right:-100,width:400,height:400,background:'radial-gradient(circle,rgba(13,148,136,0.15),transparent 70%)',pointerEvents:'none'}}/>
+    <div style={{display:'inline-flex',alignItems:'center',gap:7,padding:'5px 12px',borderRadius:5,background:'rgba(13,148,136,0.15)',border:'1px solid rgba(13,148,136,0.3)',marginBottom:18,animation:'fadeUp .3s ease'}}>
+      <span style={{width:5,height:5,borderRadius:'50%',background:'var(--teal-light)',animation:'pulse 2s ease infinite'}}/>
+      <span style={{fontSize:10.5,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--teal-light)'}}>16 Services · 70+ Variants · Live Pricing</span>
+    </div>
+    <h1 style={{fontSize:48,fontWeight:700,letterSpacing:'-0.03em',lineHeight:1.05,maxWidth:820,marginBottom:14,animation:'fadeUp .35s ease'}}>
+      Premium content writing.<br/>
+      <span style={{background:'linear-gradient(120deg,var(--teal-light) 0%,#fff 50%,var(--teal-light) 100%)',backgroundSize:'200% 100%',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Delivered on your timeline.</span>
+    </h1>
+    <p style={{fontSize:16,color:'var(--text-muted)',fontWeight:300,maxWidth:680,lineHeight:1.6,animation:'fadeUp .4s ease'}}>From admissions SOPs to executive resumes, scholarship essays to LinkedIn rewrites — pick a service, choose your variant, add to cart. Same-day fast-track available across every category.</p>
+    <div style={{display:'flex',gap:32,marginTop:28,paddingTop:24,borderTop:'1px solid var(--border)',animation:'fadeUp .45s ease'}}>
+      {[['12,400+','Orders Delivered'],['340+','Verified Writers'],['4.9★','Average Rating'],['98.2%','Acceptance Rate']].map(([v,l])=>(
+        <div key={l}><div style={{fontSize:22,fontWeight:700,color:'var(--teal-light)',letterSpacing:'-0.02em'}}>{v}</div><div style={{fontSize:11,color:'var(--text-dim)',marginTop:2}}>{l}</div></div>
+      ))}
+    </div>
+  </div>);
+}
+
+/* ─── PRODUCT CARD ─── */
+function ProductCard({prod,onOpen}){
+  const [hov,setHov]=useState(false);
+  const items=prod.variants||prod.tiers||[];
+  const minPrice=Math.min(...items.map(v=>typeof v.price==='number'?v.price:Infinity).filter(p=>isFinite(p)));
+  return(<div onClick={()=>onOpen(prod)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
+    background:hov?'var(--surface2)':'var(--surface)',border:`1px solid ${hov?'var(--teal)':'var(--border)'}`,borderRadius:12,padding:'22px 22px 18px',cursor:'pointer',transition:'all .2s',position:'relative',overflow:'hidden',
+    transform:hov?'translateY(-2px)':'translateY(0)',
+    boxShadow:hov?'0 12px 32px rgba(13,148,136,0.15)':'none',
+    animation:'fadeUp .3s ease both'
+  }}>
+    <div style={{position:'absolute',top:0,left:0,right:0,height:hov?3:0,background:'linear-gradient(90deg,var(--teal),var(--teal-light))',transition:'height .2s'}}/>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+      <div style={{width:46,height:46,borderRadius:10,background:'linear-gradient(135deg,rgba(13,148,136,0.2),rgba(13,148,136,0.05))',border:'1px solid rgba(13,148,136,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>{prod.icon}</div>
+      <span style={{padding:'3px 9px',borderRadius:4,background:'var(--surface3)',fontSize:9.5,fontWeight:700,letterSpacing:'0.08em',color:'var(--text-muted)',textTransform:'uppercase'}}>{prod.cat}</span>
+    </div>
+    <h3 style={{fontSize:16,fontWeight:700,letterSpacing:'-0.01em',marginBottom:5,lineHeight:1.3}}>{prod.name}</h3>
+    <p style={{fontSize:12,color:'var(--text-muted)',lineHeight:1.5,fontWeight:300,marginBottom:14,minHeight:36}}>{prod.tagline}</p>
+    <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:6}}>
+      <span style={{fontSize:11,color:'var(--text-dim)'}}>Starting at</span>
+      <span style={{fontSize:22,fontWeight:700,color:'var(--teal-light)',letterSpacing:'-0.02em'}}>{fmt(minPrice)}</span>
+    </div>
+    <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14}}>
+      <span style={{fontSize:10.5,color:'var(--text-dim)',padding:'2px 8px',background:'var(--surface2)',borderRadius:4}}>⏱ {prod.delivery}</span>
+      <span style={{fontSize:10.5,color:'var(--text-dim)',padding:'2px 8px',background:'var(--surface2)',borderRadius:4}}>{items.length} variants</span>
+    </div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:12,borderTop:'1px solid var(--border)'}}>
+      <span style={{fontSize:11.5,color:hov?'var(--teal-light)':'var(--text-muted)',fontWeight:600,transition:'color .15s'}}>View pricing matrix →</span>
+    </div>
+  </div>);
+}
+
+/* ─── PRODUCT DETAIL DRAWER ─── */
+function ProductDrawer({prod,onClose,onAdd}){
+  const [variant,setVariant]=useState(null);
+  const [fast,setFast]=useState(false);
+  const [addon,setAddon]=useState(false);
+  const [custom,setCustom]=useState(false);
+  useEffect(()=>{setVariant(null);setFast(false);setAddon(false);setCustom(false);},[prod]);
+  if(!prod)return null;
+  const items=prod.variants||prod.tiers||[];
+
+  const compute=()=>{
+    if(!variant||typeof variant.price!=='number')return null;
+    let total=variant.price;
+    let breakdown=[{l:variant.label,v:variant.price}];
+    if(fast&&typeof variant.fast==='number'){total+=variant.fast;breakdown.push({l:'Fast track delivery',v:variant.fast});}
+    if(addon&&typeof variant.addon==='number'){total+=variant.addon;breakdown.push({l:'+500 words addon',v:variant.addon});}
+    if(custom&&typeof variant.custom==='number'){total+=variant.custom;breakdown.push({l:'Customisation',v:variant.custom});}
+    return {total,breakdown};
+  };
+  const calc=compute();
+
+  return(<>
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',backdropFilter:'blur(6px)',zIndex:80,animation:'fadeIn .2s ease'}}/>
+    <div style={{position:'fixed',top:0,right:0,bottom:0,width:'min(620px,92vw)',background:'var(--surface)',borderLeft:'1px solid var(--border)',zIndex:90,display:'flex',flexDirection:'column',animation:'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)',boxShadow:'-30px 0 60px rgba(0,0,0,0.6)'}}>
+      <div style={{padding:'22px 28px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'flex-start',gap:16}}>
+        <div style={{width:54,height:54,borderRadius:12,background:'linear-gradient(135deg,rgba(13,148,136,0.25),rgba(13,148,136,0.08))',border:'1px solid rgba(13,148,136,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,flexShrink:0}}>{prod.icon}</div>
+        <div style={{flex:1}}>
+          <div style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:'var(--surface3)',fontSize:9.5,fontWeight:700,letterSpacing:'0.08em',color:'var(--text-muted)',textTransform:'uppercase',marginBottom:6}}>{prod.cat}</div>
+          <h2 style={{fontSize:22,fontWeight:700,letterSpacing:'-0.02em',marginBottom:5,lineHeight:1.25}}>{prod.name}</h2>
+          <p style={{fontSize:13,color:'var(--text-muted)',fontWeight:300,lineHeight:1.55}}>{prod.tagline}</p>
+        </div>
+        <button onClick={onClose} style={{width:32,height:32,borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',cursor:'pointer',fontSize:13,fontFamily:'var(--font)',flexShrink:0}}>✕</button>
+      </div>
+
+      <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
+        <p style={{fontSize:13.5,color:'var(--text)',lineHeight:1.65,marginBottom:24,fontWeight:300}}>{prod.desc}</p>
+
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-muted)',marginBottom:10}}>Choose your variant</div>
+        <div style={{display:'grid',gap:8,marginBottom:24}}>
+          {items.map(v=>(
+            <button key={v.id} onClick={()=>setVariant(v)} style={{
+              textAlign:'left',padding:'14px 16px',borderRadius:9,border:variant?.id===v.id?'1.5px solid var(--teal)':'1px solid var(--border)',
+              background:variant?.id===v.id?'rgba(13,148,136,0.1)':'var(--surface2)',
+              color:'var(--text)',cursor:'pointer',fontFamily:'var(--font)',transition:'all .15s',
+              display:'grid',gridTemplateColumns:'1fr auto',gap:14,alignItems:'center'
+            }}>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,marginBottom:3,display:'flex',alignItems:'center',gap:7}}>
+                  {v.label}
+                  {variant?.id===v.id&&<span style={{color:'var(--teal-light)',fontSize:13}}>✓</span>}
+                </div>
+                <div style={{fontSize:11,color:'var(--text-muted)',display:'flex',gap:10,flexWrap:'wrap'}}>
+                  <span>📝 {v.words}</span>
+                  <span>⏱ {v.delivery}</span>
+                  {v.revisions&&<span>🔁 {v.revisions} revisions</span>}
+                </div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:18,fontWeight:700,color:'var(--teal-light)',letterSpacing:'-0.02em'}}>{typeof v.price==='number'?fmt(v.price):v.price}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {variant&&(<>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-muted)',marginBottom:10}}>Customisations & Add-ons</div>
+          <div style={{display:'grid',gap:8,marginBottom:24}}>
+            {typeof variant.fast==='number'&&<AddonRow checked={fast} onChange={setFast} icon="⚡" label="Fast Track Delivery" sub="Get it 2-3× faster — same priority writer" price={variant.fast}/>}
+            {typeof variant.fast==='string'&&<div style={{padding:'12px 14px',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12,color:'var(--text-muted)',display:'flex',gap:10}}><span>⚡</span><div><div style={{fontWeight:600,color:'var(--text)',marginBottom:2}}>Fast Track</div>{variant.fast}</div></div>}
+            {typeof variant.addon==='number'&&<AddonRow checked={addon} onChange={setAddon} icon="📝" label="+500 words content" sub="Add extra detail and depth" price={variant.addon}/>}
+            {typeof variant.custom==='number'&&<AddonRow checked={custom} onChange={setCustom} icon="✨" label="Customisation" sub="Tailor to specific requirements" price={variant.custom}/>}
+            {variant.ats&&<div style={{padding:'12px 14px',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12,color:'var(--text-muted)',display:'flex',gap:10}}><span>🤖</span><div><div style={{fontWeight:600,color:'var(--text)',marginBottom:2}}>ATS Format</div>+₹{variant.ats} for ATS-optimized version</div></div>}
+            {variant.note&&<div style={{padding:'10px 14px',background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:8,fontSize:11.5,color:'var(--amber)',lineHeight:1.5}}>ℹ {variant.note}</div>}
+          </div>
+        </>)}
+
+        <div style={{padding:'14px 16px',background:'rgba(13,148,136,0.05)',border:'1px solid rgba(13,148,136,0.15)',borderRadius:9,fontSize:11.5,color:'var(--text-muted)',lineHeight:1.6,marginBottom:24}}>
+          <div style={{fontWeight:700,color:'var(--text)',marginBottom:5}}>What's included</div>
+          • Hand-crafted by domain expert writers · • 2 free revisions on most plans · • Plagiarism-free with originality report · • Full IP transferred to you · • In-app messaging with your writer
+        </div>
+      </div>
+
+      {variant&&calc&&(<div style={{borderTop:'1px solid var(--border)',padding:'18px 28px',background:'var(--surface2)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:14}}>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-muted)',marginBottom:4}}>Total</div>
+            <div style={{fontSize:30,fontWeight:700,color:'var(--teal-light)',letterSpacing:'-0.02em',lineHeight:1}}>{fmt(calc.total)}</div>
+          </div>
+          <div style={{fontSize:10.5,color:'var(--text-dim)',textAlign:'right',lineHeight:1.6}}>
+            {calc.breakdown.map(b=>(<div key={b.l}>{b.l} <span style={{color:'var(--text-muted)'}}>{fmt(b.v)}</span></div>))}
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <Btn size="lg" variant="outline" full onClick={()=>{onAdd({prod,variant,fast,addon,custom,total:calc.total});}}>🛒 Add to Cart</Btn>
+          <Btn size="lg" variant="primary" full onClick={()=>{onAdd({prod,variant,fast,addon,custom,total:calc.total},true);}}>Buy Now →</Btn>
+        </div>
+      </div>)}
+    </div>
+  </>);
+}
+
+function AddonRow({checked,onChange,icon,label,sub,price}){
+  return(<button onClick={()=>onChange(!checked)} style={{
+    textAlign:'left',padding:'12px 14px',borderRadius:8,border:checked?'1.5px solid var(--teal)':'1px solid var(--border)',
+    background:checked?'rgba(13,148,136,0.1)':'var(--surface2)',color:'var(--text)',cursor:'pointer',fontFamily:'var(--font)',transition:'all .15s',
+    display:'grid',gridTemplateColumns:'20px 1fr auto',gap:12,alignItems:'center'
+  }}>
+    <div style={{width:18,height:18,borderRadius:5,border:checked?'none':'1.5px solid var(--text-dim)',background:checked?'var(--teal)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:11,fontWeight:700}}>{checked?'✓':''}</div>
+    <div>
+      <div style={{fontSize:13,fontWeight:600,marginBottom:1}}>{icon} {label}</div>
+      <div style={{fontSize:11,color:'var(--text-muted)',fontWeight:300}}>{sub}</div>
+    </div>
+    <div style={{fontSize:14,fontWeight:700,color:'var(--teal-light)'}}>+{fmt(price)}</div>
+  </button>);
+}
+
+/* ─── CART DRAWER ─── */
+function CartDrawer({open,onClose,cart,setCart,onCheckout}){
+  if(!open)return null;
+  const subtotal=cart.reduce((s,i)=>s+i.total,0);
+  const fee=Math.round(subtotal*0.05);
+  const tax=Math.round((subtotal+fee)*0.18);
+  const total=subtotal+fee+tax;
+  return(<>
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)',zIndex:100,animation:'fadeIn .2s'}}/>
+    <div style={{position:'fixed',top:0,right:0,bottom:0,width:'min(480px,92vw)',background:'var(--surface)',borderLeft:'1px solid var(--border)',zIndex:110,display:'flex',flexDirection:'column',animation:'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)',boxShadow:'-30px 0 60px rgba(0,0,0,0.6)'}}>
+      <div style={{padding:'20px 24px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div><div style={{fontSize:17,fontWeight:700}}>Your Cart</div><div style={{fontSize:11.5,color:'var(--text-muted)'}}>{cart.length} {cart.length===1?'item':'items'}</div></div>
+        <button onClick={onClose} style={{width:32,height:32,borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',cursor:'pointer',fontSize:13,fontFamily:'var(--font)'}}>✕</button>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:cart.length?'12px 0':'40px 24px'}}>
+        {cart.length===0?<div style={{textAlign:'center'}}>
+          <div style={{fontSize:48,marginBottom:12,opacity:0.4}}>🛒</div>
+          <div style={{fontSize:14,fontWeight:600,color:'var(--text-muted)',marginBottom:5}}>Your cart is empty</div>
+          <div style={{fontSize:12,color:'var(--text-dim)',marginBottom:18}}>Browse our services to add items</div>
+          <Btn variant="primary" onClick={onClose}>Browse Services</Btn>
+        </div>:cart.map((item,i)=>(<div key={i} style={{padding:'16px 24px',borderBottom:'1px solid var(--border2)',display:'flex',gap:13}}>
+          <div style={{width:42,height:42,borderRadius:9,background:'rgba(13,148,136,0.15)',border:'1px solid rgba(13,148,136,0.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>{item.prod.icon}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>{item.prod.name}</div>
+            <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:5}}>{item.variant.label}</div>
+            <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:6}}>
+              {item.fast&&<span style={{fontSize:9.5,padding:'1px 6px',borderRadius:3,background:'rgba(245,200,66,0.15)',color:'var(--gold)',fontWeight:600,letterSpacing:'0.04em'}}>⚡ FAST TRACK</span>}
+              {item.addon&&<span style={{fontSize:9.5,padding:'1px 6px',borderRadius:3,background:'rgba(13,148,136,0.15)',color:'var(--teal-light)',fontWeight:600,letterSpacing:'0.04em'}}>+500 WORDS</span>}
+              {item.custom&&<span style={{fontSize:9.5,padding:'1px 6px',borderRadius:3,background:'rgba(167,139,250,0.15)',color:'#a78bfa',fontWeight:600,letterSpacing:'0.04em'}}>✨ CUSTOM</span>}
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div style={{fontSize:15,fontWeight:700,color:'var(--teal-light)'}}>{fmt(item.total)}</div>
+              <button onClick={()=>setCart(cart.filter((_,idx)=>idx!==i))} style={{background:'transparent',border:'none',color:'var(--text-dim)',cursor:'pointer',fontSize:11,fontFamily:'var(--font)'}}>Remove</button>
+            </div>
+          </div>
+        </div>))}
+      </div>
+      {cart.length>0&&<div style={{padding:'18px 24px',borderTop:'1px solid var(--border)',background:'var(--surface2)'}}>
+        <div style={{fontSize:11.5,color:'var(--text-muted)',display:'grid',gap:5,marginBottom:12}}>
+          <div style={{display:'flex',justifyContent:'space-between'}}><span>Subtotal</span><span style={{color:'var(--text)'}}>{fmt(subtotal)}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between'}}><span>Platform fee (5%)</span><span style={{color:'var(--text)'}}>{fmt(fee)}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between'}}><span>GST (18%)</span><span style={{color:'var(--text)'}}>{fmt(tax)}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',paddingTop:8,borderTop:'1px solid var(--border)',marginTop:4,fontSize:15,fontWeight:700,color:'var(--text)'}}><span>Total</span><span style={{color:'var(--teal-light)'}}>{fmt(total)}</span></div>
+        </div>
+        <Btn variant="primary" size="lg" full onClick={onCheckout}>Proceed to Checkout →</Btn>
+        <div style={{textAlign:'center',fontSize:10.5,color:'var(--text-dim)',marginTop:10}}>🔒 Secured by Stripe & Razorpay · No login required to start</div>
+      </div>}
+    </div>
+  </>);
+}
+
+/* ─── AUTH MODAL ─── */
+function AuthModal({open,onClose,onSuccess,prefilledEmail}){
+  const [mode,setMode]=useState('signup');
+  const [step,setStep]=useState(1);
+  const [email,setEmail]=useState(prefilledEmail||'');
+  const [name,setName]=useState('');
+  const [pw,setPw]=useState('');
+  useEffect(()=>{if(open){setStep(1);setEmail(prefilledEmail||'');setName('');setPw('');}},[open,prefilledEmail]);
+  if(!open)return null;
+  return(<>
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',backdropFilter:'blur(8px)',zIndex:200,animation:'fadeIn .2s'}}/>
+    <div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'min(440px,92vw)',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,zIndex:210,padding:'32px 30px',animation:'fadeUp .25s ease',boxShadow:'0 30px 80px rgba(0,0,0,0.6)'}}>
+      <button onClick={onClose} style={{position:'absolute',top:14,right:14,width:30,height:30,borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',cursor:'pointer',fontSize:12,fontFamily:'var(--font)'}}>✕</button>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:18}}>
+        <div style={{width:36,height:36,borderRadius:9,background:'linear-gradient(135deg,var(--teal),#0f766e)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:15,color:'#fff'}}>X</div>
+        <span style={{fontWeight:700,fontSize:16}}>Xpresswriters</span>
+      </div>
+      {step===1?<>
+        <h2 style={{fontSize:22,fontWeight:700,letterSpacing:'-0.02em',marginBottom:5}}>{mode==='signup'?'Create your account':'Welcome back'}</h2>
+        <p style={{fontSize:12.5,color:'var(--text-muted)',marginBottom:20,fontWeight:300}}>{mode==='signup'?'Track orders, message writers, download invoices':'Sign in to view your orders'}</p>
+        <div style={{display:'flex',gap:8,marginBottom:18}}>
+          <button style={{flex:1,padding:'10px',borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'var(--font)',display:'flex',alignItems:'center',justifyContent:'center',gap:7}}><span style={{fontSize:14}}>🅖</span> Google</button>
+          <button style={{flex:1,padding:'10px',borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'var(--font)',display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>🍎 Apple</button>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}><div style={{flex:1,height:1,background:'var(--border)'}}/><span style={{fontSize:10.5,color:'var(--text-dim)',letterSpacing:'0.08em'}}>OR CONTINUE WITH EMAIL</span><div style={{flex:1,height:1,background:'var(--border)'}}/></div>
+        {mode==='signup'&&<input value={name} onChange={e=>setName(e.target.value)} placeholder="Full name" style={{width:'100%',padding:'11px 14px',marginBottom:9,borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',fontSize:13,outline:'none',fontFamily:'var(--font)'}}/>}
+        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" style={{width:'100%',padding:'11px 14px',marginBottom:9,borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',fontSize:13,outline:'none',fontFamily:'var(--font)'}}/>
+        <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" type="password" style={{width:'100%',padding:'11px 14px',marginBottom:14,borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text)',fontSize:13,outline:'none',fontFamily:'var(--font)'}}/>
+        <Btn variant="primary" size="lg" full onClick={()=>setStep(2)} disabled={!email||!pw||(mode==='signup'&&!name)}>{mode==='signup'?'Create account & Continue':'Sign in'}</Btn>
+        <div style={{textAlign:'center',fontSize:12,color:'var(--text-muted)',marginTop:16}}>
+          {mode==='signup'?<>Already have an account? <a onClick={()=>setMode('signin')} style={{color:'var(--teal-light)',cursor:'pointer',fontWeight:600}}>Sign in</a></>:<>New here? <a onClick={()=>setMode('signup')} style={{color:'var(--teal-light)',cursor:'pointer',fontWeight:600}}>Create account</a></>}
+        </div>
+      </>:<>
+        <div style={{textAlign:'center'}}>
+          <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(34,197,94,0.15)',border:'2px solid var(--green)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'8px auto 16px',animation:'fadeUp .3s ease'}}>✓</div>
+          <h2 style={{fontSize:20,fontWeight:700,marginBottom:6}}>Account created!</h2>
+          <p style={{fontSize:12.5,color:'var(--text-muted)',marginBottom:20,lineHeight:1.6,fontWeight:300}}>We've sent a verification email to <strong style={{color:'var(--text)'}}>{email}</strong>. Click the link to verify, then you can place your order.</p>
+          <Btn variant="primary" size="lg" full onClick={onSuccess}>Continue to Checkout →</Btn>
+          <div style={{fontSize:11,color:'var(--text-dim)',marginTop:12}}>Didn't get the email? <a style={{color:'var(--teal-light)',cursor:'pointer'}}>Resend</a></div>
+        </div>
+      </>}
+    </div>
+  </>);
+}
+
+/* ─── CHECKOUT ─── */
+function Checkout({cart,setCart,onClose,onSuccess}){
+  const [step,setStep]=useState(1);
+  const subtotal=cart.reduce((s,i)=>s+i.total,0);
+  const fee=Math.round(subtotal*0.05);
+  const tax=Math.round((subtotal+fee)*0.18);
+  const total=subtotal+fee+tax;
+  const [pay,setPay]=useState('razorpay');
+  return(<div style={{position:'fixed',inset:0,background:'var(--bg)',zIndex:150,overflowY:'auto'}}>
+    <div style={{position:'sticky',top:0,background:'rgba(10,10,20,0.9)',backdropFilter:'blur(20px)',borderBottom:'1px solid var(--border)',padding:'14px 32px',display:'flex',alignItems:'center',gap:14,zIndex:5}}>
+      <button onClick={onClose} style={{padding:'8px 14px',borderRadius:7,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text-muted)',cursor:'pointer',fontSize:12,fontFamily:'var(--font)',fontWeight:600}}>← Back</button>
+      <div style={{flex:1,display:'flex',justifyContent:'center',gap:32}}>
+        {[['Brief','📋'],['Payment','💳'],['Confirm','✓']].map(([l,i],idx)=>(
+          <div key={l} style={{display:'flex',alignItems:'center',gap:9}}>
+            <div style={{width:28,height:28,borderRadius:'50%',background:step>idx?'var(--teal)':step===idx+1?'rgba(13,148,136,0.2)':'var(--surface2)',border:step===idx+1?'2px solid var(--teal)':'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:step>idx?'#fff':step===idx+1?'var(--teal-light)':'var(--text-dim)'}}>{step>idx?'✓':idx+1}</div>
+            <span style={{fontSize:12,fontWeight:600,color:step>=idx+1?'var(--text)':'var(--text-dim)'}}>{l}</span>
+            {idx<2&&<div style={{width:60,height:1,background:step>idx+1?'var(--teal)':'var(--border)'}}/>}
+          </div>
+        ))}
+      </div>
+      <div style={{width:60}}/>
+    </div>
+    <div style={{maxWidth:1080,margin:'0 auto',padding:'32px',display:'grid',gridTemplateColumns:'1fr 360px',gap:24}}>
+      <div>
+        {step===1&&<div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'24px 28px'}}>
+          <h2 style={{fontSize:20,fontWeight:700,marginBottom:5,letterSpacing:'-0.02em'}}>Order Brief</h2>
+          <p style={{fontSize:12.5,color:'var(--text-muted)',marginBottom:20,fontWeight:300}}>Tell us about your requirements so we can match the perfect writer.</p>
+          {cart.map((item,i)=>(<div key={i} style={{padding:'16px 18px',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:9,marginBottom:14}}>
+            <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:12}}>
+              <span style={{fontSize:20}}>{item.prod.icon}</span>
+              <div><div style={{fontSize:13,fontWeight:700}}>{item.prod.name}</div><div style={{fontSize:11,color:'var(--text-muted)'}}>{item.variant.label}</div></div>
+            </div>
+            <textarea placeholder="Describe your requirements, target audience, key points, examples to include..." rows={4} style={{width:'100%',padding:'10px 12px',borderRadius:7,background:'var(--surface)',border:'1px solid var(--border)',color:'var(--text)',fontSize:12.5,outline:'none',fontFamily:'var(--font)',resize:'vertical',marginBottom:8}}/>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              <label style={{padding:'7px 12px',borderRadius:6,background:'var(--surface)',border:'1px dashed var(--border)',fontSize:11.5,color:'var(--text-muted)',cursor:'pointer'}}>📎 Attach files</label>
+              <input placeholder="Target deadline" style={{flex:1,minWidth:140,padding:'7px 11px',borderRadius:6,background:'var(--surface)',border:'1px solid var(--border)',color:'var(--text)',fontSize:11.5,outline:'none',fontFamily:'var(--font)'}}/>
+            </div>
+          </div>))}
+          <Btn variant="primary" size="lg" onClick={()=>setStep(2)}>Continue to Payment →</Btn>
+        </div>}
+        {step===2&&<div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'24px 28px'}}>
+          <h2 style={{fontSize:20,fontWeight:700,marginBottom:5,letterSpacing:'-0.02em'}}>Payment Method</h2>
+          <p style={{fontSize:12.5,color:'var(--text-muted)',marginBottom:20,fontWeight:300}}>Choose your preferred payment gateway. All transactions are secured & PCI-compliant.</p>
+          <div style={{display:'grid',gap:10,marginBottom:20}}>
+            {[
+              {id:'razorpay',l:'Razorpay',d:'UPI, Cards, Net Banking, Wallets',i:'🇮🇳',badge:'Recommended for India'},
+              {id:'stripe',l:'Stripe',d:'International cards & wallets',i:'💳',badge:'For non-India customers'},
+              {id:'upi',l:'UPI Direct',d:'PhonePe, GPay, Paytm',i:'📱'},
+              {id:'wallet',l:'Xpresswriters Credits',d:'Balance: ₹0',i:'💎',disabled:true},
+            ].map(m=>(<button key={m.id} disabled={m.disabled} onClick={()=>setPay(m.id)} style={{textAlign:'left',padding:'14px 16px',borderRadius:9,border:pay===m.id?'1.5px solid var(--teal)':'1px solid var(--border)',background:pay===m.id?'rgba(13,148,136,0.1)':'var(--surface2)',cursor:m.disabled?'not-allowed':'pointer',fontFamily:'var(--font)',display:'grid',gridTemplateColumns:'auto 1fr auto',gap:13,alignItems:'center',opacity:m.disabled?0.5:1}}>
+              <div style={{width:36,height:36,borderRadius:8,background:'var(--surface)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{m.i}</div>
+              <div><div style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:2}}>{m.l}</div><div style={{fontSize:11,color:'var(--text-muted)'}}>{m.d}</div></div>
+              {m.badge&&<span style={{fontSize:9.5,padding:'3px 8px',borderRadius:4,background:'rgba(13,148,136,0.15)',color:'var(--teal-light)',fontWeight:700,letterSpacing:'0.04em'}}>{m.badge}</span>}
+              <div style={{width:18,height:18,borderRadius:'50%',border:pay===m.id?'none':'1.5px solid var(--text-dim)',background:pay===m.id?'var(--teal)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:11}}>{pay===m.id?'✓':''}</div>
+            </button>))}
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <Btn variant="outline" size="lg" onClick={()=>setStep(1)}>← Back</Btn>
+            <Btn variant="primary" size="lg" full onClick={()=>setStep(3)}>Pay {fmt(total)} →</Btn>
+          </div>
+        </div>}
+        {step===3&&<div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'40px 28px',textAlign:'center'}}>
+          <div style={{width:80,height:80,borderRadius:'50%',background:'rgba(34,197,94,0.15)',border:'2px solid var(--green)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,margin:'0 auto 18px',animation:'fadeUp .3s ease'}}>✓</div>
+          <h2 style={{fontSize:24,fontWeight:700,marginBottom:6,letterSpacing:'-0.02em'}}>Order placed!</h2>
+          <p style={{fontSize:13.5,color:'var(--text-muted)',marginBottom:6,fontWeight:300}}>Payment confirmed via Razorpay · Invoice <strong style={{color:'var(--teal-light)',fontFamily:'monospace'}}>INV-2026-{Math.floor(Math.random()*9000)+1000}</strong></p>
+          <p style={{fontSize:12.5,color:'var(--text-muted)',marginBottom:24,fontWeight:300}}>Our matching engine is assigning the best writer for your brief. You'll get an email + in-app notification within 30 minutes.</p>
+          <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+            <Btn variant="outline" size="lg" onClick={onClose}>Continue Shopping</Btn>
+            <Btn variant="primary" size="lg" onClick={onSuccess}>Track Order in Dashboard →</Btn>
+          </div>
+        </div>}
+      </div>
+      <div>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'20px 22px',position:'sticky',top:90}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-muted)',marginBottom:14}}>Order Summary · {cart.length} {cart.length===1?'item':'items'}</div>
+          {cart.map((item,i)=>(<div key={i} style={{display:'flex',gap:10,paddingBottom:12,marginBottom:12,borderBottom:'1px solid var(--border2)'}}>
+            <div style={{width:34,height:34,borderRadius:7,background:'rgba(13,148,136,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,flexShrink:0}}>{item.prod.icon}</div>
+            <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,marginBottom:1}}>{item.prod.name}</div><div style={{fontSize:10.5,color:'var(--text-muted)'}}>{item.variant.label}</div></div>
+            <div style={{fontSize:12,fontWeight:700,color:'var(--teal-light)'}}>{fmt(item.total)}</div>
+          </div>))}
+          <div style={{fontSize:12,color:'var(--text-muted)',display:'grid',gap:6,marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between'}}><span>Subtotal</span><span style={{color:'var(--text)'}}>{fmt(subtotal)}</span></div>
+            <div style={{display:'flex',justifyContent:'space-between'}}><span>Platform fee (5%)</span><span style={{color:'var(--text)'}}>{fmt(fee)}</span></div>
+            <div style={{display:'flex',justifyContent:'space-between'}}><span>GST (18%)</span><span style={{color:'var(--text)'}}>{fmt(tax)}</span></div>
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between',paddingTop:10,borderTop:'1px solid var(--border)',fontSize:16,fontWeight:700}}><span>Total</span><span style={{color:'var(--teal-light)'}}>{fmt(total)}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ─── JOURNEY DIAGRAM ─── */
+function Journey(){
+  const steps=[
+    {n:1,t:'Browse',d:'Explore 16 services across 70+ variants',i:'🔍'},
+    {n:2,t:'Customize',d:'Pick variant, add fast-track & extras',i:'⚙️'},
+    {n:3,t:'Cart',d:'Bundle multiple services together',i:'🛒'},
+    {n:4,t:'Sign Up',d:'Create account or continue as guest',i:'🔐'},
+    {n:5,t:'Brief',d:'Share requirements & deadline',i:'📋'},
+    {n:6,t:'Pay',d:'Razorpay, Stripe, UPI — all secured',i:'💳'},
+    {n:7,t:'Assigned',d:'CRM auto-routes to best writer (≤30 min)',i:'🎯'},
+    {n:8,t:'Deliver',d:'Track progress, chat, approve, invoice',i:'✅'},
+  ];
+  return(<div id="how" style={{padding:'56px 32px',maxWidth:1320,margin:'0 auto'}}>
+    <div style={{textAlign:'center',marginBottom:36}}>
+      <div style={{display:'inline-flex',padding:'4px 11px',borderRadius:5,background:'rgba(13,148,136,0.15)',marginBottom:12,fontSize:10.5,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--teal-light)'}}>End-to-End Journey</div>
+      <h2 style={{fontSize:32,fontWeight:700,letterSpacing:'-0.02em',marginBottom:8}}>From browse to delivery in 8 steps</h2>
+      <p style={{fontSize:14,color:'var(--text-muted)',fontWeight:300,maxWidth:580,margin:'0 auto'}}>Frictionless ordering with automatic CRM integration — every order flows from website → checkout → writer assignment → delivery.</p>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
+      {steps.map((s,i)=>(<div key={s.n} style={{position:'relative',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:11,padding:'20px 18px',animation:`fadeUp .3s ease ${i*.05}s both`}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+          <div style={{width:34,height:34,borderRadius:8,background:'linear-gradient(135deg,rgba(13,148,136,0.2),rgba(13,148,136,0.06))',border:'1px solid rgba(13,148,136,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>{s.i}</div>
+          <span style={{fontSize:10.5,fontWeight:700,letterSpacing:'0.08em',color:'var(--text-dim)'}}>STEP {s.n}</span>
+        </div>
+        <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>{s.t}</div>
+        <div style={{fontSize:12,color:'var(--text-muted)',lineHeight:1.5,fontWeight:300}}>{s.d}</div>
+        {(i+1)%4!==0&&i<steps.length-1&&<div style={{position:'absolute',right:-9,top:'50%',transform:'translateY(-50%)',width:14,height:14,borderRadius:'50%',background:'var(--bg)',border:'2px solid var(--teal)',color:'var(--teal-light)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,zIndex:2}}>→</div>}
+      </div>))}
+    </div>
+  </div>);
+}
+
+/* ─── APP ─── */
+function App(){
+  const [activeCat,setActiveCat]=useState('all');
+  const [search,setSearch]=useState('');
+  const [openProd,setOpenProd]=useState(null);
+  const [cart,setCart]=useState(()=>{try{return JSON.parse(localStorage.getItem('xw_cart')||'[]');}catch{return [];}});
+  const [cartOpen,setCartOpen]=useState(false);
+  const [authOpen,setAuthOpen]=useState(false);
+  const [checkout,setCheckout]=useState(false);
+  useEffect(()=>{localStorage.setItem('xw_cart',JSON.stringify(cart));},[cart]);
+
+  const filtered=useMemo(()=>CATALOG.filter(p=>{
+    if(activeCat!=='all'&&p.cat!==activeCat)return false;
+    if(search&&!`${p.name} ${p.tagline} ${p.cat}`.toLowerCase().includes(search.toLowerCase()))return false;
+    return true;
+  }),[activeCat,search]);
+
+  const addToCart=(item,buyNow)=>{
+    setCart(c=>[...c,item]);
+    setOpenProd(null);
+    if(buyNow){setAuthOpen(true);}else{setCartOpen(true);}
+  };
+
+  return(<div>
+    <Navbar cart={cart} onCartClick={()=>setCartOpen(true)} onLogin={()=>setAuthOpen(true)}/>
+    <Hero/>
+
+    {/* Category bar */}
+    <div style={{position:'sticky',top:69,zIndex:30,background:'rgba(10,10,20,0.95)',backdropFilter:'blur(20px)',borderBottom:'1px solid var(--border)',padding:'14px 32px'}}>
+      <div style={{maxWidth:1320,margin:'0 auto',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+        <div style={{display:'flex',gap:5,padding:4,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:9,flexWrap:'wrap'}}>
+          {CATEGORIES.map(c=>(<button key={c.id} onClick={()=>setActiveCat(c.id)} style={{padding:'7px 13px',borderRadius:6,border:'none',background:activeCat===c.id?'var(--teal)':'transparent',color:activeCat===c.id?'#fff':'var(--text-muted)',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'var(--font)',display:'inline-flex',alignItems:'center',gap:6,transition:'all .15s'}}>
+            <span>{c.icon}</span>{c.label}
+          </button>))}
+        </div>
+        <div style={{flex:1,minWidth:200,position:'relative'}}>
+          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text-dim)',fontSize:13,pointerEvents:'none'}}>🔍</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search services, e.g. 'SOP for masters', 'Canada visa'..." style={{width:'100%',padding:'9px 12px 9px 34px',borderRadius:7,background:'var(--surface)',border:'1px solid var(--border)',color:'var(--text)',fontSize:12.5,outline:'none',fontFamily:'var(--font)'}}/>
+        </div>
+      </div>
+    </div>
+
+    {/* Catalog grid */}
+    <div style={{padding:'28px 32px 60px',maxWidth:1320,margin:'0 auto'}}>
+      <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:18}}>
+        <div><h2 style={{fontSize:20,fontWeight:700,letterSpacing:'-0.02em'}}>{activeCat==='all'?'All Services':CATEGORIES.find(c=>c.id===activeCat)?.label}</h2><div style={{fontSize:12,color:'var(--text-muted)',marginTop:3}}>{filtered.length} {filtered.length===1?'service':'services'} · All prices in INR</div></div>
+        <div style={{fontSize:11,color:'var(--text-dim)'}}>Sort: Most popular ▾</div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14}}>
+        {filtered.map(p=><ProductCard key={p.id} prod={p} onOpen={setOpenProd}/>)}
+      </div>
+    </div>
+
+    <Journey/>
+
+    {/* Trust band */}
+    <div style={{padding:'40px 32px',background:'linear-gradient(135deg,rgba(13,148,136,0.06),transparent)',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)'}}>
+      <div style={{maxWidth:1320,margin:'0 auto',display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:24,textAlign:'center'}}>
+        {[['🔒','100% Confidential','NDA-grade privacy on every order'],['🎓','PhD-level writers','340+ verified domain experts'],['↻','Unlimited revisions','2 free revisions on every plan'],['💰','Money-back guarantee','Full refund within 14 days']].map(([i,t,d])=>(<div key={t}><div style={{fontSize:28,marginBottom:7}}>{i}</div><div style={{fontSize:13,fontWeight:700,marginBottom:3}}>{t}</div><div style={{fontSize:11.5,color:'var(--text-muted)',fontWeight:300}}>{d}</div></div>))}
+      </div>
+    </div>
+
+    {/* Footer */}
+    <footer style={{padding:'40px 32px',textAlign:'center',color:'var(--text-dim)',fontSize:11.5}}>
+      <div style={{marginBottom:6}}>© 2026 Xpresswriters Inc. · Made with care in Mumbai</div>
+      <div style={{display:'flex',gap:18,justifyContent:'center',marginTop:10}}>
+        <a href="dashboard.html" style={{color:'var(--text-muted)',textDecoration:'none'}}>Dashboard</a>
+        <a href="invoices.html" style={{color:'var(--text-muted)',textDecoration:'none'}}>Invoices</a>
+        <a href="notifications.html" style={{color:'var(--text-muted)',textDecoration:'none'}}>Notifications</a>
+        <a href="writer-onboarding.html" style={{color:'var(--text-muted)',textDecoration:'none'}}>Become a Writer</a>
+      </div>
+    </footer>
+
+    <ProductDrawer prod={openProd} onClose={()=>setOpenProd(null)} onAdd={addToCart}/>
+    <CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} setCart={setCart} onCheckout={()=>{setCartOpen(false);setAuthOpen(true);}}/>
+    <AuthModal open={authOpen} onClose={()=>setAuthOpen(false)} onSuccess={()=>{setAuthOpen(false);setCheckout(true);}}/>
+    {checkout&&<Checkout cart={cart} setCart={setCart} onClose={()=>setCheckout(false)} onSuccess={()=>{setCart([]);window.location.href='dashboard.html';}}/>}
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

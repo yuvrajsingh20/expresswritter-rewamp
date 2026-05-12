@@ -20,7 +20,7 @@ const AdminChatHub = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io();
+    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     setSocket(s);
     return () => s.disconnect();
   }, []);

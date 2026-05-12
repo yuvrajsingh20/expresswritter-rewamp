@@ -1,6 +1,8 @@
 "use client";
 import LegalPage from '../legal-layout';
 
+export const dynamic = 'force-dynamic';
+
 export default function RefundPolicy() {
   return (
     <LegalPage 

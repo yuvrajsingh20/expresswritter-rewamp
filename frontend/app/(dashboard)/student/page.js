@@ -114,7 +114,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
     else if (o.status === 'REVISION') { displayStatus = 'Revision Requested'; progress = 80; }
     else if (o.status === 'QUALITY_CHECK') { displayStatus = 'Quality Check'; progress = 90; }
     else if (o.status === 'UNDER_REVIEW') { displayStatus = 'Under Review'; progress = 75; }
-    
+
     return {
       id: o.id,
       service: o.serviceType || o.title,
@@ -258,7 +258,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const filters = ['All', 'Active', 'Delivered', 'Revision'];
-  
+
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketSuccess, setTicketSuccess] = useState(false);
   const [ticketError, setTicketError] = useState('');
@@ -298,7 +298,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     }
     setSubmitting(false);
   };
-  
+
   const MAPPED_ORDERS = projects.map(p => {
     let displayStatus = 'In Progress';
     let progress = 50;
@@ -325,12 +325,12 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const filtered = MAPPED_ORDERS.filter(o => {
     const matchesFilter = filter === 'All' ? true :
       filter === 'Active' ? !['Delivered', 'Revision Requested'].includes(o.status) :
-      filter === 'Delivered' ? o.status === 'Delivered' :
-      filter === 'Revision' ? o.status === 'Revision Requested' : true;
-    
-    const matchesSearch = o.id.toLowerCase().includes(search.toLowerCase()) || 
-                          o.service.toLowerCase().includes(search.toLowerCase());
-    
+        filter === 'Delivered' ? o.status === 'Delivered' :
+          filter === 'Revision' ? o.status === 'Revision Requested' : true;
+
+    const matchesSearch = o.id.toLowerCase().includes(search.toLowerCase()) ||
+      o.service.toLowerCase().includes(search.toLowerCase());
+
     return matchesFilter && matchesSearch;
   });
 
@@ -357,11 +357,11 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
         </div>
         <div style={{ marginLeft: isMobile ? '0' : 'auto', background: 'var(--surface2)', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, width: isMobile ? '100%' : 240, border: '1px solid var(--border2)' }}>
           <span style={{ color: 'var(--text-dim)', fontSize: 13 }}>🔍</span>
-          <input 
-            placeholder="Search by ID or service..." 
+          <input
+            placeholder="Search by ID or service..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, width: '100%' }} 
+            style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, width: '100%' }}
           />
         </div>
       </div>
@@ -383,12 +383,12 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
               cursor: 'pointer', transition: 'background 0.15s',
               background: isSelected ? 'rgba(13,148,136,0.08)' : 'transparent',
             }}
-            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.id}</div>
               <div style={{ fontSize: 13, paddingRight: 12 }}>{order.service}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.writer.split(' ').slice(0,2).join(' ')}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.writer.split(' ').slice(0, 2).join(' ')}</div>
               <div>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 100, background: sc.bg, color: sc.color }}>
                   {order.status}
@@ -471,9 +471,9 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
             )}
 
             {o.status !== 'Delivered' && (
-               <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
-                  <button onClick={() => setShowTicketModal(true)} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
-               </div>
+              <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
+                <button onClick={() => setShowTicketModal(true)} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
+              </div>
             )}
           </div>
         );
@@ -488,8 +488,8 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
                 <div style={{ fontSize: 40, marginBottom: 16 }}>🎉</div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>Ticket Created!</h3>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Your support ticket has been created successfully. Our team will review it shortly.</p>
-                <button 
-                  onClick={() => { setShowTicketModal(false); setTicketSuccess(false); setTicketError(''); }} 
+                <button
+                  onClick={() => { setShowTicketModal(false); setTicketSuccess(false); setTicketError(''); }}
                   style={{ padding: '10px 24px', borderRadius: 8, background: 'var(--teal)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                 >
                   Close
@@ -499,7 +499,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Report Issue / Request Refund</h3>
-                  <button 
+                  <button
                     onClick={() => { setShowTicketModal(false); setTicketError(''); }}
                     style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
                     title="Close"
@@ -508,7 +508,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
                   </button>
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>Our team will review your request and get back to you within 24 hours.</p>
-                
+
                 {ticketError && (
                   <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '10px', borderRadius: 6, fontSize: 13, marginBottom: 16 }}>
                     {ticketError}
@@ -517,33 +517,33 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 6 }}>Subject</label>
-                  <input 
-                    value={ticketSubject} 
-                    onChange={e => setTicketSubject(e.target.value)} 
+                  <input
+                    value={ticketSubject}
+                    onChange={e => setTicketSubject(e.target.value)}
                     placeholder="e.g., Formatting issue, Plagiarism check, etc."
-                    style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} 
+                    style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-                
+
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 6 }}>Detailed Description</label>
-                  <textarea 
-                    value={ticketMessage} 
-                    onChange={e => setTicketMessage(e.target.value)} 
+                  <textarea
+                    value={ticketMessage}
+                    onChange={e => setTicketMessage(e.target.value)}
                     placeholder="Please describe your issue in detail..."
-                    style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, minHeight: 120, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} 
+                    style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, minHeight: 120, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-                
+
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                  <button 
-                    onClick={() => { setShowTicketModal(false); setTicketError(''); }} 
+                  <button
+                    onClick={() => { setShowTicketModal(false); setTicketError(''); }}
                     style={{ padding: '10px 18px', borderRadius: 8, background: 'var(--surface3)', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                   >
                     Cancel
                   </button>
-                  <button 
-                    onClick={handleCreateTicket} 
+                  <button
+                    onClick={handleCreateTicket}
                     disabled={submitting}
                     style={{ padding: '10px 18px', borderRadius: 8, background: 'var(--teal)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
                   >
@@ -816,9 +816,9 @@ function Settings({ isMobile, profile, onUpdate }) {
       <div style={{ maxWidth: 560 }}>
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>FULL NAME</label>
-          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
         </div>
-        
+
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>EMAIL ADDRESS</label>
           <input value={form.email} disabled style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text-dim)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none', cursor: 'not-allowed' }} />
@@ -826,12 +826,12 @@ function Settings({ isMobile, profile, onUpdate }) {
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>PHONE / WHATSAPP</label>
-          <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+91 ..." style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+          <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+91 ..." style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
         </div>
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>CURRENT STATUS</label>
-          <select value={form.occupation} onChange={e => setForm({...form, occupation: e.target.value})} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }}>
+          <select value={form.occupation} onChange={e => setForm({ ...form, occupation: e.target.value })} style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }}>
             <option value="Student">Student</option>
             <option value="Working Professional">Working Professional</option>
             <option value="Freelancer">Freelancer</option>
@@ -841,7 +841,7 @@ function Settings({ isMobile, profile, onUpdate }) {
 
         <div style={{ marginBottom: 24 }}>
           <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>COLLEGE / ORGANIZATION</label>
-          <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} placeholder="University Name" style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
+          <input value={form.college} onChange={e => setForm({ ...form, college: e.target.value })} placeholder="University Name" style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', outline: 'none' }} />
         </div>
 
         <div style={{ marginBottom: 24 }}>
@@ -854,8 +854,8 @@ function Settings({ isMobile, profile, onUpdate }) {
           ))}
         </div>
 
-        <button 
-          onClick={handleSave} 
+        <button
+          onClick={handleSave}
           disabled={loading || !form.name.trim() || !form.phone.trim()}
           style={{ padding: '10px 24px', borderRadius: 6, background: saved ? 'var(--green)' : 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'background 0.3s', minWidth: 140, opacity: (loading || !form.name.trim() || !form.phone.trim()) ? 0.6 : 1 }}
         >
@@ -896,7 +896,7 @@ function ProfilePrompt({ onComplete }) {
         }
       `}</style>
       <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', animation: 'softPop 0.4s cubic-bezier(0.16, 1, 0.3, 1)', position: 'relative' }}>
-        <button 
+        <button
           onClick={() => onComplete()}
           style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
           title="Close"
@@ -912,9 +912,9 @@ function ProfilePrompt({ onComplete }) {
         <div style={{ gap: 20, display: 'flex', flexDirection: 'column' }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8, letterSpacing: '0.08em' }}>WHATSAPP / PHONE</label>
-            <input 
-              value={form.phone} 
-              onChange={e => setForm({...form, phone: e.target.value})} 
+            <input
+              value={form.phone}
+              onChange={e => setForm({ ...form, phone: e.target.value })}
               placeholder="+91 98765 43210"
               style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }}
             />
@@ -927,15 +927,15 @@ function ProfilePrompt({ onComplete }) {
 
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8, letterSpacing: '0.08em' }}>COLLEGE / ORGANIZATION</label>
-            <input 
-              value={form.college} 
-              onChange={e => setForm({...form, college: e.target.value})} 
+            <input
+              value={form.college}
+              onChange={e => setForm({ ...form, college: e.target.value })}
               placeholder="e.g. Delhi University"
               style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }}
             />
           </div>
 
-          <button 
+          <button
             onClick={handleSubmit}
             disabled={loading || !form.phone}
             style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'var(--teal)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginTop: 10, transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(13,148,136,0.3)', opacity: (loading || !form.phone) ? 0.6 : 1 }}
@@ -979,8 +979,8 @@ function NewOrder({ setActive, isMobile }) {
 
   const SERVICES = useMemo(() => {
     return Object.values(servicesData.individualServices).flat().map(s => {
-      const priceNum = typeof s.price === 'string' 
-        ? parseFloat(s.price.replace(/[^\d.]/g, '')) 
+      const priceNum = typeof s.price === 'string'
+        ? parseFloat(s.price.replace(/[^\d.]/g, ''))
         : (s.price || 0);
       return { ...s, price: priceNum || 0, icon: '📄', label: s.name, desc: s.description };
     });
@@ -1003,7 +1003,7 @@ function NewOrder({ setActive, isMobile }) {
       if (form.turnaround === '12h') multiplier = 1.8;
       else if (form.turnaround === '24h') multiplier = 1.4;
       else if (form.turnaround === '7d') multiplier = 0.9;
-      
+
       const finalAmount = Math.round((form.wordCount / 100) * 12 * multiplier);
       const amountToCharge = selectedService.price > 0 ? selectedService.price : finalAmount;
 
@@ -1013,13 +1013,13 @@ function NewOrder({ setActive, isMobile }) {
         body: JSON.stringify({
           title: `${selectedService.name} Order`,
           description: form.details,
-          deadline: form.deadline || new Date(Date.now() + 72*3600*1000).toISOString(),
+          deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
           serviceType: selectedService.id,
           amount: amountToCharge,
           attachments: []
         }),
       });
-      
+
       if (!projectRes.ok) throw new Error('Failed to create project');
       const project = await projectRes.json();
 
@@ -1031,7 +1031,7 @@ function NewOrder({ setActive, isMobile }) {
           projectId: project.id
         }),
       });
-      
+
       if (!paymentRes.ok) throw new Error('Failed to initiate payment');
       const order = await paymentRes.json();
 
@@ -1099,12 +1099,12 @@ function NewOrder({ setActive, isMobile }) {
                 <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: s <= step ? 'var(--teal)' : 'var(--surface3)', transition: 'background 0.3s' }} />
               ))}
             </div>
-            
+
             {step === 1 && (
               <div style={{ animation: 'fadeUp 0.3s ease' }}>
                 <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>What do you need?</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>Select a service category to begin</p>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 32 }}>
                   {SERVICES.map((svc, i) => (
                     <div key={i} onClick={() => setForm(f => ({ ...f, category: svc.label }))} style={{
@@ -1131,7 +1131,7 @@ function NewOrder({ setActive, isMobile }) {
               <div style={{ animation: 'fadeUp 0.3s ease' }}>
                 <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Order details</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 32 }}>Tell us more so we can match the perfect writer</p>
-                
+
                 <div style={{ marginBottom: 28 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>TURNAROUND TIME</label>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
@@ -1175,7 +1175,7 @@ function NewOrder({ setActive, isMobile }) {
               if (form.turnaround === '12h') multiplier = 1.8;
               else if (form.turnaround === '24h') multiplier = 1.4;
               else if (form.turnaround === '7d') multiplier = 0.9;
-              
+
               const finalAmount = Math.round((form.wordCount / 100) * 12 * multiplier);
               const amountToCharge = selectedService?.price > 0 ? selectedService.price : finalAmount;
 
@@ -1245,11 +1245,11 @@ export default function App() {
   }, [status, session, router]);
 
   useEffect(() => {
-  // Mobile check
-  const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    // Mobile check
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
 
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
 
     // Checkout / saved tab logic
     const params = new URLSearchParams(window.location.search);
@@ -1368,8 +1368,8 @@ export default function App() {
       </div>
 
       {isMobile && sidebarOpen && (
-        <div 
-          onClick={() => setSidebarOpen(false)} 
+        <div
+          onClick={() => setSidebarOpen(false)}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }}
         />
       )}

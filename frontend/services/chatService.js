@@ -9,6 +9,7 @@ export const sendMessage = async (data) => {
       content: data.content,
       chatType: data.chatType, // Must be CLIENT_CHAT, INTERNAL_CHAT, or ADMIN_CHAT
       senderId: data.senderId,
+      receiverId: data.receiverId || null,
       projectId: data.projectId,
       attachments: data.attachments || [],
       isSystem: data.isSystem || false,

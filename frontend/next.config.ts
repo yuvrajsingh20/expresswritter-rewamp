@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  // @ts-ignore
   eslint: {
     ignoreDuringBuilds: true,
   },

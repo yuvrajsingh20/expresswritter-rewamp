@@ -26,105 +26,105 @@ const STATUS_META = {
 const ALL_STATUSES = ['New Order', 'In Progress', 'Under Review', 'Revision', 'Quality Check', 'Delivered'];
 
 const ORDERS_DATA = [
-{
-  id: 'XW-48291', invoiceNum: 'INV-2024-0291', service: 'Statement of Purpose',
-  client: 'Client #A204', clientCode: 'A204', deliveryType: 'urgent',
-  due: 'Apr 24, 2026', submitted: 'Apr 20, 2026', words: 800, price: 144,
-  status: 'In Progress', progress: 65, unreadMsgs: 2, hasNDA: true,
-  brief: 'Stanford CS PhD SOP. Focus on computational linguistics research at NYU under Prof. Chen. Target supervisor: Prof. Manning. Tone: scholarly yet personal. 800 words max.',
-  files: [{ name: 'Research_CV_2026.pdf', size: '1.2 MB', secure: true }, { name: 'Brief_Notes.docx', size: '240 KB', secure: false }],
-  deliveredFiles: [],
-  thread: [
-  { type: 'system', text: 'Order XW-48291 created. Client identity protected.', time: 'Apr 20, 9:00 AM' },
-  { from: 'client', alias: 'Client #A204', text: 'Hello! I\'m hoping to apply to Stanford CS PhD. I\'ve attached my CV and some notes about my research background.', time: 'Apr 20, 9:05 AM' },
-  { from: 'writer', text: 'Hello! I\'ve reviewed your materials. Your computational linguistics research is impressive — that\'s a strong angle for Stanford. I\'ll start drafting and have a first version ready by tomorrow.', time: 'Apr 20, 10:12 AM' },
-  { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 20, 10:12 AM' },
-  { from: 'client', alias: 'Client #A204', text: 'That sounds great! Should I share anything else? I have a recommendation letter draft too if helpful.', time: 'Apr 20, 11:30 AM' },
-  { from: 'writer', text: 'Yes, please share the LOR draft — it\'ll help me align the SOP narrative. Also, could you list 2-3 research topics you\'d most like to pursue at Stanford?', time: 'Apr 20, 12:04 PM' },
-  { from: 'client', alias: 'Client #A204', text: 'I\'ve uploaded the LOR draft. My research interests are: (1) NLP for low-resource languages, (2) cross-lingual transfer learning, (3) human-computer interaction through language.', time: 'Apr 20, 2:18 PM' },
-  { type: 'file', from: 'client', alias: 'Client #A204', fileName: 'LOR_Draft_Chen.pdf', size: '890 KB', time: 'Apr 20, 2:18 PM' },
-  { from: 'writer', text: 'Perfect — these are exactly the right research directions for Prof. Manning\'s lab. I\'ve incorporated all three themes into a cohesive narrative. Draft ready for your review.', time: 'Apr 21, 9:40 AM' },
-  { type: 'file', from: 'writer', fileName: 'SOP_Draft_v1_SECURE.pdf', size: '1.1 MB', watermarked: true, time: 'Apr 21, 9:41 AM' }]
+  {
+    id: 'XW-48291', invoiceNum: 'INV-2024-0291', service: 'Statement of Purpose',
+    client: 'Client #A204', clientCode: 'A204', deliveryType: 'urgent',
+    due: 'Apr 24, 2026', submitted: 'Apr 20, 2026', words: 800, price: 144,
+    status: 'In Progress', progress: 65, unreadMsgs: 2, hasNDA: true,
+    brief: 'Stanford CS PhD SOP. Focus on computational linguistics research at NYU under Prof. Chen. Target supervisor: Prof. Manning. Tone: scholarly yet personal. 800 words max.',
+    files: [{ name: 'Research_CV_2026.pdf', size: '1.2 MB', secure: true }, { name: 'Brief_Notes.docx', size: '240 KB', secure: false }],
+    deliveredFiles: [],
+    thread: [
+      { type: 'system', text: 'Order XW-48291 created. Client identity protected.', time: 'Apr 20, 9:00 AM' },
+      { from: 'client', alias: 'Client #A204', text: 'Hello! I\'m hoping to apply to Stanford CS PhD. I\'ve attached my CV and some notes about my research background.', time: 'Apr 20, 9:05 AM' },
+      { from: 'writer', text: 'Hello! I\'ve reviewed your materials. Your computational linguistics research is impressive — that\'s a strong angle for Stanford. I\'ll start drafting and have a first version ready by tomorrow.', time: 'Apr 20, 10:12 AM' },
+      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 20, 10:12 AM' },
+      { from: 'client', alias: 'Client #A204', text: 'That sounds great! Should I share anything else? I have a recommendation letter draft too if helpful.', time: 'Apr 20, 11:30 AM' },
+      { from: 'writer', text: 'Yes, please share the LOR draft — it\'ll help me align the SOP narrative. Also, could you list 2-3 research topics you\'d most like to pursue at Stanford?', time: 'Apr 20, 12:04 PM' },
+      { from: 'client', alias: 'Client #A204', text: 'I\'ve uploaded the LOR draft. My research interests are: (1) NLP for low-resource languages, (2) cross-lingual transfer learning, (3) human-computer interaction through language.', time: 'Apr 20, 2:18 PM' },
+      { type: 'file', from: 'client', alias: 'Client #A204', fileName: 'LOR_Draft_Chen.pdf', size: '890 KB', time: 'Apr 20, 2:18 PM' },
+      { from: 'writer', text: 'Perfect — these are exactly the right research directions for Prof. Manning\'s lab. I\'ve incorporated all three themes into a cohesive narrative. Draft ready for your review.', time: 'Apr 21, 9:40 AM' },
+      { type: 'file', from: 'writer', fileName: 'SOP_Draft_v1_SECURE.pdf', size: '1.1 MB', watermarked: true, time: 'Apr 21, 9:41 AM' }]
 
-},
-{
-  id: 'XW-47103', invoiceNum: 'INV-2024-0261', service: 'LinkedIn Profile Rewrite',
-  client: 'Client #B118', clientCode: 'B118', deliveryType: 'timeline',
-  due: 'Apr 22, 2026', submitted: 'Apr 19, 2026', words: 500, price: 75,
-  status: 'Quality Check', progress: 90, unreadMsgs: 1, hasNDA: false,
-  brief: 'Senior Product Manager at a FAANG company. Needs complete LinkedIn overhaul — headline, about, experience bullets. Target: VP/Director roles at Series B–D startups.',
-  files: [{ name: 'Current_LinkedIn_Export.pdf', size: '540 KB', secure: false }],
-  deliveredFiles: [{ name: 'LinkedIn_Rewrite_FINAL.docx', size: '320 KB', watermarked: true }],
-  thread: [
-  { type: 'system', text: 'Order XW-47103 created. Client identity protected.', time: 'Apr 19, 3:00 PM' },
-  { from: 'client', alias: 'Client #B118', text: 'Hi! I need a complete LinkedIn overhaul. I\'m currently a Sr. PM at a top tech company, looking to move to VP/Director roles at startups.', time: 'Apr 19, 3:10 PM' },
-  { from: 'writer', text: 'Great brief! I\'ve done a deep audit of your current profile. The headline is underselling you significantly. I\'ll rewrite with your target audience in mind.', time: 'Apr 19, 4:00 PM' },
-  { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 19, 4:00 PM' },
-  { from: 'writer', text: 'Your profile rewrite is ready. I\'ve optimised for 14 keywords relevant to startup VP/Director searches. The headline now leads with impact, not job title.', time: 'Apr 20, 10:00 AM' },
-  { type: 'file', from: 'writer', fileName: 'LinkedIn_Rewrite_FINAL.docx', size: '320 KB', watermarked: true, time: 'Apr 20, 10:01 AM' },
-  { type: 'status', text: 'Status updated: In Progress → Quality Check', time: 'Apr 20, 10:01 AM' },
-  { from: 'client', alias: 'Client #B118', text: 'This is incredible! The headline is perfect. Just one small tweak — can we soften the tone in the About section slightly? It feels slightly aggressive.', time: 'Apr 20, 2:00 PM' }]
+  },
+  {
+    id: 'XW-47103', invoiceNum: 'INV-2024-0261', service: 'LinkedIn Profile Rewrite',
+    client: 'Client #B118', clientCode: 'B118', deliveryType: 'timeline',
+    due: 'Apr 22, 2026', submitted: 'Apr 19, 2026', words: 500, price: 75,
+    status: 'Quality Check', progress: 90, unreadMsgs: 1, hasNDA: false,
+    brief: 'Senior Product Manager at a FAANG company. Needs complete LinkedIn overhaul — headline, about, experience bullets. Target: VP/Director roles at Series B–D startups.',
+    files: [{ name: 'Current_LinkedIn_Export.pdf', size: '540 KB', secure: false }],
+    deliveredFiles: [{ name: 'LinkedIn_Rewrite_FINAL.docx', size: '320 KB', watermarked: true }],
+    thread: [
+      { type: 'system', text: 'Order XW-47103 created. Client identity protected.', time: 'Apr 19, 3:00 PM' },
+      { from: 'client', alias: 'Client #B118', text: 'Hi! I need a complete LinkedIn overhaul. I\'m currently a Sr. PM at a top tech company, looking to move to VP/Director roles at startups.', time: 'Apr 19, 3:10 PM' },
+      { from: 'writer', text: 'Great brief! I\'ve done a deep audit of your current profile. The headline is underselling you significantly. I\'ll rewrite with your target audience in mind.', time: 'Apr 19, 4:00 PM' },
+      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 19, 4:00 PM' },
+      { from: 'writer', text: 'Your profile rewrite is ready. I\'ve optimised for 14 keywords relevant to startup VP/Director searches. The headline now leads with impact, not job title.', time: 'Apr 20, 10:00 AM' },
+      { type: 'file', from: 'writer', fileName: 'LinkedIn_Rewrite_FINAL.docx', size: '320 KB', watermarked: true, time: 'Apr 20, 10:01 AM' },
+      { type: 'status', text: 'Status updated: In Progress → Quality Check', time: 'Apr 20, 10:01 AM' },
+      { from: 'client', alias: 'Client #B118', text: 'This is incredible! The headline is perfect. Just one small tweak — can we soften the tone in the About section slightly? It feels slightly aggressive.', time: 'Apr 20, 2:00 PM' }]
 
-},
-{
-  id: 'XW-44302', invoiceNum: 'INV-2024-0234', service: 'Research Proposal — ML in Healthcare',
-  client: 'Client #C056', clientCode: 'C056', deliveryType: 'timeline',
-  due: 'Apr 28, 2026', submitted: 'Apr 18, 2026', words: 2000, price: 280,
-  status: 'Revision', progress: 80, unreadMsgs: 3, hasNDA: true,
-  brief: 'PhD research proposal for UCL. Topic: applying transformer models to early disease detection in NHS imaging data. Must follow UCL proposal format. 2000 words.',
-  files: [{ name: 'UCL_Proposal_Guidelines.pdf', size: '2.1 MB', secure: false }, { name: 'Research_Context.docx', size: '890 KB', secure: false }],
-  deliveredFiles: [{ name: 'Research_Proposal_v1_SECURE.pdf', size: '2.8 MB', watermarked: true }],
-  thread: [
-  { type: 'system', text: 'Order XW-44302 created. NDA active. Client identity protected.', time: 'Apr 18, 10:00 AM' },
-  { from: 'client', alias: 'Client #C056', text: 'I need a research proposal for UCL PhD. My topic is transformer models for NHS imaging. The guidelines doc has the exact format required.', time: 'Apr 18, 10:20 AM' },
-  { from: 'writer', text: 'Hello! I\'ve reviewed the UCL guidelines carefully. This is a strong research topic — very timely given NHS digital transformation. I\'ll structure it in 5 sections as required.', time: 'Apr 18, 11:00 AM' },
-  { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 18, 11:00 AM' },
-  { from: 'writer', text: 'First draft ready. I\'ve included a comprehensive literature review covering ViT, DeiT, and recent NHS imaging studies. The methodology section details the proposed transformer architecture.', time: 'Apr 20, 8:30 AM' },
-  { type: 'file', from: 'writer', fileName: 'Research_Proposal_v1_SECURE.pdf', size: '2.8 MB', watermarked: true, time: 'Apr 20, 8:31 AM' },
-  { type: 'status', text: 'Status updated: In Progress → Revision', time: 'Apr 21, 9:00 AM' },
-  { from: 'client', alias: 'Client #C056', text: 'The proposal is very strong overall! Three revision points: (1) Section 3 methodology needs more detail on data preprocessing pipeline, (2) add a Gantt chart for timeline, (3) the bibliography needs APA 7th edition formatting.', time: 'Apr 21, 9:05 AM' },
-  { from: 'client', alias: 'Client #C056', text: 'Also, could you strengthen the significance statement in the introduction? It needs to be more compelling for the committee.', time: 'Apr 21, 9:08 AM' },
-  { from: 'client', alias: 'Client #C056', text: 'Happy to jump on a call if that helps clarify the methodology section.', time: 'Apr 21, 9:10 AM' }]
+  },
+  {
+    id: 'XW-44302', invoiceNum: 'INV-2024-0234', service: 'Research Proposal — ML in Healthcare',
+    client: 'Client #C056', clientCode: 'C056', deliveryType: 'timeline',
+    due: 'Apr 28, 2026', submitted: 'Apr 18, 2026', words: 2000, price: 280,
+    status: 'Revision', progress: 80, unreadMsgs: 3, hasNDA: true,
+    brief: 'PhD research proposal for UCL. Topic: applying transformer models to early disease detection in NHS imaging data. Must follow UCL proposal format. 2000 words.',
+    files: [{ name: 'UCL_Proposal_Guidelines.pdf', size: '2.1 MB', secure: false }, { name: 'Research_Context.docx', size: '890 KB', secure: false }],
+    deliveredFiles: [{ name: 'Research_Proposal_v1_SECURE.pdf', size: '2.8 MB', watermarked: true }],
+    thread: [
+      { type: 'system', text: 'Order XW-44302 created. NDA active. Client identity protected.', time: 'Apr 18, 10:00 AM' },
+      { from: 'client', alias: 'Client #C056', text: 'I need a research proposal for UCL PhD. My topic is transformer models for NHS imaging. The guidelines doc has the exact format required.', time: 'Apr 18, 10:20 AM' },
+      { from: 'writer', text: 'Hello! I\'ve reviewed the UCL guidelines carefully. This is a strong research topic — very timely given NHS digital transformation. I\'ll structure it in 5 sections as required.', time: 'Apr 18, 11:00 AM' },
+      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 18, 11:00 AM' },
+      { from: 'writer', text: 'First draft ready. I\'ve included a comprehensive literature review covering ViT, DeiT, and recent NHS imaging studies. The methodology section details the proposed transformer architecture.', time: 'Apr 20, 8:30 AM' },
+      { type: 'file', from: 'writer', fileName: 'Research_Proposal_v1_SECURE.pdf', size: '2.8 MB', watermarked: true, time: 'Apr 20, 8:31 AM' },
+      { type: 'status', text: 'Status updated: In Progress → Revision', time: 'Apr 21, 9:00 AM' },
+      { from: 'client', alias: 'Client #C056', text: 'The proposal is very strong overall! Three revision points: (1) Section 3 methodology needs more detail on data preprocessing pipeline, (2) add a Gantt chart for timeline, (3) the bibliography needs APA 7th edition formatting.', time: 'Apr 21, 9:05 AM' },
+      { from: 'client', alias: 'Client #C056', text: 'Also, could you strengthen the significance statement in the introduction? It needs to be more compelling for the committee.', time: 'Apr 21, 9:08 AM' },
+      { from: 'client', alias: 'Client #C056', text: 'Happy to jump on a call if that helps clarify the methodology section.', time: 'Apr 21, 9:10 AM' }]
 
-},
-{
-  id: 'XW-43109', invoiceNum: 'INV-2024-0219', service: 'Business Proposal — SaaS Startup',
-  client: 'Client #D302', clientCode: 'D302', deliveryType: 'urgent',
-  due: 'Apr 26, 2026', submitted: 'Apr 22, 2026', words: 1200, price: 240,
-  status: 'New Order', progress: 0, unreadMsgs: 0, hasNDA: false,
-  brief: 'Investor pitch document for B2B SaaS startup automating payroll for SMEs. Need: executive summary, problem/solution, market size, business model, team. Professional and compelling.',
-  files: [{ name: 'Company_Deck_Draft.pdf', size: '3.4 MB', secure: false }],
-  deliveredFiles: [],
-  thread: [
-  { type: 'system', text: 'Order XW-43109 created. Client identity protected.', time: 'Apr 22, 8:00 AM' },
-  { from: 'client', alias: 'Client #D302', text: 'Hi! We\'re a B2B SaaS startup and need an investor-ready business proposal. I\'ve attached our rough deck for context. Urgent — needed by Thursday.', time: 'Apr 22, 8:15 AM' }]
+  },
+  {
+    id: 'XW-43109', invoiceNum: 'INV-2024-0219', service: 'Business Proposal — SaaS Startup',
+    client: 'Client #D302', clientCode: 'D302', deliveryType: 'urgent',
+    due: 'Apr 26, 2026', submitted: 'Apr 22, 2026', words: 1200, price: 240,
+    status: 'New Order', progress: 0, unreadMsgs: 0, hasNDA: false,
+    brief: 'Investor pitch document for B2B SaaS startup automating payroll for SMEs. Need: executive summary, problem/solution, market size, business model, team. Professional and compelling.',
+    files: [{ name: 'Company_Deck_Draft.pdf', size: '3.4 MB', secure: false }],
+    deliveredFiles: [],
+    thread: [
+      { type: 'system', text: 'Order XW-43109 created. Client identity protected.', time: 'Apr 22, 8:00 AM' },
+      { from: 'client', alias: 'Client #D302', text: 'Hi! We\'re a B2B SaaS startup and need an investor-ready business proposal. I\'ve attached our rough deck for context. Urgent — needed by Thursday.', time: 'Apr 22, 8:15 AM' }]
 
-},
-{
-  id: 'XW-41890', invoiceNum: 'INV-2024-0201', service: 'Academic Essay — Philosophy of Mind',
-  client: 'Client #E741', clientCode: 'E741', deliveryType: 'timeline',
-  due: 'Apr 15, 2026', submitted: 'Apr 10, 2026', words: 3000, price: 360,
-  status: 'Delivered', progress: 100, unreadMsgs: 0, hasNDA: false,
-  brief: '3000-word essay on functionalism vs biological naturalism (Searle). Include analysis of the Chinese Room argument. Harvard referencing. Masters level.',
-  files: [{ name: 'Essay_Guidelines.pdf', size: '210 KB', secure: false }],
-  deliveredFiles: [{ name: 'Philosophy_Essay_FINAL.pdf', size: '1.9 MB', watermarked: true }],
-  thread: [
-  { type: 'system', text: 'Order XW-41890 created. Client identity protected.', time: 'Apr 10, 2:00 PM' },
-  { from: 'client', alias: 'Client #E741', text: 'Hi, I need a Masters-level philosophy essay on functionalism vs biological naturalism. The Chinese Room argument should be central.', time: 'Apr 10, 2:10 PM' },
-  { from: 'writer', text: 'Excellent topic! Searle vs Dennett is one of the richest debates in philosophy of mind. I\'ll structure it as: (1) functionalism overview, (2) biological naturalism, (3) Chinese Room analysis, (4) critique and synthesis.', time: 'Apr 10, 3:00 PM' },
-  { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 10, 3:00 PM' },
-  { type: 'status', text: 'Status updated: In Progress → Quality Check', time: 'Apr 13, 9:00 AM' },
-  { type: 'file', from: 'writer', fileName: 'Philosophy_Essay_FINAL.pdf', size: '1.9 MB', watermarked: true, time: 'Apr 13, 9:01 AM' },
-  { type: 'status', text: 'Status updated: Quality Check → Delivered', time: 'Apr 14, 10:00 AM' },
-  { from: 'client', alias: 'Client #E741', text: 'This is absolutely outstanding. The analysis of the Chinese Room is the best I\'ve read. My professor gave it an A. Thank you so much!', time: 'Apr 15, 4:00 PM' },
-  { from: 'writer', text: 'Wonderful news! Thank you for trusting me with this — it was genuinely a pleasure to write. Best of luck with the rest of your programme! ⭐', time: 'Apr 15, 4:30 PM' }]
+  },
+  {
+    id: 'XW-41890', invoiceNum: 'INV-2024-0201', service: 'Academic Essay — Philosophy of Mind',
+    client: 'Client #E741', clientCode: 'E741', deliveryType: 'timeline',
+    due: 'Apr 15, 2026', submitted: 'Apr 10, 2026', words: 3000, price: 360,
+    status: 'Delivered', progress: 100, unreadMsgs: 0, hasNDA: false,
+    brief: '3000-word essay on functionalism vs biological naturalism (Searle). Include analysis of the Chinese Room argument. Harvard referencing. Masters level.',
+    files: [{ name: 'Essay_Guidelines.pdf', size: '210 KB', secure: false }],
+    deliveredFiles: [{ name: 'Philosophy_Essay_FINAL.pdf', size: '1.9 MB', watermarked: true }],
+    thread: [
+      { type: 'system', text: 'Order XW-41890 created. Client identity protected.', time: 'Apr 10, 2:00 PM' },
+      { from: 'client', alias: 'Client #E741', text: 'Hi, I need a Masters-level philosophy essay on functionalism vs biological naturalism. The Chinese Room argument should be central.', time: 'Apr 10, 2:10 PM' },
+      { from: 'writer', text: 'Excellent topic! Searle vs Dennett is one of the richest debates in philosophy of mind. I\'ll structure it as: (1) functionalism overview, (2) biological naturalism, (3) Chinese Room analysis, (4) critique and synthesis.', time: 'Apr 10, 3:00 PM' },
+      { type: 'status', text: 'Status updated: New Order → In Progress', time: 'Apr 10, 3:00 PM' },
+      { type: 'status', text: 'Status updated: In Progress → Quality Check', time: 'Apr 13, 9:00 AM' },
+      { type: 'file', from: 'writer', fileName: 'Philosophy_Essay_FINAL.pdf', size: '1.9 MB', watermarked: true, time: 'Apr 13, 9:01 AM' },
+      { type: 'status', text: 'Status updated: Quality Check → Delivered', time: 'Apr 14, 10:00 AM' },
+      { from: 'client', alias: 'Client #E741', text: 'This is absolutely outstanding. The analysis of the Chinese Room is the best I\'ve read. My professor gave it an A. Thank you so much!', time: 'Apr 15, 4:00 PM' },
+      { from: 'writer', text: 'Wonderful news! Thank you for trusting me with this — it was genuinely a pleasure to write. Best of luck with the rest of your programme! ⭐', time: 'Apr 15, 4:30 PM' }]
 
-}];
+  }];
 
 
 const EARNINGS_DATA = [
-{ month: 'Nov', amt: 1240 }, { month: 'Dec', amt: 1890 }, { month: 'Jan', amt: 2100 },
-{ month: 'Feb', amt: 1750 }, { month: 'Mar', amt: 2480 }, { month: 'Apr', amt: 1980 }];
+  { month: 'Nov', amt: 1240 }, { month: 'Dec', amt: 1890 }, { month: 'Jan', amt: 2100 },
+  { month: 'Feb', amt: 1750 }, { month: 'Mar', amt: 2480 }, { month: 'Apr', amt: 1980 }];
 
 
 /* ═══════════════════════════════════════════════
@@ -239,9 +239,9 @@ function OrderStrip({ order, isActive, onClick }) {
       transition: 'all .2s', overflow: 'hidden',
       boxShadow: isActive ? '0 0 0 1px rgba(13,148,136,0.2)' : 'none', borderColor: "var(--border)"
     }}
-    onMouseEnter={(e) => {if (!isActive) {e.currentTarget.style.borderColor = 'rgba(13,148,136,0.3)';e.currentTarget.style.background = 'var(--surface3)';}}}
-    onMouseLeave={(e) => {if (!isActive) {e.currentTarget.style.borderColor = 'var(--border)';e.currentTarget.style.background = 'var(--surface2)';}}}>
-      
+      onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.3)'; e.currentTarget.style.background = 'var(--surface3)'; } }}
+      onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface2)'; } }}>
+
       {/* Accent top bar = status color */}
       <div style={{ height: 2, background: m.color, opacity: 0.7 }} />
 
@@ -276,12 +276,12 @@ function OrderStrip({ order, isActive, onClick }) {
           <StatusPill status={order.status} small />
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             {order.unreadMsgs > 0 &&
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.18)', color: 'var(--teal-light)', animation: 'pulse 2s infinite' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.18)', color: 'var(--teal-light)', animation: 'pulse 2s infinite' }}>
                 💬 {order.unreadMsgs} new
               </span>
             }
             {daysLeft !== null &&
-            <span style={{ fontSize: 10, color: daysLeft <= 1 ? 'var(--red)' : daysLeft <= 3 ? 'var(--amber)' : 'var(--text-dim)', fontWeight: daysLeft <= 3 ? 600 : 400 }}>
+              <span style={{ fontSize: 10, color: daysLeft <= 1 ? 'var(--red)' : daysLeft <= 3 ? 'var(--amber)' : 'var(--text-dim)', fontWeight: daysLeft <= 3 ? 600 : 400 }}>
                 {daysLeft <= 0 ? 'Overdue' : daysLeft === 1 ? 'Due tomorrow' : `${daysLeft}d left`}
               </span>
             }
@@ -418,42 +418,48 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
         </div>
         {/* Status changer */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
-          <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color}44`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
-            Update Status <span style={{ fontSize: 10 }}>▾</span>
-          </button>
-          {showStatusMenu &&
-          <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px', zIndex: 100, minWidth: 180, boxShadow: '0 16px 48px rgba(0,0,0,0.5)', animation: 'popIn .2s ease' }}>
-              {ALL_STATUSES.filter((s) => s !== order.status).map((s) => {
-              const sm = STATUS_META[s];
-              return (
-                <div key={s} onClick={() => {onStatusChange(order.id, s);setShowStatusMenu(false);}} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'background .15s', fontSize: 12, fontWeight: 500, color: sm.color }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface2)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                  
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: sm.dot, flexShrink: 0 }} />
-                    {s}
-                  </div>);
+          {order.status === 'New Order' ? (
+            <button onClick={() => onStatusChange(order.id, 'In Progress')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
+          ) : (
+            <>
+              <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color}44`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
+                Update Status <span style={{ fontSize: 10 }}>▾</span>
+              </button>
+              {showStatusMenu &&
+                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px', zIndex: 100, minWidth: 180, boxShadow: '0 16px 48px rgba(0,0,0,0.5)', animation: 'popIn .2s ease' }}>
+                  {ALL_STATUSES.filter((s) => s !== order.status && s !== 'New Order').map((s) => {
+                    const sm = STATUS_META[s];
+                    return (
+                      <div key={s} onClick={() => { onStatusChange(order.id, s); setShowStatusMenu(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'background .15s', fontSize: 12, fontWeight: 500, color: sm.color }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
 
-            })}
-            </div>
-          }
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: sm.dot, flexShrink: 0 }} />
+                        {s}
+                      </div>);
+
+                  })}
+                </div>
+              }
+            </>
+          )}
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
         {[['chat', '💬 Chat'], ['brief', '📋 Brief'], ['files', '📁 Files'], ['timeline', '📍 Timeline']].map(([id, label]) =>
-        <button key={id} onClick={() => setTab(id)} style={{
-          padding: '9px 16px', border: 'none', borderBottom: `2px solid ${tab === id ? 'var(--teal)' : 'transparent'}`,
-          background: 'transparent', color: tab === id ? 'var(--teal-light)' : 'var(--text-muted)',
-          fontSize: 12, fontWeight: tab === id ? 600 : 400, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s'
-        }}>{label}</button>
+          <button key={id} onClick={() => setTab(id)} style={{
+            padding: '9px 16px', border: 'none', borderBottom: `2px solid ${tab === id ? 'var(--teal)' : 'transparent'}`,
+            background: 'transparent', color: tab === id ? 'var(--teal-light)' : 'var(--text-muted)',
+            fontSize: 12, fontWeight: tab === id ? 600 : 400, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s'
+          }}>{label}</button>
         )}
       </div>
 
       {/* Tab content */}
       {tab === 'chat' &&
-      <>
+        <>
           {/* Messages */}
           <div className="scrollable" style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
             {/* Security banner */}
@@ -476,18 +482,22 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
 
           {/* Input area */}
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-              <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault();handleSend();}}} placeholder={`Message ${order.client}...`} rows={1} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, resize: 'none', fontFamily: 'var(--font)', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto' }} />
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button title="Attach file" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2, borderRadius: 4, transition: 'color .2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
-                  📎</button>
+            {order.status === 'New Order' ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, padding: '10px 0' }}>Chat is disabled until you accept the assignment.</div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={`Message ${order.client}...`} rows={1} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, resize: 'none', fontFamily: 'var(--font)', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto' }} />
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button title="Attach file" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2, borderRadius: 4, transition: 'color .2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
+                      📎</button>
+                  </div>
                 </div>
+                <button onClick={handleSend} disabled={!input.trim()} style={{ width: 40, height: 40, borderRadius: 8, background: input.trim() ? 'var(--teal)' : 'var(--surface3)', border: `1px solid ${input.trim() ? 'var(--teal)' : 'var(--border)'}`, color: '#fff', fontSize: 18, cursor: input.trim() ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>↑</button>
               </div>
-              <button onClick={handleSend} disabled={!input.trim()} style={{ width: 40, height: 40, borderRadius: 8, background: input.trim() ? 'var(--teal)' : 'var(--surface3)', border: `1px solid ${input.trim() ? 'var(--teal)' : 'var(--border)'}`, color: '#fff', fontSize: 18, cursor: input.trim() ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>↑</button>
-            </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
               <span style={{ fontSize: 9, color: 'var(--text-dim)' }}>🔒 End-to-end encrypted · Client identity protected · Files auto-watermarked</span>
             </div>
@@ -496,29 +506,29 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
       }
 
       {tab === 'brief' &&
-      <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+        <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 8 }}>Project Brief</div>
             <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px', fontSize: 13, color: 'var(--text)', lineHeight: 1.7 }}>{order.brief}</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[['Invoice', order.invoiceNum], ['Words', `${order.words.toLocaleString()} words`], ['Price', `$${order.price}`], ['Due', order.due], ['Delivery', order.deliveryType === 'urgent' ? '⚡ Urgent' : '📅 Timeline'], ['NDA', order.hasNDA ? 'Active' : 'Not required']].map(([k, v]) =>
-          <div key={k} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
+              <div key={k} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
                 <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{v}</div>
               </div>
-          )}
+            )}
           </div>
         </div>
       }
 
       {tab === 'files' &&
-      <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+        <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
           {[['Client Files', order.files], ['Delivered Files', order.deliveredFiles]].map(([label, files]) =>
-        <div key={label} style={{ marginBottom: 20 }}>
+            <div key={label} style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 10 }}>{label} ({files.length})</div>
               {files.length === 0 ? <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '12px 0' }}>No files yet</div> : files.map((f, i) =>
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
                   <span style={{ fontSize: 20 }}>📄</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
@@ -530,9 +540,9 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
                   </div>
                   <button style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '5px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)' }}>↓</button>
                 </div>
-          )}
+              )}
             </div>
-        )}
+          )}
           <div style={{ padding: '12px 14px', background: 'rgba(13,148,136,0.06)', border: '1px solid var(--border-teal)', borderRadius: 8, fontSize: 11, color: 'var(--teal-light)', lineHeight: 1.6 }}>
             🔒 All delivered files are automatically watermarked with the client's ID and a unique document hash. Unauthorized distribution is tracked.
           </div>
@@ -540,7 +550,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend }) {
       }
 
       {tab === 'timeline' &&
-      <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+        <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 16 }}>Order Timeline</div>
           <div style={{ position: 'relative', paddingLeft: 24 }}>
             <div style={{ position: 'absolute', left: 7, top: 8, bottom: 8, width: 2, background: 'var(--border)', borderRadius: 2 }} />
@@ -583,12 +593,33 @@ function OrdersView({ projects = [], userId, isMobile }) {
     return true;
   });
 
-  const handleStatusChange = (id, newStatus) => {
-    setOrders((prev) => prev.map((o) => {
-      if (o.id !== id) return o;
-      const systemMsg = { type: 'status', text: `Status updated: ${o.status} → ${newStatus}`, time: 'Just now' };
-      return { ...o, status: newStatus, thread: [...o.thread, systemMsg], progress: newStatus === 'Delivered' ? 100 : newStatus === 'Quality Check' ? 90 : newStatus === 'In Progress' ? 65 : newStatus === 'Revision' ? 75 : o.progress };
-    }));
+  const handleStatusChange = async (id, newStatus) => {
+    const dbStatus = newStatus === 'In Progress' ? 'IN_PROGRESS' : newStatus === 'Delivered' ? 'COMPLETED' : newStatus === 'Revision' ? 'REVISION' : newStatus === 'Quality Check' ? 'QUALITY_CHECK' : newStatus === 'Under Review' ? 'UNDER_REVIEW' : newStatus;
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: dbStatus })
+      });
+      if (res.ok) {
+        if (newStatus === 'In Progress') {
+          await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: id,
+              content: "Hello! I am your assigned expert writer for this project. I've reviewed your brief and will begin working on it immediately. Please feel free to share any additional details or requirements here.",
+              chatType: 'CLIENT_CHAT'
+            })
+          });
+        }
+        window.location.reload();
+      } else {
+        console.error("Failed to update status");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleSend = (id, msg) => {
@@ -785,18 +816,18 @@ function Earnings({ isMobile }) {
   }, []);
 
   // Derive chart data from projects or fallback to static
-  const chartData = data.projects && data.projects.length > 0 
+  const chartData = data.projects && data.projects.length > 0
     ? data.projects.reduce((acc, p) => {
-        const date = new Date(p.date);
-        const month = date.toLocaleString('default', { month: 'short' });
-        const existing = acc.find(d => d.month === month);
-        if (existing) {
-          existing.amt += p.amount;
-        } else {
-          acc.push({ month, amt: p.amount });
-        }
-        return acc;
-      }, []).slice(-6)
+      const date = new Date(p.date);
+      const month = date.toLocaleString('default', { month: 'short' });
+      const existing = acc.find(d => d.month === month);
+      if (existing) {
+        existing.amt += p.amount;
+      } else {
+        acc.push({ month, amt: p.amount });
+      }
+      return acc;
+    }, []).slice(-6)
     : EARNINGS_DATA;
 
   const maxAmt = Math.max(...chartData.map((d) => d.amt)) || 1;
@@ -815,16 +846,16 @@ function Earnings({ isMobile }) {
       {/* Totals */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
         {[
-        { label: 'Total Earned', val: `${data.symbol}${data.totalEarned.toLocaleString()}`, sub: 'All time', color: 'var(--teal-light)' },
-        { label: 'Available Balance', val: `${data.symbol}${data.balance.toLocaleString()}`, sub: 'Ready for payout', color: 'var(--green)' },
-        { label: 'Pending Payout', val: `${data.symbol}${data.pending.toLocaleString()}`, sub: 'Processing', color: 'var(--amber)' }].
-        map((s, i) =>
-        <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 20px' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>{s.label}</div>
-            <div style={{ fontSize: 30, fontWeight: 700, color: s.color, letterSpacing: '-0.02em', marginBottom: 4 }}>{s.val}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{s.sub}</div>
-          </div>
-        )}
+          { label: 'Total Earned', val: `${data.symbol}${data.totalEarned.toLocaleString()}`, sub: 'All time', color: 'var(--teal-light)' },
+          { label: 'Available Balance', val: `${data.symbol}${data.balance.toLocaleString()}`, sub: 'Ready for payout', color: 'var(--green)' },
+          { label: 'Pending Payout', val: `${data.symbol}${data.pending.toLocaleString()}`, sub: 'Processing', color: 'var(--amber)' }].
+          map((s, i) =>
+            <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 20px' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>{s.label}</div>
+              <div style={{ fontSize: 30, fontWeight: 700, color: s.color, letterSpacing: '-0.02em', marginBottom: 4 }}>{s.val}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{s.sub}</div>
+            </div>
+          )}
       </div>
 
       {/* Bar chart */}
@@ -832,11 +863,11 @@ function Earnings({ isMobile }) {
         <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 20 }}>Monthly Earnings — Last 6 Months</h3>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 140 }}>
           {chartData.map((d, i) =>
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--teal-light)' }}>{data.symbol}{(d.amt / 1000).toFixed(1)}k</div>
               <div style={{ width: '100%', borderRadius: '4px 4px 0 0', background: `linear-gradient(180deg,var(--teal),rgba(13,148,136,0.4))`, height: `${d.amt / maxAmt * 100}px`, transition: 'height .6s ease', minHeight: 4, position: 'relative' }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '.8'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '.8'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
               <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{d.month}</div>
             </div>
           )}
@@ -850,7 +881,7 @@ function Earnings({ isMobile }) {
           <button style={{ fontSize: 12, color: 'var(--teal-light)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>Request Payout</button>
         </div>
         {payouts.map((p, i) =>
-        <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 0.8fr', gap: isMobile ? 6 : 0, padding: '12px 18px', borderBottom: i < payouts.length - 1 ? '1px solid var(--border)' : 'none', alignItems: isMobile ? 'flex-start' : 'center' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 0.8fr', gap: isMobile ? 6 : 0, padding: '12px 18px', borderBottom: i < payouts.length - 1 ? '1px solid var(--border)' : 'none', alignItems: isMobile ? 'flex-start' : 'center' }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{p.date}</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>{data.symbol}{p.amount.toLocaleString()}</span>
             <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{p.method}</span>
@@ -933,7 +964,7 @@ function Profile({ isMobile, profile, onUpdate }) {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Full Name</label>
-              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Email</label>
@@ -941,16 +972,16 @@ function Profile({ isMobile, profile, onUpdate }) {
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Phone / WhatsApp</label>
-              <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+              <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Occupation / Title</label>
-              <input value={form.occupation} onChange={e => setForm({...form, occupation: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+              <input value={form.occupation} onChange={e => setForm({ ...form, occupation: e.target.value })} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>College / Organization</label>
-            <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
+            <input value={form.college} onChange={e => setForm({ ...form, college: e.target.value })} style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font)' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>
@@ -970,7 +1001,7 @@ function Profile({ isMobile, profile, onUpdate }) {
           <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '18px', marginBottom: 14 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 14 }}>Writer Stats</div>
             {[['Response time', '< 2 hours'], ['On-time rate', '100%']].map(([k, v]) =>
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
                 <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{k}</span>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>{v}</span>
               </div>
@@ -1011,7 +1042,7 @@ function ProfilePrompt({ onComplete }) {
         }
       `}</style>
       <div style={{ background: 'var(--surface)', borderRadius: 24, width: '100%', maxWidth: 440, padding: 36, border: '1px solid var(--border2)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', animation: 'softPop 0.4s cubic-bezier(0.16, 1, 0.3, 1)', position: 'relative' }}>
-        <button 
+        <button
           onClick={() => onComplete()}
           style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
           title="Close"
@@ -1024,9 +1055,9 @@ function ProfilePrompt({ onComplete }) {
           <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.5 }}>Let's set up your writer profile so clients can know your expertise.</p>
         </div>
         <div style={{ gap: 20, display: 'flex', flexDirection: 'column' }}>
-          <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="WhatsApp / Phone" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
+          <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="WhatsApp / Phone" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
           <div style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', fontSize: 14 }}>Freelancer</div>
-          <input value={form.college} onChange={e => setForm({...form, college: e.target.value})} placeholder="University / Organization" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
+          <input value={form.college} onChange={e => setForm({ ...form, college: e.target.value })} placeholder="University / Organization" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '14px 18px', color: 'var(--text)', outline: 'none', fontSize: 14 }} />
           <button onClick={handleSubmit} disabled={loading || !form.phone} style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'var(--teal)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginTop: 10, transition: 'all 0.3s' }}>{loading ? 'Saving...' : 'Start Writing →'}</button>
         </div>
       </div>
@@ -1154,7 +1185,7 @@ export default function App() {
         <p style={{ color: '#8e8e93', fontSize: 14, maxWidth: 400, marginBottom: 24, lineHeight: 1.5 }}>
           Thank you for applying! Our team is reviewing your profile. This usually takes less than 24 hours. You will gain access to the dashboard once approved.
         </p>
-        <button 
+        <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.3s' }}
         >

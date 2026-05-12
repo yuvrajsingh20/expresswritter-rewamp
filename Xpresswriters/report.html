@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xpresswriters — Originality Report</title>
+<script src="site-shell.js"></script>
+<script>document.write(window.XW_FONT)</script>
+<style id="base-style"></style>
+<style>
+.wrap{max-width:1200px;margin:0 auto;padding:36px 32px 80px}
+.crumb{font-size:12px;color:var(--text-muted);margin-bottom:14px}
+.crumb a{color:var(--text-muted);text-decoration:none}
+.crumb a:hover{color:var(--teal-light)}
+.head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;margin-bottom:30px}
+.head h1{font-size:30px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px}
+.head .sub{font-size:13.5px;color:var(--text-muted);font-weight:300}
+.head .inv{font-family:'SF Mono',Menlo,monospace;font-size:11px;color:var(--text-dim);letter-spacing:0.04em;margin-bottom:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 16px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--font);transition:all .15s}
+.btn:hover{border-color:var(--teal);color:var(--teal-light)}
+.btn.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+.btn.primary:hover{background:var(--teal-dark);color:#fff}
+
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:26px}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 26px;position:relative;overflow:hidden}
+.score-card .lbl{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.score-card .gauge{display:flex;align-items:center;gap:18px;margin-bottom:14px}
+.ring{position:relative;width:88px;height:88px;flex-shrink:0}
+.ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.ring circle{fill:none;stroke-width:8}
+.ring .bg{stroke:var(--surface3)}
+.ring .fg{stroke:currentColor;stroke-linecap:round;transition:stroke-dasharray 1.2s cubic-bezier(.2,.8,.4,1)}
+.ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;letter-spacing:-0.02em}
+.score-body{flex:1}
+.score-body .val{font-size:13px;font-weight:600;margin-bottom:4px}
+.score-body .desc{font-size:11.5px;color:var(--text-muted);line-height:1.55;font-weight:300}
+.threshold{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--text-dim);padding-top:14px;border-top:1px solid var(--border2)}
+.threshold .ok{color:var(--green);font-weight:600}
+
+.tone-green{color:var(--green)}.tone-amber{color:var(--amber)}.tone-red{color:var(--red)}.tone-teal{color:var(--teal-light)}
+
+.tabs-bar{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:9px;margin-bottom:20px;width:fit-content}
+.tab{padding:9px 16px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.tab.active{background:var(--teal);color:#fff}
+
+.content-grid{display:grid;grid-template-columns:1fr 320px;gap:20px}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.doc-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:var(--surface2)}
+.doc-head h3{font-size:13.5px;font-weight:700}
+.doc-head .info{font-size:11.5px;color:var(--text-muted);font-weight:300}
+.legend{display:flex;gap:14px;font-size:11px}
+.legend-item{display:flex;align-items:center;gap:6px;color:var(--text-muted)}
+.legend-chip{width:12px;height:12px;border-radius:3px}
+.doc-body{padding:32px 36px;font-size:14px;line-height:1.85;color:var(--text);max-height:680px;overflow-y:auto;font-weight:300}
+.doc-body p{margin-bottom:14px}
+.doc-body .clean{color:var(--text)}
+.doc-body .match{background:rgba(244,63,94,0.18);padding:1px 3px;border-radius:2px;border-bottom:2px solid rgba(244,63,94,0.5);cursor:pointer;position:relative}
+.doc-body .match:hover{background:rgba(244,63,94,0.3)}
+.doc-body .ai{background:rgba(167,139,250,0.18);padding:1px 3px;border-radius:2px;border-bottom:2px dashed rgba(167,139,250,0.5);cursor:pointer}
+.doc-body .ai:hover{background:rgba(167,139,250,0.3)}
+.doc-body .cite{font-family:'SF Mono',Menlo,monospace;font-size:10px;vertical-align:super;color:var(--red);font-weight:700;margin-left:1px}
+.doc-body[data-view="ai"] .match{background:transparent;border:none;cursor:default}
+.doc-body[data-view="plagiarism"] .ai{background:transparent;border:none;cursor:default}
+
+.side{display:flex;flex-direction:column;gap:14px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.panel-head h4{font-size:13px;font-weight:700}
+.panel-head .count{padding:2px 8px;border-radius:8px;background:var(--surface2);color:var(--text-muted);font-size:10.5px;font-weight:700}
+.panel-body{padding:0}
+.src{padding:14px 18px;border-bottom:1px solid var(--border2);font-size:12px;cursor:pointer;transition:background .15s}
+.src:last-child{border-bottom:none}
+.src:hover{background:var(--surface2)}
+.src-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:8px}
+.src-num{font-family:'SF Mono',Menlo,monospace;font-size:10px;color:var(--red);font-weight:700;background:rgba(244,63,94,0.12);padding:2px 6px;border-radius:3px}
+.src-pct{font-size:12px;font-weight:700;color:var(--amber)}
+.src-title{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.src-url{font-size:10.5px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+
+.ai-stat{padding:14px 18px;border-bottom:1px solid var(--border2);font-size:12px}
+.ai-stat:last-child{border-bottom:none}
+.ai-stat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-weight:600;font-size:12.5px}
+.ai-stat-bar{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.ai-stat-bar .fill{height:100%;border-radius:3px;transition:width 1s ease}
+
+.verdict{background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(34,197,94,0.04));border:1px solid rgba(34,197,94,0.3);border-radius:14px;padding:24px 26px;margin-top:20px}
+.verdict h3{font-size:15px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.verdict p{font-size:13px;color:var(--text-muted);font-weight:300;line-height:1.65;margin-bottom:10px}
+.verdict-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(34,197,94,0.2)}
+.verdict-grid div{font-size:11px;color:var(--text-muted)}
+.verdict-grid strong{display:block;color:var(--text);font-size:14px;font-weight:700;margin-bottom:2px}
+
+.tools-row{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--text-dim);padding:14px 22px;background:var(--surface2);border-top:1px solid var(--border2)}
+.tools-row strong{color:var(--text-muted);font-weight:600;margin-right:4px}
+.tool-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;background:var(--surface3);border:1px solid var(--border);font-size:10.5px;color:var(--text-muted);font-weight:600}
+
+@media (max-width:920px){.content-grid{grid-template-columns:1fr}.score-grid{grid-template-columns:1fr}}
+@media print{.xw-nav,.xw-footer,.actions,.tabs-bar{display:none}.wrap{padding:20px}.doc-body{max-height:none;overflow:visible}}
+</style>
+</head>
+<body>
+<script>document.getElementById('base-style').textContent=window.XW_CSS;document.write(window.XW_NAV(''));</script>
+
+<div class="wrap">
+  <div class="crumb"><a href="dashboard.html">Dashboard</a> / <a href="dashboard.html">Orders</a> / <a href="#">XW-48039</a> / <strong style="color:var(--text)">Originality Report</strong></div>
+
+  <div class="head">
+    <div>
+      <div class="inv">INV-XW-48039 · LinkedIn Profile Rewrite — Executive</div>
+      <h1>Originality Report</h1>
+      <p class="sub">Generated Apr 22, 4:18 PM IST · 750 words · Writer: Marcus Webb</p>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">⎙ Print</button>
+      <a class="btn" href="#">📥 Download PDF</a>
+      <a class="btn" href="#">📧 Email to me</a>
+      <a class="btn primary" href="dashboard.html">← Back to order</a>
+    </div>
+  </div>
+
+  <div class="score-grid">
+    <!-- Plagiarism -->
+    <div class="score-card">
+      <div class="lbl"><span>🔍</span> Plagiarism Score</div>
+      <div class="gauge">
+        <div class="ring tone-green">
+          <svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" stroke-dasharray="11 264"/></svg>
+          <div class="pct" style="color:var(--green)">4<span style="font-size:13px">%</span></div>
+        </div>
+        <div class="score-body">
+          <div class="val tone-green">✓ Excellent — Original</div>
+          <div class="desc">4% similarity from 2 common-phrase matches in standard executive bios. Well below threshold.</div>
+        </div>
+      </div>
+      <div class="threshold"><span>Threshold:</span><strong class="ok">Pass — under 10%</strong></div>
+    </div>
+
+    <!-- AI Detection -->
+    <div class="score-card">
+      <div class="lbl"><span>🤖</span> AI Detection</div>
+      <div class="gauge">
+        <div class="ring tone-green">
+          <svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" stroke-dasharray="21 264"/></svg>
+          <div class="pct" style="color:var(--green)">8<span style="font-size:13px">%</span></div>
+        </div>
+        <div class="score-body">
+          <div class="val tone-green">✓ Human-written</div>
+          <div class="desc">8% AI probability across 5 detectors. Natural cadence, varied sentence structure, idiomatic transitions.</div>
+        </div>
+      </div>
+      <div class="threshold"><span>Threshold:</span><strong class="ok">Pass — under 15%</strong></div>
+    </div>
+
+    <!-- Quality -->
+    <div class="score-card">
+      <div class="lbl"><span>✨</span> Editorial Quality</div>
+      <div class="gauge">
+        <div class="ring tone-teal">
+          <svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" stroke-dasharray="244 264"/></svg>
+          <div class="pct" style="color:var(--teal-light)">92</div>
+        </div>
+        <div class="score-body">
+          <div class="val tone-teal">Exceptional</div>
+          <div class="desc">Grammarly Premium: 0 issues. Hemingway grade: 9. Tone: confident, executive-appropriate.</div>
+        </div>
+      </div>
+      <div class="threshold"><span>Industry avg:</span><strong style="color:var(--text-muted);font-weight:600">68/100</strong></div>
+    </div>
+  </div>
+
+  <div class="tabs-bar">
+    <button class="tab active" data-view="plagiarism">🔍 Plagiarism View</button>
+    <button class="tab" data-view="ai">🤖 AI Detection View</button>
+    <button class="tab" data-view="clean">📄 Clean View</button>
+  </div>
+
+  <div class="content-grid">
+    <div class="doc-card">
+      <div class="doc-head">
+        <div><h3>Delivered Content</h3><div class="info">Highlighting <strong style="color:var(--text)" id="lbl-mode">2 plagiarism matches</strong> · click any highlight to jump to source</div></div>
+        <div class="legend">
+          <span class="legend-item" id="leg-match"><span class="legend-chip" style="background:rgba(244,63,94,0.3)"></span>Match</span>
+          <span class="legend-item" id="leg-ai" style="display:none"><span class="legend-chip" style="background:rgba(167,139,250,0.3)"></span>AI-likely</span>
+        </div>
+      </div>
+      <div class="doc-body" id="doc-body" data-view="plagiarism">
+        <p><strong>Senior Operations Leader · 14 Years Building High-Performance Teams Across APAC</strong></p>
+        <p>I've spent my career at the intersection of supply chain, fintech, and people leadership — turning fragmented operations into engines of compounding growth. <span class="ai">My approach combines rigorous data analysis with a deep belief that the right team, properly resourced, can outperform any playbook.</span></p>
+        <p>At <span class="match">Razorpay, I led the merchant operations function from 80 to 340 people<span class="cite">[1]</span></span> across three countries, cutting onboarding time 4× while raising NPS from 31 to 68. Before that, at Flipkart, I built the last-mile escalation cell that handled 14,000 tickets a week with a 92-minute median resolution.</p>
+        <p><span class="ai">What I bring to a leadership conversation isn't another framework. It's a track record of taking ambiguous, under-resourced operations problems and turning them into measurable, repeatable systems</span> — usually within 90 days, almost always with the existing team. I'm a believer in clarity over consensus, kindness over conflict-avoidance, and writing things down.</p>
+        <p>Beyond work, I mentor 4 women operators through the WeOp India network, run a small Saturday running club, and am two chapters into a book on operating without a playbook. <span class="match">Always open to a conversation with builders, founders, and operators<span class="cite">[2]</span></span> — drop a note.</p>
+        <p style="color:var(--text-muted);font-size:12px;font-style:italic;border-top:1px solid var(--border2);padding-top:14px;margin-top:18px">— LinkedIn About section · 624 words · Written by Marcus Webb (xpresswriters.com/marcus-w)</p>
+      </div>
+      <div class="tools-row">
+        <strong>Scanned with:</strong>
+        <span class="tool-badge">📚 Turnitin v9.4</span>
+        <span class="tool-badge">🔎 Copyscape Premium</span>
+        <span class="tool-badge">🤖 GPTZero</span>
+        <span class="tool-badge">🛡 Originality.ai</span>
+        <span class="tool-badge">📝 Grammarly</span>
+      </div>
+    </div>
+
+    <div class="side">
+      <!-- Plagiarism sources -->
+      <div class="panel" id="panel-plag">
+        <div class="panel-head"><h4>Plagiarism Matches</h4><span class="count">2 sources</span></div>
+        <div class="panel-body">
+          <div class="src">
+            <div class="src-top"><span class="src-num">[1]</span><span class="src-pct">2.1%</span></div>
+            <div class="src-title">Razorpay Crosses 340 Merchant Ops Team Members — Press Release</div>
+            <a class="src-url" href="#" target="_blank">razorpay.com/blog/team-growth-2024</a>
+          </div>
+          <div class="src">
+            <div class="src-top"><span class="src-num">[2]</span><span class="src-pct">1.9%</span></div>
+            <div class="src-title">Common executive LinkedIn closing phrases — corpus reference</div>
+            <a class="src-url" href="#" target="_blank">linkedin.com/help/profile-best-practices</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI breakdown -->
+      <div class="panel" id="panel-ai" style="display:none">
+        <div class="panel-head"><h4>AI Detector Breakdown</h4><span class="count">5 tools</span></div>
+        <div class="panel-body">
+          <div class="ai-stat"><div class="ai-stat-top"><span>GPTZero</span><span class="tone-green">7%</span></div><div class="ai-stat-bar"><div class="fill" style="width:7%;background:var(--green)"></div></div></div>
+          <div class="ai-stat"><div class="ai-stat-top"><span>Originality.ai</span><span class="tone-green">9%</span></div><div class="ai-stat-bar"><div class="fill" style="width:9%;background:var(--green)"></div></div></div>
+          <div class="ai-stat"><div class="ai-stat-top"><span>Copyleaks</span><span class="tone-green">6%</span></div><div class="ai-stat-bar"><div class="fill" style="width:6%;background:var(--green)"></div></div></div>
+          <div class="ai-stat"><div class="ai-stat-top"><span>Winston AI</span><span class="tone-green">11%</span></div><div class="ai-stat-bar"><div class="fill" style="width:11%;background:var(--green)"></div></div></div>
+          <div class="ai-stat"><div class="ai-stat-top"><span>Sapling</span><span class="tone-green">8%</span></div><div class="ai-stat-bar"><div class="fill" style="width:8%;background:var(--green)"></div></div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h4>Document Stats</h4></div>
+        <div class="panel-body" style="padding:14px 18px;font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between"><span>Words</span><strong style="color:var(--text)">624</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Sentences</span><strong style="color:var(--text)">28</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Avg sentence length</span><strong style="color:var(--text)">22.3</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Readability (Flesch)</span><strong style="color:var(--text)">52 — Grade 10</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Tone</span><strong style="color:var(--text)">Confident · Warm</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Passive voice</span><strong style="color:var(--green)">3%</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h3>✓ Report Verdict: PASS — Original, Human-Written, Exceeds Quality Standards</h3>
+    <p>This deliverable meets all Xpresswriters originality guarantees. The 4% similarity is from inevitable common phrases (company names, standard professional sign-offs) and represents 0% verbatim block copying. AI detection across 5 industry tools averages 8% — well within human-writing baseline (typical: 5–15%).</p>
+    <div class="verdict-grid">
+      <div><strong>📜 ISO 9001</strong>Quality certified</div>
+      <div><strong>🛡 SOC 2</strong>Report integrity</div>
+      <div><strong>🔐 Cryptographically signed</strong>Tamper-proof PDF</div>
+      <div><strong>♾ Permanent</strong>Available in dashboard forever</div>
+    </div>
+  </div>
+</div>
+
+<script>document.write(window.XW_FOOTER)</script>
+<script>
+const tabs=document.querySelectorAll('.tab');
+const body=document.getElementById('doc-body');
+const lblMode=document.getElementById('lbl-mode');
+const legMatch=document.getElementById('leg-match');
+const legAi=document.getElementById('leg-ai');
+const panelPlag=document.getElementById('panel-plag');
+const panelAi=document.getElementById('panel-ai');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.toggle('active',x===t));
+  const v=t.dataset.view;
+  body.dataset.view=v;
+  if(v==='plagiarism'){lblMode.textContent='2 plagiarism matches';legMatch.style.display='flex';legAi.style.display='none';panelPlag.style.display='block';panelAi.style.display='none';}
+  else if(v==='ai'){lblMode.textContent='AI-flagged passages';legMatch.style.display='none';legAi.style.display='flex';panelPlag.style.display='none';panelAi.style.display='block';}
+  else{lblMode.textContent='clean delivery view';legMatch.style.display='none';legAi.style.display='none';panelPlag.style.display='block';panelAi.style.display='none';}
+}));
+
+// Animate rings on load
+requestAnimationFrame(()=>{
+  document.querySelectorAll('.ring .fg').forEach(c=>{
+    const cur=c.getAttribute('stroke-dasharray');
+    c.style.strokeDasharray='0 264';
+    setTimeout(()=>c.style.strokeDasharray=cur,80);
+  });
+});
+</script>
+</body>
+</html>

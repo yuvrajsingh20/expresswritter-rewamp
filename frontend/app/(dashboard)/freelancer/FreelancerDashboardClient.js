@@ -191,7 +191,7 @@ export default function FreelancerDashboardClient({ session, profile }) {
 
   useEffect(() => {
     if (session?.user?.id && profile.isVerified) {
-      const socket = io();
+      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
       socket.emit('join_chat', { userId: session.user.id, role: 'FREELANCER' });
       
       socket.on('new_assignment', (data) => {

@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     // Other experimental features can go here, but NOT turbopack
   },

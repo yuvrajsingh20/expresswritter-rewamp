@@ -138,12 +138,12 @@ const WorkforcePortal = () => {
                          </div>
                       </td>
                       <td className="px-6 py-8">
-                         <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden mb-2 shadow-inner">
-                            <div className={`h-full rounded-full ${f.freelancerProfile?.isVerified ? 'bg-green-500' : 'bg-amber-500'}`} style={{ width: f.freelancerProfile?.isVerified ? '100%' : '50%' }} />
-                         </div>
-                         <p className={`text-[9px] font-black uppercase tracking-tighter ${f.freelancerProfile?.isVerified ? 'text-green-600' : 'text-amber-600'}`}>
-                           {f.freelancerProfile?.isVerified ? '100% VERIFIED' : 'PENDING REVIEW'}
-                         </p>
+                          <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden mb-2 shadow-inner">
+                             <div className={`h-full rounded-full ${f.freelancerProfile?.isVerified ? 'bg-green-500' : 'bg-amber-500'}`} style={{ width: f.freelancerProfile?.isVerified ? '100%' : '50%' }} />
+                          </div>
+                          <p className={`text-[9px] font-black uppercase tracking-tighter ${f.freelancerProfile?.isVerified ? 'text-green-600' : 'text-amber-600'}`}>
+                            {f.freelancerProfile?.isVerified ? '100% VERIFIED' : f.freelancerProfile ? 'PENDING REVIEW' : 'NO PROFILE YET'}
+                          </p>
                       </td>
                       <td className="px-6 py-8">
                          <p className="text-sm font-black text-slate-900">₹0</p>

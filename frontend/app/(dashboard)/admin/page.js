@@ -13,10 +13,11 @@ import { AdminAnalytics } from "./admin-analytics";
 import { AdminRefunds } from "./admin-refunds";
 import { AdminPromos } from "./admin-promos";
 import Notifications from "@/components/NotificationsView";
+import NotificationBell from "@/components/NotificationBell";
 import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar } from "./admin-shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 
 
@@ -224,7 +225,7 @@ function AdminSidebar({ active, setActive, dark }) {
 }
 
 /* ── TOPBAR ── */
-function AdminTopbar({ section, dark, setDark, isMobile, setSidebarOpen }) {
+function AdminTopbar({ section, dark, setDark, isMobile, setSidebarOpen, setSection }) {
   const item = NAV.find((n) => n.id === section) || { label: 'Overview', icon: '⊞' };
   const [togHov, setTogHov] = useState(false);
   return (
@@ -267,10 +268,7 @@ function AdminTopbar({ section, dark, setDark, isMobile, setSidebarOpen }) {
         </button>
 
         {/* Notification bell */}
-        <div style={{ position: 'relative', cursor: 'pointer' }}>
-          <span style={{ fontSize: 16 }}>🔔</span>
-          <span style={{ position: 'absolute', top: -2, right: -2, width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', border: '2px solid var(--surface)' }} />
-        </div>
+        <NotificationBell />
         {/* Admin avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 10, color: '#fff' }}>SA</div>
@@ -283,6 +281,8 @@ function AdminTopbar({ section, dark, setDark, isMobile, setSidebarOpen }) {
 
 /* ── APP ── */
 export default function App() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [section, setSection] = useState('overview');
   const [dark, setDark] = useState(true);
   const [projects, setProjects] = useState([]);
@@ -299,6 +299,14 @@ export default function App() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
+      router.push("/login");
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -398,7 +406,7 @@ export default function App() {
       )}
 
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: dark ? 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.07) 0%, transparent 70%), var(--bg)' : 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.05) 0%, transparent 70%), var(--bg)' }}>
-        <AdminTopbar section={section} dark={dark} setDark={setDark} isMobile={isMobile} setSidebarOpen={setSidebarOpen} />
+        <AdminTopbar section={section} dark={dark} setDark={setDark} isMobile={isMobile} setSidebarOpen={setSidebarOpen} setSection={setSection} />
         <div style={{ flex: 1, overflow: 'hidden' }}>
           {views[section] || views.overview}
         </div>

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import cloudinary from '@/lib/cloudinary';
 import { getAuthUser } from '@/lib/auth';
 
 export async function POST(req) {
@@ -17,10 +16,10 @@ export async function POST(req) {
       return NextResponse.json({ message: 'No file uploaded' }, { status: 400 });
     }
 
-    // 2. Max File Size Check (10MB)
-    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    // 2. Max File Size Check (5MB for Base64 safety)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ message: 'File size exceeds limit of 10MB' }, { status: 400 });
+      return NextResponse.json({ message: 'File size exceeds limit of 5MB for direct database storage' }, { status: 400 });
     }
 
     // 3. File Type Validation
@@ -39,35 +38,21 @@ export async function POST(req) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Convert to Base64 for Cloudinary Compatibility
-    const base64File = `data:${file.type};base64,${buffer.toString('base64')}`;
+    // Convert to Base64 Data URL for direct storage in the database
+    const base64Data = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64Data}`;
 
-    console.log('Specialist Console: Initiating Cloudinary upload for', file.name);
+    console.log('Specialist Console: Converting file to Data URL for direct DB storage:', file.name);
 
-    try {
-        const uploadResponse = await cloudinary.uploader.upload(base64File, {
-            resource_type: 'auto',
-            folder: 'express-writer/deliverables'
-        });
-
-        console.log('Cloudinary upload success:', uploadResponse.secure_url);
-
-        return NextResponse.json({
-          url: uploadResponse.secure_url,
-          name: file.name
-        }, { status: 200 });
-    } catch (uploadError) {
-        console.error('Cloudinary upload error:', uploadError);
-        return NextResponse.json({ 
-            message: 'Cloudinary upload failed', 
-            error: uploadError.message 
-        }, { status: 500 });
-    }
+    return NextResponse.json({
+      url: dataUrl,
+      name: file.name
+    }, { status: 200 });
 
   } catch (error) {
     console.error('Upload Error:', error);
     return NextResponse.json({ 
-        message: 'Upload failed', 
+        message: 'Direct data conversion failed', 
         error: error.message 
     }, { status: 500 });
   }

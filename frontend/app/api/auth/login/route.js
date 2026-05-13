@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { signToken, comparePassword } from '@/lib/auth';
+import { isRateLimited } from '@/lib/rateLimit';
 
 /**
  * Handle application authentication for existing users via PostgreSQL and bcrypt comparison.
@@ -8,6 +9,12 @@ import { signToken, comparePassword } from '@/lib/auth';
  */
 export async function POST(req) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+    
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ message: 'Too many attempts, try again later' }, { status: 429 });
+    }
+
     const { email, password } = await req.json();
 
     // Retrieve user by unique email with Prisma

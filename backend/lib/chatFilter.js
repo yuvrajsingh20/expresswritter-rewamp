@@ -1,4 +1,5 @@
 function filterMessageContent(content) {
+  if (!content) return { isRestricted: false, reasons: { phone: false, email: false, link: false } };
   const phoneRegex = /(?:\+?\d{1,3}[-\s]?)?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g;
   const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
   const linkRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;

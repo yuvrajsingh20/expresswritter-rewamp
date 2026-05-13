@@ -1,9 +1,16 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { dispatchNotification } from "@/lib/notifications";
+import { isRateLimited } from "@/lib/rateLimit";
 
 export async function POST(req) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+    
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ message: 'Too many attempts, try again later' }, { status: 429 });
+    }
+
     const { email } = await req.json();
 
     if (!email) {

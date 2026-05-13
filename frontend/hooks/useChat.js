@@ -74,8 +74,8 @@ export function useChat({ projectId, userId, role, chatType = "CLIENT_CHAT", rec
   }, [projectId, userId, chatType, receiverId]);
 
   // ── 3. Send ───────────────────────────────────────────────────────────────
-  const sendMessage = useCallback(async (content) => {
-    if (!content?.trim()) return;
+  const sendMessage = useCallback(async (content, attachments = []) => {
+    if (!content?.trim() && (!attachments || attachments.length === 0)) return;
     if (!userId) { setErrorAlert("You must be logged in to send messages."); return; }
 
     try {
@@ -83,7 +83,7 @@ export function useChat({ projectId, userId, role, chatType = "CLIENT_CHAT", rec
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, content, chatType, receiverId: receiverId || null }),
+        body: JSON.stringify({ projectId, content, chatType, receiverId: receiverId || null, attachments }),
       });
 
       if (!res.ok) throw new Error(await res.text());
@@ -94,6 +94,7 @@ export function useChat({ projectId, userId, role, chatType = "CLIENT_CHAT", rec
       socketRef.current?.emit("send_message", {
         id: saved.id,
         content: saved.content,
+        attachments: saved.attachments,
         projectId,
         chatType,
         senderId: userId,
@@ -124,5 +125,6 @@ function normalise(m) {
     createdAt: m.createdAt ? new Date(m.createdAt) : (m.timestamp ? new Date(m.timestamp) : new Date()),
     chatType:  m.chatType,
     projectId: m.projectId,
+    attachments: m.attachments || [],
   };
 }

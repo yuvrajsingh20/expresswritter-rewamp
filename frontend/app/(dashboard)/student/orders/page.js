@@ -180,7 +180,7 @@ export default function StudentOrdersPage() {
                                      {project.title}
                                    </Link>
                                    <div className="flex items-center gap-2">
-                                     <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md">ID: {project.id.slice(-6).toUpperCase()}</span>
+                                     <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md">XW-{project.id.slice(-5).toUpperCase()}</span>
                                      <span className="text-[9px] font-black text-[#0067B8] uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">₹{project.amount}</span>
                                    </div>
                                 </div>

@@ -19,6 +19,8 @@ enum ProjectStatus {
   ASSIGNED
   IN_PROGRESS
   REVIEW
+  QUALITY_CHECK
+  UNDER_REVIEW
   REVISION
   COMPLETED
 }
@@ -175,6 +177,9 @@ model Project {
   orders           Order[]
   logs             ProjectLog[]
   freelancerInvoices FreelancerInvoice[]
+  
+  rating           Int?
+  ratingComment    String?
 }
 
 model Message {

@@ -1,12 +1,12 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from "next-auth/react";
 import Sidebar from '@/components/dashboard/Sidebar';
 import { 
   MessageSquare, Search, Filter, 
   ChevronRight, Clock, User, 
   ExternalLink, Briefcase, Info,
-  ShieldCheck, Send, Paperclip, X
+  ShieldCheck, Send, Paperclip, X, FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { io } from 'socket.io-client';
@@ -23,6 +23,9 @@ export default function FreelancerChatInbox() {
   const [adminMessages, setAdminMessages] = useState([]);
   const [adminInput, setAdminInput] = useState("");
   const [socket, setSocket] = useState(null);
+  const [chatAttachments, setChatAttachments] = useState([]);
+  const [chatUploading, setChatUploading] = useState(false);
+  const chatFileInputRef = useRef(null);
 
   useEffect(() => {
     const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
@@ -70,9 +73,11 @@ export default function FreelancerChatInbox() {
   }, [socket, session?.user?.id]);
 
   const handleSendAdminMessage = async () => {
-    if (!adminInput.trim() || !session?.user?.id) return;
+    if (!adminInput.trim() && chatAttachments.length === 0 || !session?.user?.id) return;
     const content = adminInput;
+    const atts = chatAttachments;
     setAdminInput("");
+    setChatAttachments([]);
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
@@ -80,7 +85,8 @@ export default function FreelancerChatInbox() {
         body: JSON.stringify({
           content,
           chatType: 'ADMIN_CHAT',
-          receiverId: null // Changed from 'ADMIN' to null
+          receiverId: null, // Broadcast to all admins
+          attachments: atts
         })
       });
       if (res.ok) {
@@ -93,11 +99,40 @@ export default function FreelancerChatInbox() {
               senderId: session.user.id,
               receiverId: null, // Broadcast to all admins
               senderRole: 'FREELANCER',
-              chatType: 'ADMIN_CHAT'
+              chatType: 'ADMIN_CHAT',
+              attachments: saved.attachments
            });
         }
       }
     } catch (e) { console.error(e); }
+  };
+
+  const handleChatFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setChatUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setChatAttachments(prev => [...prev, ...uploadedFiles]);
+    } catch (error) {
+      console.error('Chat file upload failure:', error);
+    } finally {
+      setChatUploading(false);
+      if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+    }
+  };
+
+  const removeChatAttachment = (url) => {
+    setChatAttachments(prev => prev.filter(a => a.url !== url));
   };
 
   const filteredProjects = projects.filter(p => 
@@ -260,6 +295,31 @@ export default function FreelancerChatInbox() {
                                          : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
                                      }`}>
                                         {msg.content}
+                                        
+                                        {msg.attachments?.length > 0 && (
+                                          <div className={`mt-3 flex flex-col gap-2 ${isMe ? 'items-end' : 'items-start'}`}>
+                                            {msg.attachments.map((file, fidx) => {
+                                              const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                                              if (isImg) {
+                                                return (
+                                                  <a key={fidx} href={file.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border border-white/10 shadow-md transition-transform hover:scale-[1.02]">
+                                                    <img src={file.url} alt={file.name} className="max-w-[180px] max-h-[180px] object-cover" />
+                                                  </a>
+                                                );
+                                              }
+                                              return (
+                                                <a key={fidx} href={file.url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-md ${isMe ? 'bg-white/10 border-white/10 hover:bg-white/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}>
+                                                  <FileText size={16} className={isMe ? 'text-blue-200' : 'text-[#002D5B]'} />
+                                                  <div className="flex flex-col min-w-0">
+                                                    <span className={`text-[10px] font-bold truncate max-w-[100px] ${isMe ? 'text-white' : 'text-slate-700'}`}>{file.name}</span>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-blue-200/60' : 'text-slate-400'}`}>DOCUMENT</span>
+                                                  </div>
+                                                  <ExternalLink size={14} className={isMe ? 'text-white/40' : 'text-slate-300'} />
+                                                </a>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
                                      </div>
                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">
                                         {isMe ? 'YOU' : 'ADMIN'} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -271,8 +331,45 @@ export default function FreelancerChatInbox() {
                       </div>
 
                       <div className="p-8 border-t border-slate-50 shrink-0">
-                         <div className="bg-slate-50 border border-slate-100 rounded-[2rem] px-8 py-4 flex items-center gap-6 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-blue-200 transition-all">
-                            <button className="text-slate-300 hover:text-blue-500 transition-colors">
+                         {chatAttachments.length > 0 && (
+                            <div className="flex items-center gap-3 mb-4 overflow-x-auto pb-2 no-scrollbar">
+                              {chatAttachments.map((file, aidx) => {
+                                const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                                return (
+                                  <div key={aidx} className="relative group shrink-0">
+                                    {isImg ? (
+                                      <div className="w-12 h-12 rounded-lg border border-slate-100 overflow-hidden shadow-sm">
+                                        <img src={file.url} alt="thumb" className="w-full h-full object-cover" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-12 h-12 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-center shadow-sm">
+                                        <FileText size={16} className="text-[#002D5B]" />
+                                      </div>
+                                    )}
+                                    <button 
+                                      onClick={() => removeChatAttachment(file.url)}
+                                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                         <div className={`bg-slate-50 border border-slate-100 rounded-[2rem] px-8 py-4 flex items-center gap-6 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-blue-200 transition-all ${chatUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <input 
+                               type="file" 
+                               className="hidden" 
+                               ref={chatFileInputRef} 
+                               multiple 
+                               accept="image/*,.pdf,.doc,.docx" 
+                               onChange={handleChatFileUpload} 
+                             />
+                            <button 
+                              onClick={() => chatFileInputRef.current?.click()}
+                              className="text-slate-300 hover:text-blue-500 transition-colors"
+                            >
                                <Paperclip size={20} />
                             </button>
                             <input 

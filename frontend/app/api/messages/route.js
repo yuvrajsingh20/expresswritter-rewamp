@@ -5,10 +5,17 @@ import { authOptions, getAuthUser } from "@/lib/auth";
 import { z } from "zod";
 
 const messageSchema = z.object({
-  content: z.string().min(1, "Content cannot be empty"),
+  content: z.string().optional().default(""),
   projectId: z.string().optional().nullable(),
   chatType: z.enum(["CLIENT_CHAT", "INTERNAL_CHAT", "ADMIN_CHAT"]).optional(),
   receiverId: z.string().optional().nullable(),
+  attachments: z.array(z.object({
+    url: z.string(),
+    name: z.string()
+  })).optional().default([])
+}).refine(data => data.content.length > 0 || data.attachments.length > 0, {
+  message: "Message must contain content or attachments",
+  path: ["content"]
 });
 
 export async function GET(req) {
@@ -80,7 +87,7 @@ export async function POST(req) {
       return NextResponse.json({ message: errorMessages }, { status: 400 });
     }
 
-    const { projectId, content, chatType, receiverId } = result.data;
+    const { projectId, content, chatType, receiverId, attachments } = result.data;
 
     const newMessage = await prisma.message.create({
       data: {
@@ -88,7 +95,8 @@ export async function POST(req) {
         chatType,
         projectId,
         senderId: session.user.id,
-        receiverId: receiverId || null
+        receiverId: receiverId || null,
+        attachments: attachments || []
       },
       include: {
         sender: {

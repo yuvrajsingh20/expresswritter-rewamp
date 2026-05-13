@@ -3,14 +3,34 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notifications";
+import { isRateLimited } from "@/lib/rateLimit";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["ADMIN", "SUB_ADMIN", "FREELANCER", "STUDENT"]).optional(),
+  writerProfile: z.any().optional(),
+});
 
 export async function POST(req) {
   try {
-    const { name, email, password, role, writerProfile } = await req.json();
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ message: "Missing fields" }, { status: 400 });
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+    
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ message: 'Too many attempts, try again later' }, { status: 429 });
     }
+
+    const body = await req.json();
+    const result = signupSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMessages = result.error.issues.map(issue => issue.message).join(", ");
+      return NextResponse.json({ message: errorMessages }, { status: 400 });
+    }
+
+    const { name, email, password, role, writerProfile } = result.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -51,9 +71,7 @@ export async function POST(req) {
       }
     });
 
-    // --- EMAIL VERIFICATION TEMPORARILY DISABLED ---
     // Generate Verification Token
-    /*
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 3600000); // 1 hour
 
@@ -88,7 +106,6 @@ export async function POST(req) {
     } catch (mailError) {
       console.warn("⚠️ Non-fatal: Failed to send verification email:", mailError.message);
     }
-    */
 
     // Don't return password
     const { password: _, ...userWithoutPassword } = user;

@@ -26,14 +26,6 @@ app.use(
 
 app.use(express.json());
 
-app.post('/notify', (req, res) => {
-  const { userId, title, msg, icon } = req.body;
-  if (io) {
-    io.to(`user_${userId}`).emit('new_notification', { title, msg, icon });
-  }
-  res.json({ ok: true });
-});
-
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -41,6 +33,14 @@ const io = new Server(server, {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"],
   },
+});
+
+app.post('/notify', (req, res) => {
+  const { userId, title, msg, icon } = req.body;
+  if (io) {
+    io.to(`user_${userId}`).emit('new_notification', { title, msg, icon });
+  }
+  res.json({ ok: true });
 });
 
 io.on("connection", (socket) => {

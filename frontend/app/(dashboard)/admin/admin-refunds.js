@@ -48,8 +48,8 @@ export function AdminRefunds() {
         <Table
           cols={['Request ID', 'Order', 'Amount', 'Reason', 'Status', 'Actions']}
           rows={filtered.map(r => [
-            <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>{r.id.slice(-6)}</span>,
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{r.orderId.slice(-6)}</span>,
+            <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>XW-{r.id.slice(-5).toUpperCase()}</span>,
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>XW-{r.orderId.slice(-5).toUpperCase()}</span>,
             <span style={{ fontWeight: 700 }}>₹{r.amount.toLocaleString()}</span>,
             <div style={{ maxWidth: 200, fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reason}>{r.reason}</div>,
             <Pill label={r.status} color={r.status === 'PENDING' ? 'var(--amber)' : r.status === 'APPROVED' ? 'var(--green)' : 'var(--red)'} />,

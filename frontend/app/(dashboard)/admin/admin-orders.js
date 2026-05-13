@@ -127,7 +127,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
               ]}
               rows={unassignedProjects.map(p => [
                 <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />,
-                <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>#{p.id.slice(-6).toUpperCase()}</span>,
+                <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>XW-{p.id.slice(-5).toUpperCase()}</span>,
                 <span style={{ fontSize: 13 }}>{p.title}</span>,
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A'}</span>,
                 <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
@@ -166,7 +166,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
                 <Table
                     cols={['Order ID', 'Service', 'Status', 'Writer', 'Client', 'Action']}
                     rows={projects.filter(p => p.status !== 'CREATED' && p.status !== 'UNASSIGNED' && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').map(p => [
-                      <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>#{p.id.slice(-6).toUpperCase()}</span>,
+                      <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>XW-{p.id.slice(-5).toUpperCase()}</span>,
                       <span style={{ fontSize: 13 }}>{p.title}</span>,
                       <Pill label={p.status} color="var(--teal)" />,
                       <span style={{ fontSize: 13 }}>{p.freelancer?.name || 'Unassigned'}</span>,
@@ -243,7 +243,7 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Project #{project.id.slice(-6).toUpperCase()} Chat Feed</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Project XW-{project.id.slice(-5).toUpperCase()} Chat Feed</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Student: {project.student?.name} | Writer: {project.freelancer?.name}</div>
           </div>
         </div>

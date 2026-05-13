@@ -2,17 +2,27 @@ import { NextResponse } from "next/server";
 import razorpay from "@/lib/razorpay";
 import { getAuthUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { z } from "zod";
+
+const paymentSchema = z.object({
+  amount: z.number().positive("Amount must be a positive number"),
+  projectId: z.string().min(1, "Project ID is required"),
+});
 
 export async function POST(req) {
   try {
     const authUser = await getAuthUser(req);
     if (!authUser) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const { amount, projectId } = await req.json();
+    const body = await req.json();
+    const result = paymentSchema.safeParse(body);
 
-    if (!amount || !projectId) {
-      return NextResponse.json({ message: "Missing amount or projectId" }, { status: 400 });
+    if (!result.success) {
+      const errorMessages = result.error.issues.map(issue => issue.message).join(", ");
+      return NextResponse.json({ message: errorMessages }, { status: 400 });
     }
+
+    const { amount, projectId } = result.data;
 
     // Amount in Razorpay is in paisa
     const options = {

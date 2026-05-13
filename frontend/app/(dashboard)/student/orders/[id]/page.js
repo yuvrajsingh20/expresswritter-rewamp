@@ -57,8 +57,11 @@ export default function OrderDetailsPage() {
   const scrollRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatFileInputRef = useRef(null);
   const [errorAlert, setErrorAlert] = useState(null);
   const [isListening, setIsListening] = useState(false);
+  const [chatAttachments, setChatAttachments] = useState([]);
+  const [chatUploading, setChatUploading] = useState(false);
 
   const startListening = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -370,9 +373,11 @@ export default function OrderDetailsPage() {
       senderRole: 'STUDENT',
       chatType: 'CLIENT_CHAT',
       projectId: id,
+      attachments: chatAttachments
     };
 
     setNewMessage("");
+    setChatAttachments([]);
 
     try {
       // 1. Save to database first via messages API
@@ -389,6 +394,7 @@ export default function OrderDetailsPage() {
           socketRef.current.emit('send_message', {
               id: savedMessage.id,
               content: savedMessage.content,
+              attachments: savedMessage.attachments,
               projectId: id,
               senderId: userId,
               senderRole: 'STUDENT',
@@ -400,6 +406,36 @@ export default function OrderDetailsPage() {
       setErrorAlert("Failed to send message.");
       setTimeout(() => setErrorAlert(null), 5000);
     }
+  };
+
+  const handleChatFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setChatUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setChatAttachments(prev => [...prev, ...uploadedFiles]);
+    } catch (error) {
+      console.error('Chat file upload failure:', error);
+      setErrorAlert("File upload failed. Please try again.");
+      setTimeout(() => setErrorAlert(null), 5000);
+    } finally {
+      setChatUploading(false);
+      if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+    }
+  };
+
+  const removeChatAttachment = (url) => {
+    setChatAttachments(prev => prev.filter(a => a.url !== url));
   };
 
   const handleKeyDown = (e) => {
@@ -519,7 +555,7 @@ export default function OrderDetailsPage() {
              <div className="flex flex-col">
                <h1 className="text-base font-black text-slate-900 tracking-tight">{project.title}</h1>
                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                 <span className="text-[#0067B8]">ORDER ID: #{project.id.slice(-6).toUpperCase()}</span>
+                 <span className="text-[#0067B8]">ORDER ID: XW-{project.id.slice(-5).toUpperCase()}</span>
                  <span>•</span>
                  <span>{new Date(project.createdAt).toLocaleDateString()}</span>
                </div>
@@ -920,6 +956,31 @@ export default function OrderDetailsPage() {
                                         isMe ? 'bg-[#002D5B] text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none'
                                     }`}>
                                         {msg.content || msg.text}
+                                        
+                                        {msg.attachments?.length > 0 && (
+                                          <div className={`mt-3 flex flex-col gap-2 ${isMe ? 'items-end' : 'items-start'}`}>
+                                            {msg.attachments.map((file, fidx) => {
+                                              const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                                              if (isImg) {
+                                                return (
+                                                  <a key={fidx} href={file.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border border-white/20 shadow-md transition-transform hover:scale-[1.02]">
+                                                    <img src={file.url} alt={file.name} className="max-w-[200px] max-h-[200px] object-cover" />
+                                                  </a>
+                                                );
+                                              }
+                                              return (
+                                                <a key={fidx} href={file.url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-md ${isMe ? 'bg-white/10 border-white/20 hover:bg-white/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}>
+                                                  <FileText size={18} className={isMe ? 'text-blue-200' : 'text-[#002D5B]'} />
+                                                  <div className="flex flex-col min-w-0">
+                                                    <span className={`text-[10px] font-bold truncate max-w-[120px] ${isMe ? 'text-white' : 'text-slate-700'}`}>{file.name}</span>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-blue-200/60' : 'text-slate-400'}`}>DOCUMENT</span>
+                                                  </div>
+                                                  <ExternalLink size={14} className={isMe ? 'text-white/40' : 'text-slate-300'} />
+                                                </a>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
                                         {isMe ? 'CLIENT CONSOLE' : ((msg.sender?.role === 'FREELANCER' || msg.senderRole === 'FREELANCER') ? `SPECIALIST: ${msg.sender?.name || 'Assigned'}` : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
@@ -958,36 +1019,83 @@ export default function OrderDetailsPage() {
                  )}
                </AnimatePresence>
                
-               <form onSubmit={handleSendMessage} className="space-y-6">
-                  <div className="relative group">
-                    <textarea 
-                        rows={3}
-                        disabled={needsPayment}
-                        value={newMessage}
-                        onKeyDown={handleKeyDown}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Initialize message exchange..."
-                        className="w-full bg-slate-50 border-2 border-transparent group-hover:bg-white group-hover:border-slate-100 rounded-2xl p-5 pr-14 text-xs font-medium focus:bg-white focus:border-[#0067B8]/20 focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none shadow-inner disabled:opacity-50"
-                    />
-                    <div className="absolute right-4 bottom-4 flex items-center gap-3 text-slate-300">
-                        <button 
-                          type="button" 
-                          onClick={startListening}
-                          className={`transition-all ${isListening ? 'text-red-500 animate-pulse' : 'hover:text-[#0067B8]'}`}
-                        >
-                           <Mic size={18} />
-                        </button>
-                        <Paperclip size={18} className="cursor-pointer hover:text-[#0067B8] transition-colors" />
-                    </div>
-                  </div>
-                  <button 
-                    disabled={!newMessage.trim() || needsPayment}
-                    type="submit" 
-                    className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
-                  >
-                    TRANSMIT PACKET <Send size={16} />
-                  </button>
-               </form>
+                <form onSubmit={handleSendMessage} className="space-y-6">
+                   <div className="relative group">
+                     {chatAttachments.length > 0 && (
+                       <div className="flex items-center gap-3 overflow-x-auto pb-4 px-2 no-scrollbar">
+                         {chatAttachments.map((file, aidx) => {
+                           const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                           return (
+                             <motion.div 
+                               initial={{ scale: 0.8, opacity: 0 }}
+                               animate={{ scale: 1, opacity: 1 }}
+                               key={aidx} 
+                               className="relative group/thumb shrink-0"
+                             >
+                               {isImg ? (
+                                 <div className="w-16 h-16 rounded-xl border-2 border-slate-100 overflow-hidden shadow-sm">
+                                   <img src={file.url} alt="thumb" className="w-full h-full object-cover" />
+                                 </div>
+                               ) : (
+                                 <div className="w-16 h-16 rounded-xl border-2 border-slate-100 bg-slate-50 flex flex-col items-center justify-center p-2 text-center shadow-sm">
+                                   <FileText size={18} className="text-[#002D5B] mb-1" />
+                                   <span className="text-[8px] font-bold text-slate-500 truncate w-full">{file.name}</span>
+                                 </div>
+                               )}
+                               <button 
+                                 type="button"
+                                 onClick={() => removeChatAttachment(file.url)}
+                                 className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg transform translate-y-1 opacity-0 group-hover/thumb:translate-y-0 group-hover/thumb:opacity-100 transition-all"
+                               >
+                                 <X size={12} />
+                               </button>
+                             </motion.div>
+                           );
+                         })}
+                       </div>
+                     )}
+
+                     <textarea 
+                         rows={3}
+                         disabled={needsPayment || chatUploading}
+                         value={newMessage}
+                         onKeyDown={handleKeyDown}
+                         onChange={(e) => setNewMessage(e.target.value)}
+                         placeholder={chatUploading ? "Uploading assets..." : "Initialize message exchange..."}
+                         className="w-full bg-slate-50 border-2 border-transparent group-hover:bg-white group-hover:border-slate-100 rounded-2xl p-5 pr-14 text-xs font-medium focus:bg-white focus:border-[#0067B8]/20 focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none shadow-inner disabled:opacity-50"
+                     />
+                     <div className="absolute right-4 bottom-4 flex items-center gap-3 text-slate-300">
+                         {chatUploading && <Loader2 className="animate-spin text-[#0067B8]" size={18} />}
+                         <button 
+                           type="button" 
+                           onClick={startListening}
+                           className={`transition-all ${isListening ? 'text-red-500 animate-pulse' : 'hover:text-[#0067B8]'}`}
+                         >
+                            <Mic size={18} />
+                         </button>
+                         <input 
+                           type="file" 
+                           className="hidden" 
+                           ref={chatFileInputRef} 
+                           multiple 
+                           accept="image/*,.pdf,.doc,.docx" 
+                           onChange={handleChatFileUpload} 
+                         />
+                         <Paperclip 
+                           size={18} 
+                           className={`cursor-pointer transition-colors ${chatUploading ? 'opacity-50 pointer-events-none' : 'hover:text-[#0067B8]'}`} 
+                           onClick={() => chatFileInputRef.current?.click()}
+                         />
+                     </div>
+                   </div>
+                   <button 
+                     disabled={(!newMessage.trim() && chatAttachments.length === 0) || needsPayment || chatUploading}
+                     type="submit" 
+                     className="w-full h-14 bg-slate-900 text-white flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 shadow-2xl shadow-slate-900/10 active:scale-95"
+                   >
+                     {chatUploading ? "UPLOADING ASSETS..." : <>{newMessage.trim() || chatAttachments.length === 0 ? "TRANSMIT PACKET" : "SEND ASSETS"} <Send size={16} /></>}
+                   </button>
+                </form>
                <div className="mt-6 p-4 bg-slate-50 rounded-xl flex items-start gap-4">
                   <ShieldCheck size={18} className="text-[#0067B8] mt-0.5 shrink-0" />
                   <p className="text-[9px] text-slate-500 font-bold leading-relaxed uppercase tracking-tight">Security Protocol: Direct identifier exchange is restricted to maintain platform integrity and user privacy.</p>

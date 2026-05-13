@@ -153,7 +153,7 @@ function OrderStrip({ order, isActive, onClick }) {
       <div style={{ padding: '16px 18px', fontFamily: "\"Google Sans\"", borderRadius: "0px" }}>
         {/* Row 1: invoice + badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.04em', fontWeight: 500 }}>{order.invoiceNum}</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.04em', fontWeight: 500 }}>{order.displayId}</span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
             {isUrgent && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: 'rgba(244,63,94,0.12)', color: '#f43f5e', border: '1px solid rgba(244,63,94,0.2)', letterSpacing: '0.05em' }}>⚡ URGENT</span>}
             {!isUrgent && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 600, padding: '2px 7px', borderRadius: 100, background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.15)' }}>📅 {order.due.split(',')[0]}</span>}
@@ -213,7 +213,7 @@ function ChatMessage({ msg, writerAvatar }) {
   if (msg.type === 'system') return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0', animation: 'fadeIn .3s ease' }}>
       <div style={{ fontSize: 10, color: 'var(--text-dim)', background: 'var(--surface3)', padding: '4px 12px', borderRadius: 100, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span style={{ color: 'var(--teal)', fontSize: 11 }}>🔒</span>{msg.text} · <span style={{ fontFamily: 'var(--mono)', fontSize: 9 }}>{msg.time}</span>
+        <span style={{ color: 'var(--teal)', fontSize: 11 }}>🔒</span>{msg.text || msg.content} · <span style={{ fontFamily: 'var(--mono)', fontSize: 9 }}>{msg.time}</span>
       </div>
     </div>);
 
@@ -253,16 +253,51 @@ function ChatMessage({ msg, writerAvatar }) {
 
   const isWriter = msg.from === 'writer';
   return (
-    <div style={{ display: 'flex', justifyContent: isWriter ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 7, padding: '2px 0', animation: 'fadeIn .3s ease' }}>
-      {!isWriter && <Avatar initials={msg.alias?.slice(-4) || 'C'} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />}
-      <div style={{ maxWidth: '68%' }}>
-        {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias} <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>· Identity Protected</span></div>}
-        <div style={{ padding: '9px 13px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'var(--teal)' : 'var(--surface3)', color: isWriter ? '#fff' : 'var(--text)', fontSize: 13, lineHeight: 1.55, border: isWriter ? 'none' : '1px solid var(--border)' }}>
-          {msg.content || msg.text}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isWriter ? 'flex-end' : 'flex-start', gap: 4, padding: '2px 0', animation: 'fadeIn .3s ease' }}>
+      <div style={{ display: 'flex', justifyContent: isWriter ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 7 }}>
+        {!isWriter && <Avatar initials={msg.alias?.slice(-4) || 'C'} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />}
+        <div style={{ maxWidth: '85%' }}>
+          {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias} <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>· Identity Protected</span></div>}
+          <div style={{ padding: '9px 13px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'var(--teal)' : 'var(--surface3)', color: isWriter ? '#fff' : 'var(--text)', fontSize: 13, lineHeight: 1.55, border: isWriter ? 'none' : '1px solid var(--border)' }}>
+            {msg.content || msg.text}
+          </div>
         </div>
-        <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 3, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)' }}>{msg.time}</div>
+        {isWriter && <Avatar initials={writerAvatar} size={26} />}
       </div>
-      {isWriter && <Avatar initials={writerAvatar} size={26} />}
+
+      {msg.attachments && msg.attachments.length > 0 && (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 6, 
+          width: '70%', 
+          marginLeft: isWriter ? 0 : 33, 
+          marginRight: isWriter ? 33 : 0 
+        }}>
+          {msg.attachments.map((file, idx) => {
+            const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+            return (
+              <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ 
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, 
+                background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', 
+                border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, 
+                textDecoration: 'none', color: 'inherit' 
+              }}>
+                {isImg ? (
+                  <img src={file.url} alt="attachment" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: 34, height: 34, borderRadius: 7, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                  <div style={{ fontSize: 9, opacity: 0.7 }}>DOCUMENT</div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 1, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)', marginLeft: isWriter ? 0 : 33, marginRight: isWriter ? 33 : 0 }}>{msg.time}</div>
     </div>);
 
 }
@@ -275,8 +310,21 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [typing, setTyping] = useState(false);
   const [tab, setTab] = useState('chat');
+  const [chatAttachments, setChatAttachments] = useState([]);
+  const [chatUploading, setChatUploading] = useState(false);
+  const chatFileInputRef = useRef(null);
   const endRef = useRef();
   const inputRef = useRef();
+
+  const handleDownload = (file) => {
+    if (!file.url) return;
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.name || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     if (endRef.current && endRef.current.parentElement) {
@@ -289,10 +337,41 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
     return () => clearTimeout(t);
   }, [typing]);
 
+  const handleChatFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setChatUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setChatAttachments(prev => [...prev, ...uploadedFiles]);
+    } catch (error) {
+      console.error('Chat file upload failure:', error);
+      alert("File upload failed. Please try again.");
+    } finally {
+      setChatUploading(false);
+      if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+    }
+  };
+
+  const removeChatAttachment = (url) => {
+    setChatAttachments(prev => prev.filter(a => a.url !== url));
+  };
+
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && chatAttachments.length === 0) return;
     const msgText = input;
+    const attachments = chatAttachments;
     setInput('');
+    setChatAttachments([]);
     
     try {
       const res = await fetch('/api/messages', {
@@ -304,6 +383,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
           senderRole: 'FREELANCER',
           chatType: 'CLIENT_CHAT',
           projectId: order.id,
+          attachments: attachments
         })
       });
       
@@ -312,6 +392,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
         id: savedMessage.id,
         from: 'writer', 
         text: savedMessage.content, 
+        attachments: savedMessage.attachments,
         time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
       });
 
@@ -323,6 +404,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
           senderId: userId,
           senderRole: 'FREELANCER',
           chatType: 'CLIENT_CHAT',
+          attachments: savedMessage.attachments,
           sender: { ...savedMessage.sender, role: 'FREELANCER' }
         });
       }
@@ -345,7 +427,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
             <StatusPill status={order.status} small />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>{order.invoiceNum}</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>{order.displayId}</span>
             <span style={{ color: 'var(--text-dim)', fontSize: 10 }}>·</span>
             <span style={{ fontSize: 10, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 11 }}>🛡</span>{order.client}</span>
             {order.hasNDA && <SecurityBadge label="NDA Active" icon="🔒" color="#8b5cf6" />}
@@ -420,17 +502,48 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
             {order.status === 'New Order' ? (
               <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, padding: '10px 0' }}>Chat is disabled until you accept the assignment.</div>
             ) : (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={`Message ${order.client}...`} rows={1} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, resize: 'none', fontFamily: 'var(--font)', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto' }} />
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button title="Attach file" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2, borderRadius: 4, transition: 'color .2s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
-                      📎</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                {chatAttachments.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '4px 0' }}>
+                    {chatAttachments.map((file, idx) => (
+                      <div key={idx} style={{ position: 'relative', width: 50, height: 50, borderRadius: 6, background: 'var(--surface3)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? (
+                          <img src={file.url} alt="preview" style={{ width: '100%', height: '100%', borderRadius: 6, objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: 18 }}>📄</span>
+                        )}
+                        <button onClick={() => removeChatAttachment(file.url)} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: 'var(--red)', border: 'none', color: '#fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                      </div>
+                    ))}
                   </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                    <textarea value={input} disabled={chatUploading} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={chatUploading ? "Uploading..." : `Message ${order.client}...`} rows={1} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, resize: 'none', fontFamily: 'var(--font)', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto' }} />
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button 
+                        onClick={() => chatFileInputRef.current?.click()}
+                        disabled={chatUploading}
+                        title="Attach file" 
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2, borderRadius: 4, transition: 'color .2s' }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                      >
+                        📎
+                      </button>
+                      <input 
+                        type="file" 
+                        ref={chatFileInputRef} 
+                        style={{ display: 'none' }} 
+                        multiple 
+                        onChange={handleChatFileUpload} 
+                      />
+                    </div>
+                  </div>
+                  <button onClick={handleSend} disabled={(!input.trim() && chatAttachments.length === 0) || chatUploading} style={{ width: 40, height: 40, borderRadius: 8, background: (input.trim() || chatAttachments.length > 0) && !chatUploading ? 'var(--teal)' : 'var(--surface3)', border: `1px solid ${(input.trim() || chatAttachments.length > 0) && !chatUploading ? 'var(--teal)' : 'var(--border)'}`, color: '#fff', fontSize: 18, cursor: (input.trim() || chatAttachments.length > 0) && !chatUploading ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>
+                    {chatUploading ? "..." : "↑"}
+                  </button>
                 </div>
-                <button onClick={handleSend} disabled={!input.trim()} style={{ width: 40, height: 40, borderRadius: 8, background: input.trim() ? 'var(--teal)' : 'var(--surface3)', border: `1px solid ${input.trim() ? 'var(--teal)' : 'var(--border)'}`, color: '#fff', fontSize: 18, cursor: input.trim() ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>↑</button>
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
@@ -447,7 +560,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
             <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px', fontSize: 13, color: 'var(--text)', lineHeight: 1.7 }}>{order.brief}</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[['Invoice', order.invoiceNum], ['Words', `${order.words.toLocaleString()} words`], ['Price', `$${order.price}`], ['Due', order.due], ['Delivery', order.deliveryType === 'urgent' ? '⚡ Urgent' : '📅 Timeline'], ['NDA', order.hasNDA ? 'Active' : 'Not required']].map(([k, v]) =>
+            {[['Invoice', order.displayId], ['Words', `${order.words.toLocaleString()} words`], ['Price', `$${order.price}`], ['Due', order.due], ['Delivery', order.deliveryType === 'urgent' ? '⚡ Urgent' : '📅 Timeline'], ['NDA', order.hasNDA ? 'Active' : 'Not required']].map(([k, v]) =>
               <div key={k} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
                 <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{v}</div>
@@ -459,25 +572,53 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
 
       {tab === 'files' &&
         <div className="scrollable" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-          {[['Client Files', order.files], ['Delivered Files', order.deliveredFiles]].map(([label, files]) =>
-            <div key={label} style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 10 }}>{label} ({files.length})</div>
-              {files.length === 0 ? <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '12px 0' }}>No files yet</div> : files.map((f, i) =>
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
-                  <span style={{ fontSize: 20 }}>📄</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 3 }}>
-                      <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{f.size}</span>
-                      {f.watermarked && <SecurityBadge label="Watermarked" icon="🔒" color="#8b5cf6" />}
-                      {f.secure && <SecurityBadge label="Secured" icon="🛡" color="#0d9488" />}
+          {[
+            ['Initial Project Files', order.files], 
+            ['Delivered Files', order.deliveredFiles],
+            ['Chat Documents', (order.thread || []).reduce((acc, m) => [...acc, ...(m.attachments || [])], [])]
+          ].map(([label, files]) => (
+            <div key={label} style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal-light)', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+                <span>{label}</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>{files.length} ITEMS</span>
+              </div>
+              {files.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px dashed var(--border)', textAlign: 'center' }}>
+                  No files in this category yet
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {files.map((f, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', transition: 'transform .2s, border-color .2s' }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--surface3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, border: '1px solid var(--border)' }}>
+                        {/\.(jpg|jpeg|png|webp|gif)$/i.test(f.url) ? '🖼️' : '📄'}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}>{f.name}</div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+                          <span style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 500 }}>{f.size || 'DOCUMENT'}</span>
+                          {f.watermarked && <SecurityBadge label="Watermarked" icon="🔒" color="#8b5cf6" />}
+                          <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-dim)' }} />
+                          <span style={{ fontSize: 10, color: 'var(--teal-light)', cursor: 'pointer' }} onClick={() => handleDownload(f)}>Quick Preview</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleDownload(f)}
+                        title="Download File"
+                        style={{ 
+                          background: 'var(--teal)', border: 'none', color: '#fff', 
+                          width: 32, height: 32, borderRadius: 8, fontSize: 14, cursor: 'pointer', 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' 
+                        }}
+                      >
+                        ↓
+                      </button>
                     </div>
-                  </div>
-                  <button style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '5px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)' }}>↓</button>
+                  ))}
                 </div>
               )}
             </div>
-          )}
+          ))}
           <div style={{ padding: '12px 14px', background: 'rgba(13,148,136,0.06)', border: '1px solid var(--border-teal)', borderRadius: 8, fontSize: 11, color: 'var(--teal-light)', lineHeight: 1.6 }}>
             🔒 All delivered files are automatically watermarked with the client's ID and a unique document hash. Unauthorized distribution is tracked.
           </div>
@@ -515,8 +656,8 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
       case 'ASSIGNED':
       case 'IN_PROGRESS': return 'In Progress';
       case 'REVIEW':
-      case 'QUALITY_CHECK': return 'Quality Check';
-      case 'UNDER_REVIEW': return 'Under Review';
+      case 'QUALITY_CHECK': 
+      case 'UNDER_REVIEW': return 'Quality Check';
       case 'REVISION': return 'Revision';
       case 'COMPLETED': return 'Delivered';
       case 'CLOSED': return 'Closed';
@@ -527,7 +668,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
   const mapProjectsToOrders = useCallback((rawProjects) => {
     return (rawProjects || []).map(p => ({
       id: p.id,
-      invoiceNum: `XW-${p.id.slice(-5).toUpperCase()}`,
+      displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
       service: p.serviceType || p.title,
       client: p.student?.name || `Client #${p.studentId?.slice(-4)}`,
       clientCode: p.studentId?.slice(-4),
@@ -551,7 +692,8 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
         text: m.content,
         time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         fileName: m.attachments?.[0]?.name,
-        size: m.attachments?.[0]?.size
+        size: m.attachments?.[0]?.size,
+        attachments: m.attachments || []
       }))
     }));
   }, [userId]);
@@ -581,7 +723,13 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
   });
 
   const handleStatusChange = async (id, newStatus) => {
-    const dbStatus = newStatus === 'In Progress' ? 'IN_PROGRESS' : newStatus === 'Delivered' ? 'COMPLETED' : newStatus === 'Revision' ? 'REVISION' : newStatus === 'Quality Check' ? 'QUALITY_CHECK' : newStatus === 'Under Review' ? 'UNDER_REVIEW' : newStatus;
+    // Map UI status to valid Prisma Enum values
+    const dbStatus = 
+      newStatus === 'In Progress' ? 'IN_PROGRESS' : 
+      newStatus === 'Delivered' ? 'COMPLETED' : 
+      newStatus === 'Revision' ? 'REVISION' : 
+      (newStatus === 'Quality Check' || newStatus === 'Under Review') ? 'REVIEW' : 
+      newStatus;
     try {
       const res = await fetch(`/api/projects/${id}`, {
         method: 'PATCH',
@@ -600,7 +748,17 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
             })
           });
         }
-        window.location.reload();
+        
+        // Emit socket event for real-time update
+        if (socket) {
+          socket.emit('status_update', { projectId: id, status: dbStatus });
+        }
+
+        // Update local state instead of reload
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+        
+        // Also update main projects state in App
+        if (typeof onUpdate === 'function') onUpdate();
       } else {
         console.error("Failed to update status");
       }

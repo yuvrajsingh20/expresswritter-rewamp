@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import './(auth)/landing.css';
 
 /* ─── DATA ─── */
@@ -24,6 +26,12 @@ const SERVICES = [
   { icon: '🧬', cat: 'Content', name: 'Thesis & Dissertation', price: 'from ₹15,000', desc: 'PhD-level research writing & editing' },
   { icon: '📊', cat: 'Business', name: 'Business Proposals', price: 'from ₹4,999', desc: 'Pitch decks, RFPs, investor proposals' },
   { icon: '📑', cat: 'Business', name: 'White Papers & Reports', price: 'from ₹0.80/word', desc: 'Authoritative B2B and research reports' },
+  { icon: '🗽', cat: 'Visa', name: 'B1B2 Visa Support', price: '₹25,000', desc: 'Complete B1/B2 assistance including slot booking & mocks' },
+  { icon: '📜', cat: 'Business', name: 'GMAT/GRE Waiver', price: '₹1,499', desc: 'Professional letters to waive standardized test requirements' },
+  { icon: '💸', cat: 'Business', name: 'App Fee Waiver', price: '₹1,499', desc: 'Request application fee waivers professionally' },
+  { icon: '🖋️', cat: 'Content', name: 'Media Write-up', price: 'TBD', desc: 'Professional write-ups for media, news, and magazines' },
+  { icon: '🎓', cat: 'Academic', name: 'Scholarship Essay', price: 'TBD', desc: 'Compelling essays for securing university funding' },
+  { icon: '✉️', cat: 'Career', name: 'Email Templates', price: '₹399', desc: 'Professional templates for networking and outreach' }
 ];
 
 const STEPS = [
@@ -67,6 +75,8 @@ const FAQ = [
 
 /* ─── HERO ─── */
 function Hero() {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [counts, setCounts] = useState({ orders: 0, writers: 0, rating: 0 });
   useEffect(() => {
     const dur = 1600; const t0 = Date.now();
@@ -95,8 +105,14 @@ function Hero() {
           Connect with 1,200+ vetted freelance writers across 12 service categories — from SOPs and resumes to thesis chapters and B2B content. Plagiarism-free, NDA-protected, on time.
         </p>
         <div className="fade-up" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', animationDelay: '.15s' }}>
-          <Link className="btn-teal" href="/login">Browse Services →</Link>
-          <Link className="btn-outline-teal" href="/login">Sign in / Sign up</Link>
+          <button onClick={() => {
+            if (session) {
+              router.push(`/${session.user.role.toLowerCase()}`);
+            } else {
+              document.getElementById('services').scrollIntoView({ behavior: 'smooth' });
+            }
+          }} className="btn-teal">Browse Services →</button>
+          {!session && <Link className="btn-outline-teal" href="/login">Sign in / Sign up</Link>}
         </div>
 
         <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 32, marginTop: 72, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', animationDelay: '.2s' }}>
@@ -129,10 +145,42 @@ function TrustBar() {
 }
 
 /* ─── SERVICES GRID ─── */
+function ServiceModal({ service, onClose }) {
+  const router = useRouter();
+  if (!service) return null;
+
+  const handleOrder = () => {
+    localStorage.setItem('pendingOrder', JSON.stringify({ category: service.name }));
+    router.push('/login');
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 32, maxWidth: 500, width: '100%', position: 'relative', animation: 'fadeUp 0.3s ease' }} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 24, cursor: 'pointer' }}>&times;</button>
+        <div style={{ width: 60, height: 60, borderRadius: 12, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, marginBottom: 20 }}>{service.icon}</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-light)', textTransform: 'uppercase', marginBottom: 8 }}>{service.cat}</div>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>{service.name}</h2>
+        <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>{service.desc}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, padding: '16px', background: 'var(--surface2)', borderRadius: 12 }}>
+          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Estimated Price</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--teal-light)' }}>{service.price}</span>
+        </div>
+        <button onClick={handleOrder} className="btn-teal" style={{ width: '100%', justifyContent: 'center' }}>Order this Service →</button>
+      </div>
+    </div>
+  );
+}
+
 function Services() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [selectedService, setSelectedService] = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const cats = ['All', 'Academic', 'Visa', 'Career', 'Content', 'Business'];
   const [tab, setTab] = useState('All');
   const filtered = tab === 'All' ? SERVICES : SERVICES.filter(s => s.cat === tab);
+  const displayServices = expanded ? filtered : filtered.slice(0, 12);
   return (
     <section className="section" id="services">
       <div className="container">
@@ -147,8 +195,14 @@ function Services() {
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
-          {filtered.map((s, i) => (
-            <Link key={i} href="/login" className="card" style={{ textDecoration: 'none', color: 'var(--text)', position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {displayServices.map((s, i) => (
+            <div key={i} onClick={() => {
+              if (session) {
+                router.push('/student?tab=new-order');
+              } else {
+                setSelectedService(s);
+              }
+            }} className="card" style={{ cursor: 'pointer', textDecoration: 'none', color: 'var(--text)', position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {s.pop && <div style={{ position: 'absolute', top: 14, right: 14, padding: '3px 8px', borderRadius: 4, background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)', color: 'var(--teal-light)', fontSize: 9, fontWeight: 700, letterSpacing: '0.06em' }}>POPULAR</div>}
               <div style={{ width: 42, height: 42, borderRadius: 9, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{s.icon}</div>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{s.cat}</div>
@@ -156,13 +210,26 @@ function Services() {
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.55, flex: 1 }}>{s.desc}</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingTop: 12, borderTop: '1px solid var(--border2)' }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{s.price}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Browse →</span>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Details →</span>
               </div>
-            </Link>))}
+            </div>))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 36 }}>
-          <Link className="btn-outline-teal" href="/login">View all 12 services & pricing →</Link>
+          {!expanded ? (
+            <button className="btn-outline-teal" onClick={() => {
+              if (session) {
+                router.push('/student?tab=new-order');
+              } else {
+                setExpanded(true);
+                const grid = document.querySelector('.section-head');
+                if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}>View all {SERVICES.length} services & pricing ↓</button>
+          ) : (
+            <button className="btn-outline-teal" onClick={() => setExpanded(false)}>Show Less ↑</button>
+          )}
         </div>
+        <ServiceModal service={selectedService} onClose={() => setSelectedService(null)} />
       </div>
     </section>);
 }
@@ -397,6 +464,8 @@ function FAQSection() {
 
 /* ─── FINAL CTA ─── */
 function FinalCTA() {
+  const { data: session } = useSession();
+  const router = useRouter();
   return (
     <section style={{ padding: '120px 32px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,rgba(13,148,136,0.18) 0%,transparent 60%)', pointerEvents: 'none' }} />
@@ -404,8 +473,14 @@ function FinalCTA() {
         <h2 className="h1" style={{ fontSize: 'clamp(32px,4.5vw,56px)', marginBottom: 20 }}>Ready to <span className="gradient-text">work with a real writer?</span></h2>
         <p className="lead" style={{ margin: '0 auto 32px', fontSize: 17 }}>Pick a service, brief your writer, watch it come together. The first revision is on us either way.</p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }} href="/login">Browse Services →</Link>
-          <Link className="btn-outline-teal" style={{ fontSize: 15, padding: '15px 30px' }} href="/login">Track an order</Link>
+          <button onClick={() => {
+            if (session) {
+              router.push(`/${session.user.role.toLowerCase()}`);
+            } else {
+              router.push('/login');
+            }
+          }} className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }}>Browse Services →</button>
+          {!session && <Link className="btn-outline-teal" style={{ fontSize: 15, padding: '15px 30px' }} href="/login">Track an order</Link>}
         </div>
       </div>
     </section>);

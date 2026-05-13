@@ -7,7 +7,7 @@ import { io } from 'socket.io-client';
 import { 
   Send, Paperclip, Hash, Users, 
   MessageCircle, Search, MoreVertical,
-  CheckCheck, Phone, Video, Info, Loader2
+  CheckCheck, Phone, Video, Info, Loader2, X, FileText, ExternalLink
 } from 'lucide-react';
 
 const AdminChatHub = () => {
@@ -18,6 +18,9 @@ const AdminChatHub = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [socket, setSocket] = useState(null);
+  const [chatAttachments, setChatAttachments] = useState([]);
+  const [chatUploading, setChatUploading] = useState(false);
+  const chatFileInputRef = React.useRef(null);
 
   useEffect(() => {
     const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
@@ -35,6 +38,7 @@ const AdminChatHub = () => {
                 id: data.id,
                 sender: data.senderRole === 'ADMIN' ? 'Admin' : 'Expert',
                 text: data.content,
+                attachments: data.attachments,
                 time: new Date(data.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 type: data.senderId === session.user.id ? 'outgoing' : 'incoming'
              }]);
@@ -69,6 +73,7 @@ const AdminChatHub = () => {
                id: m.id,
                sender: m.senderId === session.user.id ? 'Admin' : m.sender.name,
                text: m.content,
+               attachments: m.attachments,
                time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                type: m.senderId === session.user.id ? 'outgoing' : 'incoming'
             })));
@@ -89,7 +94,9 @@ const AdminChatHub = () => {
     if (!newMessage.trim() || !session?.user?.id) return;
     
     const content = newMessage;
+    const atts = chatAttachments;
     setNewMessage("");
+    setChatAttachments([]);
 
     try {
       const res = await fetch('/api/messages', {
@@ -98,7 +105,8 @@ const AdminChatHub = () => {
         body: JSON.stringify({
           content,
           chatType: 'ADMIN_CHAT',
-          receiverId: activeChannel.type === 'direct' ? activeChannel.id : null
+          receiverId: activeChannel.type === 'direct' ? activeChannel.id : null,
+          attachments: atts
         })
       });
 
@@ -108,24 +116,54 @@ const AdminChatHub = () => {
           id: saved.id,
           sender: 'Admin',
           text: saved.content,
+          attachments: saved.attachments,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'outgoing'
         };
         setMessages(prev => [...prev, msg]);
         
         if (socket) {
-           socket.emit('send_message', {
-              id: saved.id,
-              content: saved.content,
-              senderId: session.user.id,
-              receiverId: activeChannel.id,
-              senderRole: 'ADMIN'
-           });
-        }
+            socket.emit('send_message', {
+               id: saved.id,
+               content: saved.content,
+               attachments: saved.attachments,
+               senderId: session.user.id,
+               receiverId: activeChannel.id,
+               senderRole: 'ADMIN'
+            });
+         }
       }
     } catch (error) {
       console.error("Failed to send message:", error);
     }
+  };
+
+  const handleChatFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setChatUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setChatAttachments(prev => [...prev, ...uploadedFiles]);
+    } catch (error) {
+      console.error('Chat file upload failure:', error);
+    } finally {
+      setChatUploading(false);
+      if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+    }
+  };
+
+  const removeChatAttachment = (url) => {
+    setChatAttachments(prev => prev.filter(a => a.url !== url));
   };
 
   const handleKeyDown = (e) => {
@@ -227,6 +265,31 @@ const AdminChatHub = () => {
                            : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
                        }`}>
                           {msg.text}
+                          
+                          {msg.attachments?.length > 0 && (
+                            <div className={`mt-3 flex flex-col gap-2 ${msg.type === 'outgoing' ? 'items-end' : 'items-start'}`}>
+                              {msg.attachments.map((file, fidx) => {
+                                const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                                if (isImg) {
+                                  return (
+                                    <a key={fidx} href={file.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border border-white/10 shadow-md transition-transform hover:scale-[1.02]">
+                                      <img src={file.url} alt={file.name} className="max-w-[180px] max-h-[180px] object-cover" />
+                                    </a>
+                                  );
+                                }
+                                return (
+                                  <a key={fidx} href={file.url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-md ${msg.type === 'outgoing' ? 'bg-white/10 border-white/20 hover:bg-white/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}>
+                                    <FileText size={16} className={msg.type === 'outgoing' ? 'text-blue-200' : 'text-blue-600'} />
+                                    <div className="flex flex-col min-w-0">
+                                      <span className={`text-[10px] font-bold truncate max-w-[100px] ${msg.type === 'outgoing' ? 'text-white' : 'text-slate-700'}`}>{file.name}</span>
+                                      <span className={`text-[8px] font-black uppercase tracking-widest ${msg.type === 'outgoing' ? 'text-blue-200/60' : 'text-slate-400'}`}>DOCUMENT</span>
+                                    </div>
+                                    <ExternalLink size={14} className={msg.type === 'outgoing' ? 'text-white/40' : 'text-slate-300'} />
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
                        </div>
                        <p className={`text-[8px] font-black text-slate-300 uppercase flex items-center gap-2 ${msg.type === 'outgoing' ? 'justify-end mr-2' : 'ml-2'}`}>
                           {msg.time} {msg.type === 'outgoing' && <CheckCheck size={12} className="text-blue-500" />}
@@ -236,9 +299,46 @@ const AdminChatHub = () => {
               ))}
            </div>
 
-           <div className="p-8 border-t border-slate-50">
-              <div className="bg-slate-50 border border-slate-100 rounded-[2rem] px-8 py-4 flex items-center gap-6 group focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-blue-200 transition-all">
-                 <button className="text-slate-400 hover:text-blue-500 transition-colors">
+            <div className="p-8 border-t border-slate-50">
+               {chatAttachments.length > 0 && (
+                 <div className="flex items-center gap-3 mb-4 overflow-x-auto pb-2 no-scrollbar px-4">
+                   {chatAttachments.map((file, aidx) => {
+                     const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                     return (
+                       <div key={aidx} className="relative group shrink-0">
+                         {isImg ? (
+                           <div className="w-12 h-12 rounded-lg border border-slate-100 overflow-hidden shadow-sm">
+                             <img src={file.url} alt="thumb" className="w-full h-full object-cover" />
+                           </div>
+                         ) : (
+                           <div className="w-12 h-12 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-center shadow-sm">
+                             <FileText size={16} className="text-blue-600" />
+                           </div>
+                         )}
+                         <button 
+                           onClick={() => removeChatAttachment(file.url)}
+                           className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md"
+                         >
+                           <X size={10} className="text-white" />
+                         </button>
+                       </div>
+                     );
+                   })}
+                 </div>
+               )}
+              <div className={`bg-slate-50 border border-slate-100 rounded-[2rem] px-8 py-4 flex items-center gap-6 group focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-blue-200 transition-all ${chatUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                 <input 
+                   type="file" 
+                   className="hidden" 
+                   ref={chatFileInputRef} 
+                   multiple 
+                   accept="image/*,.pdf,.doc,.docx" 
+                   onChange={handleChatFileUpload} 
+                 />
+                 <button 
+                   onClick={() => chatFileInputRef.current?.click()}
+                   className="text-slate-400 hover:text-blue-500 transition-colors"
+                 >
                     <Paperclip size={20} />
                  </button>
                  <input 

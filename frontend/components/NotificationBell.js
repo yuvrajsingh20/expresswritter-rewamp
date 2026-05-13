@@ -5,7 +5,7 @@ import Link from 'next/link';
 import io from 'socket.io-client';
 
 export default function NotificationBell() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -83,6 +83,14 @@ export default function NotificationBell() {
     }
   };
 
+  if (status === 'loading') {
+    return (
+      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surface2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.8, cursor: 'wait' }}>
+        <span style={{ fontSize: 18, animation: 'pulse 2s infinite' }}>🔔</span>
+      </div>
+    );
+  }
+
   if (!session) return null;
 
   return (
@@ -90,8 +98,8 @@ export default function NotificationBell() {
       <button
         onClick={() => setOpen(!open)}
         style={{
-          background: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'var(--surface2)',
+          border: '1px solid var(--border)',
           borderRadius: '50%',
           width: 40,
           height: 40,
@@ -101,7 +109,8 @@ export default function NotificationBell() {
           cursor: 'pointer',
           position: 'relative',
           backdropFilter: 'blur(10px)',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)'
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          color: 'var(--text)'
         }}
       >
         <span style={{ fontSize: 20 }}>🔔</span>
@@ -130,19 +139,19 @@ export default function NotificationBell() {
           top: 48,
           right: 0,
           width: 320,
-          background: 'rgba(30, 41, 59, 0.85)',
+          background: 'var(--surface)',
           backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid var(--border)',
           borderRadius: 16,
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column'
         }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.2)' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#fff' }}>Notifications</h3>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.1)' }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Notifications</h3>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} style={{ fontSize: 12, color: 'var(--teal, #0d9488)', background: 'none', border: 'none', cursor: 'pointer' }}>Mark all read</button>
+              <button onClick={markAllRead} style={{ fontSize: 12, color: 'var(--teal-light, #0d9488)', background: 'none', border: 'none', cursor: 'pointer' }}>Mark all read</button>
             )}
           </div>
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
@@ -165,13 +174,13 @@ export default function NotificationBell() {
                   >
                     <div style={{ fontSize: 20 }}>{n.icon || '🔔'}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: '#fff', marginBottom: 2 }}>{n.title}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-dim, #9ca3af)' }}>{n.msg}</div>
+                      <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: 'var(--text)', marginBottom: 2 }}>{n.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted, #9ca3af)' }}>{n.msg}</div>
                       <div style={{ fontSize: 10, color: 'var(--text-dim, #9ca3af)', marginTop: 4 }}>
                         {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       {n.link && (
-                        <Link href={n.link} style={{ fontSize: 11, color: 'var(--teal, #0d9488)', marginTop: 4, display: 'inline-block' }}>View Details →</Link>
+                        <Link href={n.link} style={{ fontSize: 11, color: 'var(--teal-light, #0d9488)', marginTop: 4, display: 'inline-block' }}>View Details →</Link>
                       )}
                     </div>
                     {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--teal, #0d9488)', alignSelf: 'center' }} />}

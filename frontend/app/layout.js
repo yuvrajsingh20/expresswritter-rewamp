@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
         <SessionWrapper>
           {children}
           <CookieBanner />
-          <FloatingChat />
+          {/* <FloatingChat /> */}
         </SessionWrapper>
       </body>
     </html>

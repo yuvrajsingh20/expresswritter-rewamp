@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useChat } from "@/hooks/useChat";
 import servicesData from '@/data/services_data.json';
 import Wallet from "./student-wallet";
+import io from 'socket.io-client';
 import Notifications from "@/components/NotificationsView";
 import NotificationBell from '@/components/NotificationBell';
 
@@ -16,15 +17,100 @@ import NotificationBell from '@/components/NotificationBell';
 /* ── HARD-CODED DATA REMOVED ── */
 
 /* ── STATUS ── */
-const STATUS_COLORS = {
-  'Finding Writer': { bg: 'rgba(59,130,246,0.12)', color: '#60a5fa', dot: '#3b82f6' },
-  'Writer Assigned': { bg: 'rgba(124,58,237,0.12)', color: '#a78bfa', dot: '#7c3aed' },
-  'In Progress': { bg: 'rgba(13,148,136,0.15)', color: '#2dd4bf', dot: '#0d9488' },
-  'Under Review': { bg: 'rgba(245,158,11,0.12)', color: '#fbbf24', dot: '#f59e0b' },
-  'Quality Check': { bg: 'rgba(245,158,11,0.12)', color: '#fbbf24', dot: '#f59e0b' },
-  'Delivered': { bg: 'rgba(34,197,94,0.12)', color: '#4ade80', dot: '#22c55e' },
-  'Revision Requested': { bg: 'rgba(244,63,94,0.12)', color: '#fb7185', dot: '#f43f5e' },
+const STATUS_META = {
+  'New Order': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
+  'Finding Writer': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
+  'Writer Assigned': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 1 },
+  'In Progress': { color: '#0d9488', bg: 'rgba(13,148,136,.12)', dot: '#0d9488', rank: 2 },
+  'Under Review': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 3 },
+  'Quality Check': { color: '#f59e0b', bg: 'rgba(245,158,11,.12)', dot: '#f59e0b', rank: 4 },
+  'Revision Requested': { color: '#f43f5e', bg: 'rgba(244,63,94,.12)', dot: '#f43f5e', rank: 5 },
+  'Delivered': { color: '#22c55e', bg: 'rgba(34,197,94,.12)', dot: '#22c55e', rank: 6 },
+  'Closed': { color: '#334e4c', bg: 'rgba(51,78,76,.1)', dot: '#334e4c', rank: 7 }
 };
+
+function StatusPill({ status, small }) {
+  const m = STATUS_META[status] || STATUS_META['In Progress'];
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: small ? '2px 8px' : '3px 10px', borderRadius: 100, background: m.bg, border: `1px solid ${m.color}22`, fontSize: small ? 10 : 11, fontWeight: 600, color: m.color, whiteSpace: 'nowrap' }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: m.dot, display: 'inline-block', animation: status === 'In Progress' ? 'pulse 2s infinite' : 'none' }} />
+      {status}
+    </span>);
+}
+
+function Avatar({ initials, size = 36, gradient }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: size * 0.28, flexShrink: 0, background: gradient || 'linear-gradient(135deg,#0d9488,#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: size * 0.38, color: '#fff', letterSpacing: '-0.01em' }}>
+      {initials}
+    </div>);
+}
+
+function OrderStrip({ order, isActive, onClick }) {
+  const m = STATUS_META[order.status] || STATUS_META['In Progress'];
+  const isUrgent = order.deliveryType === 'urgent';
+  const daysLeft = order.status === 'Delivered' ? null : Math.ceil((new Date(order.due) - new Date()) / 86400000);
+
+  return (
+    <div onClick={onClick} style={{
+      padding: '0', cursor: 'pointer', borderRadius: 8,
+      borderWidth: '1px', borderStyle: 'solid',
+      borderColor: isActive ? 'var(--teal)' : 'var(--border2)',
+      background: isActive ? 'rgba(13,148,136,0.06)' : 'var(--surface2)',
+      transition: 'all .2s', overflow: 'hidden', flexShrink: 0,
+      marginBottom: 8,
+      boxShadow: isActive ? '0 0 0 1px rgba(13,148,136,0.2)' : 'none'
+    }}
+      onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.3)'; e.currentTarget.style.background = 'var(--surface3)'; } }}
+      onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--surface2)'; } }}>
+
+      <div style={{ height: 2, background: m.color, opacity: 0.7 }} />
+
+      <div style={{ padding: '12px 14px', fontFamily: "inherit" }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em', fontWeight: 500 }}>{order.displayId}</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+            {isUrgent && <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 100, background: 'rgba(244,63,94,0.12)', color: '#f43f5e', border: '1px solid rgba(244,63,94,0.2)' }}>⚡ URGENT</span>}
+            {!isUrgent && <span style={{ fontSize: 8, fontWeight: 600, padding: '1px 5px', borderRadius: 100, background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.15)' }}>📅 {order.due.split(',')[0]}</span>}
+          </div>
+        </div>
+
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, lineHeight: 1.3, color: isActive ? 'var(--teal-light)' : 'var(--text)' }}>{order.service}</div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <StatusPill status={order.status} small />
+          {order.unreadMsgs > 0 &&
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 100, background: 'rgba(13,148,136,0.18)', color: 'var(--teal-light)' }}>
+              💬 {order.unreadMsgs}
+            </span>
+          }
+        </div>
+
+        <div style={{ height: 2, borderRadius: 1, background: 'var(--surface3)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${order.progress}%`, background: m.color, transition: 'width .6s ease' }} />
+        </div>
+      </div>
+    </div>);
+}
+
+function DeliveredPopup({ project, onClose, onAction }) {
+  if (!project) return null;
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 16, width: '100%', maxWidth: 440, padding: 32, textAlign: 'center', animation: 'scaleUp 0.3s ease' }}>
+        <div style={{ width: 64, height: 64, background: 'rgba(34,197,94,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px' }}>🎉</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>Service Delivered!</h2>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
+          Great news! Your service <strong>"{project.serviceType || project.title}"</strong> has been successfully delivered and is ready for your review.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button onClick={() => onAction('view')} style={{ width: '100%', padding: '12px', background: 'var(--teal)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>View Order & Files</button>
+          <button onClick={() => onAction('ticket')} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Raise Revision Ticket</button>
+          <button onClick={onClose} style={{ width: '100%', padding: '8px', background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 12, cursor: 'pointer' }}>Dismiss</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── SIDEBAR ── */
 function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
@@ -212,9 +298,8 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
 }
 
 function ActiveOrderCard({ order, onClick }) {
-  const sc = STATUS_COLORS[order.status] || STATUS_COLORS['In Progress'];
-  const TRACK = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
-  const stepIdx = order.status === 'Delivered' ? 4 : (order.status === 'Quality Check' || order.status === 'Under Review' || order.status === 'Revision Requested') ? 3 : order.status === 'In Progress' ? 2 : order.status === 'Writer Assigned' ? 1 : 0;
+  const sc = STATUS_META[order.status] || STATUS_META['In Progress'];
+  const stepIdx = order.status === 'Delivered' ? 4 : (order.status === 'Quality Check' || order.status === 'Under Review' || order.status === 'Revision Requested') ? 3 : order.status === 'In Progress' ? 2 : (order.status === 'Writer Assigned' || order.status === 'ASSIGNED') ? 1 : 0;
 
   return (
     <div onClick={onClick} style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: '18px 20px', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -224,20 +309,17 @@ function ActiveOrderCard({ order, onClick }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{order.service}</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.id} · with {order.writer}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.displayId} · with {order.writer}</div>
         </div>
-        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: sc.bg, color: sc.color }}>
-          <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: sc.dot, marginRight: 5, verticalAlign: 'middle' }} />
-          {order.status}
-        </span>
+        <StatusPill status={order.status} small />
       </div>
 
       {/* Mini track */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 10 }}>
-        {TRACK.map((step, i) => (
+        {['Placed', 'Assigned', 'In-Work', 'Review', 'Done'].map((step, i) => (
           <React.Fragment key={i}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}`, flexShrink: 0, transition: 'all 0.3s' }} />
-            {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', transition: 'background 0.3s' }} />}
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', flexShrink: 0, transition: 'all 0.3s' }} />
+            {i < 4 && <div style={{ flex: 1, height: 1, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', transition: 'background 0.3s' }} />}
           </React.Fragment>
         ))}
       </div>
@@ -265,6 +347,64 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [ratingComment, setRatingComment] = useState('');
+  const [ratingSuccess, setRatingSuccess] = useState(false);
+
+  const handleDownloadWork = (project) => {
+    const deliveryFiles = (project.attachments || []).filter(a => a.type === 'DELIVERY');
+    if (deliveryFiles.length === 0) {
+      alert("No delivery files found yet.");
+      return;
+    }
+    deliveryFiles.forEach(f => {
+      window.open(f.url, '_blank');
+    });
+  };
+
+  const handleReorder = (project) => {
+    // Find proper service name for NewOrder form pre-filling
+    const allSvcs = Object.values(servicesData.individualServices).flat();
+    const svc = allSvcs.find(s => s.id === project.serviceType) || allSvcs.find(s => s.name === project.serviceType);
+    
+    localStorage.setItem('pendingOrder', JSON.stringify({
+      category: svc?.name || project.serviceType || project.title,
+      details: `[REORDER] Original Order: XW-${project.id.slice(-5).toUpperCase()}\n\n${project.description || ''}`,
+      wordCount: 1000
+    }));
+    setActive('new-order');
+    // We can't easily trigger the useEffect without a mount/refresh if already in new-order
+    // But since we are changing tabs, it will mount.
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!selectedOrder) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/projects/${selectedOrder}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, ratingComment })
+      });
+      if (res.ok) {
+        setRatingSuccess(true);
+        // Refresh local projects state to show rating if needed (though not implemented in UI yet)
+        setProjects(prev => prev.map(p => p.id === selectedOrder ? { ...p, rating, ratingComment } : p));
+        setTimeout(() => {
+          setShowRatingModal(false);
+          setRatingSuccess(false);
+        }, 2000);
+      } else {
+        alert("Failed to submit rating. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error submitting rating.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleCreateTicket = async () => {
     setTicketError('');
@@ -306,11 +446,13 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     else if (p.status === 'ASSIGNED') { displayStatus = 'Writer Assigned'; progress = 20; }
     else if (p.status === 'REVISION') { displayStatus = 'Revision Requested'; progress = 80; }
     else if (p.status === 'COMPLETED') { displayStatus = 'Delivered'; progress = 100; }
-    else if (p.status === 'QUALITY_CHECK') { displayStatus = 'Quality Check'; progress = 90; }
-    else if (p.status === 'UNDER_REVIEW') { displayStatus = 'Under Review'; progress = 75; }
+    else if (p.status === 'REVIEW') { displayStatus = 'Under Review'; progress = 90; }
+    else if (p.status === 'QUALITY_CHECK') { displayStatus = 'Quality Check'; progress = 95; }
+    else if (p.status === 'UNDER_REVIEW') { displayStatus = 'Under Review'; progress = 90; }
 
     return {
       id: p.id,
+      displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
       service: p.serviceType || p.title,
       writer: p.freelancer?.name || 'Unassigned',
       status: displayStatus,
@@ -374,7 +516,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
           ))}
         </div>
         {filtered.map((order, i) => {
-          const sc = STATUS_COLORS[order.status] || STATUS_COLORS['In Progress'];
+          const sc = STATUS_META[order.status] || STATUS_META['In Progress'];
           const isSelected = selectedOrder === order.id;
           return (
             <div key={order.id} onClick={() => setSelectedOrder(isSelected ? null : order.id)} style={{
@@ -386,7 +528,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
               onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
               onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.id}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.displayId}</div>
               <div style={{ fontSize: 13, paddingRight: 12 }}>{order.service}</div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.writer.split(' ').slice(0, 2).join(' ')}</div>
               <div>
@@ -405,15 +547,15 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
       {selectedOrder && (() => {
         const o = MAPPED_ORDERS.find(x => x.id === selectedOrder);
         if (!o) return null;
-        const sc = STATUS_COLORS[o.status] || STATUS_COLORS['In Progress'];
+        const sc = STATUS_META[o.status] || STATUS_META['In Progress'];
         const TRACK = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
-        const stepIdx = o.status === 'Delivered' ? 4 : 2;
+        const stepIdx = o.status === 'Delivered' ? 4 : (o.status === 'Quality Check' || o.status === 'Under Review' || o.status === 'Revision Requested') ? 3 : o.status === 'In Progress' ? 2 : (o.status === 'Writer Assigned') ? 1 : 0;
         return (
           <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{o.id} · Submitted {o.submitted} · {o.words.toLocaleString()} words</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{o.displayId} · Submitted {o.submitted} · {o.words.toLocaleString()} words</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, background: sc.bg, color: sc.color, display: 'block', marginBottom: 8 }}>{o.status}</span>
@@ -460,19 +602,19 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
               <div style={{ marginTop: 12, padding: 20, background: 'rgba(34,197,94,0.05)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, color: '#4ade80' }}>✅ Content Ready for Download</div>
-                  <button style={{ padding: '6px 14px', borderRadius: 6, background: '#22c55e', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Download Work ↓</button>
+                  <button onClick={() => handleDownloadWork(projects.find(p => p.id === o.id))} style={{ padding: '6px 14px', borderRadius: 6, background: '#22c55e', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Download Work ↓</button>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>Rate Writer ★</button>
-                  <button style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Request Revision</button>
-                  <button style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Reorder Item 🔄</button>
+                  <button onClick={() => setShowRatingModal(true)} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>Rate Writer ★</button>
+                  <button onClick={() => { setTicketSubject(`Revision: ${o.displayId}`); setTicketMessage(`I would like to request a revision for order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Request Revision</button>
+                  <button onClick={() => handleReorder(projects.find(p => p.id === o.id))} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Reorder Item 🔄</button>
                 </div>
               </div>
             )}
 
             {o.status !== 'Delivered' && (
               <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowTicketModal(true)} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
+                <button onClick={() => { setTicketSubject(`Issue: ${o.displayId}`); setTicketMessage(`I am reporting an issue with order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
               </div>
             )}
           </div>
@@ -555,6 +697,36 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
           </div>
         </div>
       )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--surface)', padding: 32, borderRadius: 16, width: 400, border: '1px solid var(--border2)', textAlign: 'center' }}>
+            {ratingSuccess ? (
+              <div>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🌟</div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Thank You!</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your feedback helps us maintain high quality standards.</p>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Rate Your Writer</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>How was your experience with this order?</p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button key={star} onClick={() => setRating(star)} style={{ background: 'none', border: 'none', fontSize: 32, cursor: 'pointer', color: star <= rating ? '#fbbf24' : 'var(--border2)', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>★</button>
+                  ))}
+                </div>
+                <textarea value={ratingComment} onChange={e => setRatingComment(e.target.value)} placeholder="Optional: Share some details about the quality of work..." style={{ width: '100%', height: 100, background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 12, padding: '12px', color: 'var(--text)', fontSize: 14, marginBottom: 24, outline: 'none', resize: 'none' }} />
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button onClick={() => setShowRatingModal(false)} style={{ flex: 1, padding: '12px', borderRadius: 8, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={handleRatingSubmit} disabled={submitting} style={{ flex: 1, padding: '12px', borderRadius: 8, background: 'var(--teal)', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>{submitting ? '...' : 'Submit Rating'}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -563,6 +735,9 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
 function Messages({ projects = [], userId, isMobile }) {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [input, setInput] = useState('');
+  const [chatAttachments, setChatAttachments] = useState([]);
+  const [chatUploading, setChatUploading] = useState(false);
+  const chatFileInputRef = useRef(null);
   const endRef = useRef(null);
 
   // Pick the first real project by default
@@ -581,6 +756,35 @@ function Messages({ projects = [], userId, isMobile }) {
     chatType: 'CLIENT_CHAT',
   });
 
+  const handleChatFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setChatUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setChatAttachments(prev => [...prev, ...uploadedFiles]);
+    } catch (error) {
+      console.error('Chat file upload failure:', error);
+      alert("File upload failed. Please try again.");
+    } finally {
+      setChatUploading(false);
+      if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+    }
+  };
+
+  const removeChatAttachment = (url) => {
+    setChatAttachments(prev => prev.filter(a => a.url !== url));
+  };
+
   useEffect(() => {
     if (endRef.current) {
       endRef.current.parentElement.scrollTop = endRef.current.parentElement.scrollHeight;
@@ -588,9 +792,10 @@ function Messages({ projects = [], userId, isMobile }) {
   }, [messages.length]);
 
   const handleSend = () => {
-    if (!input.trim()) return;
-    sendMessage(input);
+    if (!input.trim() && chatAttachments.length === 0) return;
+    sendMessage(input, chatAttachments);
     setInput('');
+    setChatAttachments([]);
   };
 
   if (projects.length === 0) {
@@ -613,25 +818,39 @@ function Messages({ projects = [], userId, isMobile }) {
             <input placeholder="Search orders..." style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13, width: '100%' }} />
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {projects.map(p => (
-            <div key={p.id} onClick={() => setActiveProjectId(p.id)} style={{
-              padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border2)', transition: 'background 0.15s',
-              background: activeProjectId === p.id ? 'rgba(13,148,136,0.1)' : 'transparent',
-              borderLeft: activeProjectId === p.id ? '3px solid var(--teal)' : '3px solid transparent',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                  {(p.freelancer?.name || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.serviceType || p.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{p.freelancer?.name || 'Awaiting assignment'}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>#{p.id.slice(-6)}</div>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          {projects.map(p => {
+            const mapStatus = (s) => {
+              switch(s) {
+                case 'CREATED': return 'Finding Writer';
+                case 'ASSIGNED': return 'Writer Assigned';
+                case 'IN_PROGRESS': return 'In Progress';
+                case 'REVIEW': return 'Under Review';
+                case 'QUALITY_CHECK': return 'Quality Check';
+                case 'REVISION': return 'Revision Requested';
+                case 'COMPLETED': return 'Delivered';
+                default: return 'In Progress';
+              }
+            };
+            const orderObj = {
+              id: p.id,
+              displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
+              service: p.serviceType || p.title,
+              status: mapStatus(p.status),
+              due: p.deadline ? new Date(p.deadline).toLocaleDateString() : 'No Date',
+              progress: p.status === 'COMPLETED' ? 100 : (p.status === 'REVIEW' || p.status === 'QUALITY_CHECK') ? 90 : p.status === 'CREATED' ? 10 : 50,
+              unreadMsgs: p.messages?.filter(m => !m.read && m.senderId !== userId).length || 0,
+              deliveryType: p.deadline && (new Date(p.deadline) - new Date()) < 86400000 * 2 ? 'urgent' : 'timeline',
+            };
+            return (
+              <OrderStrip 
+                key={p.id} 
+                order={orderObj} 
+                isActive={activeProjectId === p.id} 
+                onClick={() => setActiveProjectId(p.id)} 
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -653,7 +872,7 @@ function Messages({ projects = [], userId, isMobile }) {
               <div style={{ fontSize: 12, color: 'var(--teal-light)' }}>● Active · {activeProject.serviceType || activeProject.title}</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 6, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--border)', color: 'var(--teal-light)' }}>#{activeProject.id.slice(-6)}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 6, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--border)', color: 'var(--teal-light)' }}>XW-{activeProject.id.slice(-5).toUpperCase()}</div>
             </div>
           </div>
 
@@ -689,14 +908,39 @@ function Messages({ projects = [], userId, isMobile }) {
                       {(msg.senderName || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
                     </div>
                   )}
-                  <div style={{ maxWidth: '65%' }}>
-                    <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: isMe ? 'var(--teal)' : 'var(--surface2)', fontSize: 13, lineHeight: 1.55, color: isMe ? '#fff' : 'var(--text)' }}>
-                      {msg.content}
+                    <div style={{ maxWidth: '65%' }}>
+                      <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: isMe ? 'var(--teal)' : 'var(--surface2)', fontSize: 13, lineHeight: 1.55, color: isMe ? '#fff' : 'var(--text)' }}>
+                        {msg.content}
+
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {msg.attachments.map((file, idx) => {
+                              const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                              return (
+                                <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ 
+                                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px', borderRadius: 6, 
+                                  background: isMe ? 'rgba(255,255,255,0.1)' : 'var(--surface3)', 
+                                  border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', color: 'inherit' 
+                                }}>
+                                  {isImg ? (
+                                    <img src={file.url} alt="attachment" style={{ width: 40, height: 40, borderRadius: 4, objectCover: 'cover' }} />
+                                  ) : (
+                                    <span style={{ fontSize: 18 }}>📄</span>
+                                  )}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                                    <div style={{ fontSize: 9, opacity: 0.7 }}>DOCUMENT</div>
+                                  </div>
+                                </a>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4, textAlign: isMe ? 'right' : 'left' }}>
+                        {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4, textAlign: isMe ? 'right' : 'left' }}>
-                      {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                    </div>
-                  </div>
                 </div>
               );
             })}
@@ -704,16 +948,51 @@ function Messages({ projects = [], userId, isMobile }) {
           </div>
 
           {/* Input */}
-          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border2)', display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-            <textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder={`Message your writer...`}
-              rows={1}
-              style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'var(--font)', lineHeight: 1.5 }}
-            />
-            <button onClick={handleSend} style={{ background: 'var(--teal)', border: 'none', color: '#fff', width: 40, height: 40, borderRadius: 8, cursor: 'pointer', fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
+          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border2)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {chatAttachments.length > 0 && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingBottom: 10 }}>
+                {chatAttachments.map((file, idx) => (
+                  <div key={idx} style={{ position: 'relative', width: 60, height: 60, borderRadius: 8, background: 'var(--surface3)', border: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? (
+                      <img src={file.url} alt="preview" style={{ width: '100%', height: '100%', borderRadius: 8, objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: 20 }}>📄</span>
+                    )}
+                    <button onClick={() => removeChatAttachment(file.url)} style={{ position: 'absolute', top: -8, right: -8, width: 20, height: 20, borderRadius: '50%', background: 'var(--red)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  placeholder={chatUploading ? "Uploading..." : `Message your writer...`}
+                  disabled={chatUploading}
+                  rows={1}
+                  style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 40px 10px 14px', color: 'var(--text)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'var(--font)', lineHeight: 1.5 }}
+                />
+                <button 
+                  onClick={() => chatFileInputRef.current?.click()}
+                  disabled={chatUploading}
+                  style={{ position: 'absolute', right: 10, bottom: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}
+                >
+                  📎
+                </button>
+                <input 
+                  type="file" 
+                  ref={chatFileInputRef} 
+                  style={{ display: 'none' }} 
+                  multiple 
+                  onChange={handleChatFileUpload} 
+                />
+              </div>
+              <button onClick={handleSend} disabled={(!input.trim() && chatAttachments.length === 0) || chatUploading} style={{ background: 'var(--teal)', border: 'none', color: '#fff', width: 40, height: 40, borderRadius: 8, cursor: 'pointer', fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (!input.trim() && chatAttachments.length === 0) || chatUploading ? 0.5 : 1 }}>
+                {chatUploading ? "..." : "↑"}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -956,21 +1235,23 @@ function NewOrder({ setActive, isMobile }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Auto-fill from landing page
+  // Form is auto-filled from parent/localStorage in the step 2 view logic if needed
+  // But we can still keep a small check here to sync the local form state
   useEffect(() => {
     const pending = localStorage.getItem('pendingOrder');
     if (pending) {
       try {
         const data = JSON.parse(pending);
-        setForm({
+        setForm(f => ({
+          ...f,
           category: data.category || '',
           turnaround: data.turnaround || '72h',
           wordCount: data.wordCount || 500,
           details: data.details || '',
           deadline: data.deadline || ''
-        });
-        setStep(3); // Jump to payment step
-        localStorage.removeItem('pendingOrder'); // Clear it so it doesn't repeat
+        }));
+        setStep(2); // Jump to details step
+        localStorage.removeItem('pendingOrder'); // Clear it after successful application
       } catch (e) {
         console.error("Error parsing pending order", e);
       }
@@ -1233,6 +1514,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [deliveredProject, setDeliveredProject] = useState(null);
+  const socketRef = useRef(null);
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -1245,7 +1529,6 @@ export default function App() {
   }, [status, session, router]);
 
   useEffect(() => {
-    // Mobile check
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
 
     checkMobile();
@@ -1256,9 +1539,10 @@ export default function App() {
     const isCheckout = params.get('action') === 'checkout';
     const tabParam = params.get('tab');
 
-    if (isCheckout) {
+    const pending = localStorage.getItem('pendingOrder');
+    if (isCheckout || pending) {
       setActive('new-order');
-      window.history.replaceState({}, '', window.location.pathname);
+      if (isCheckout) window.history.replaceState({}, '', window.location.pathname);
     } else if (tabParam) {
       setActive(tabParam);
     } else {
@@ -1320,6 +1604,50 @@ export default function App() {
     fetchProfile();
   }, []);
 
+  // Socket Logic
+  useEffect(() => {
+    if (session?.user?.id) {
+      const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
+      setSocket(s);
+      socketRef.current = s;
+
+      s.emit('join_chat', { userId: session.user.id, role: session.user.role });
+
+      s.on('project_status_changed', (data) => {
+        setProjects(prev => prev.map(p => {
+          if (p.id === data.projectId) {
+            if (data.status === 'COMPLETED' || data.status === 'REVIEW' || data.status === 'QUALITY_CHECK') {
+              setDeliveredProject({ ...p, status: data.status });
+            }
+            return { ...p, status: data.status };
+          }
+          return p;
+        }));
+      });
+
+      s.on('new_notification', (data) => {
+        // Re-fetch projects on certain notifications to ensure sync
+        if (data.type === 'status' || data.type === 'assignment') {
+          fetch('/api/projects').then(r => r.json()).then(d => {
+             if (Array.isArray(d)) setProjects(d);
+          });
+        }
+      });
+
+      return () => {
+        socketRef.current?.disconnect();
+      };
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (socket && projects.length > 0) {
+      projects.forEach(p => {
+        socket.emit('join_chat', { projectId: p.id, userId: session?.user?.id, role: session?.user?.role });
+      });
+    }
+  }, [socket, projects, session?.user?.id, session?.user?.role]);
+
   useEffect(() => {
     localStorage.setItem('xw_dash_tab', active);
     const url = new URL(window.location);
@@ -1354,6 +1682,23 @@ export default function App() {
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       {showProfilePrompt && <ProfilePrompt onComplete={() => setShowProfilePrompt(false)} />}
+      {deliveredProject && (
+        <DeliveredPopup 
+          project={deliveredProject} 
+          onClose={() => setDeliveredProject(null)} 
+          onAction={(type) => {
+            if (type === 'view') {
+              setActive('orders');
+              setSelectedOrder(deliveredProject.id);
+            } else if (type === 'ticket') {
+              setActive('orders');
+              setSelectedOrder(deliveredProject.id);
+              // The ticket modal is in the Orders component, so we just set the order
+            }
+            setDeliveredProject(null);
+          }}
+        />
+      )}
       <div style={isMobile ? {
         position: 'absolute',
         top: 0,

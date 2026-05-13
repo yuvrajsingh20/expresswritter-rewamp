@@ -350,7 +350,7 @@ export function EagleEyePanel({ isMobile }) {
               <div key={i} style={{ background: 'var(--surface3)', borderLeft: '3px solid #ef4444', borderRadius: 8, padding: '10px 12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#ef4444' }}>BLOCKED</span>
-                  <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>#{String(m.projectId || '').slice(-6)}</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>XW-{String(m.projectId || '').slice(-5).toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 6, fontStyle: 'italic' }}>"{m.content}"</div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -373,7 +373,7 @@ export function EagleEyePanel({ isMobile }) {
               <div key={i} style={{ display: 'flex', gap: 8, padding: '8px 10px', background: 'var(--surface3)', borderRadius: 7 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--teal-light)' }}>{m.senderRole} #{String(m.projectId || '').slice(-6)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--teal-light)' }}>{m.senderRole} XW-{String(m.projectId || '').slice(-5).toUpperCase()}</span>
                     <span style={{ fontSize: 9, color: 'var(--text-dim)' }}>{m.ts && m.ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.content}</div>

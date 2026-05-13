@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { authOptions, getAuthUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  phone: z.string().optional().nullable(),
+  occupation: z.string().optional().nullable(),
+  college: z.string().optional().nullable(),
+  name: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  currency: z.string().optional().nullable(),
+});
 
 export async function GET(req) {
   try {
@@ -38,7 +48,14 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { phone, occupation, college, name, country, currency } = body;
+    const result = profileSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMessages = result.error.issues.map(issue => issue.message).join(", ");
+      return NextResponse.json({ message: errorMessages }, { status: 400 });
+    }
+
+    const { phone, occupation, college, name, country, currency } = result.data;
 
     const updatedUser = await prisma.user.update({
       where: { email: user.email },

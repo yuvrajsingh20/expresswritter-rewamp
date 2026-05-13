@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, getAuthUser } from "@/lib/auth";
+import { z } from "zod";
+
+const messageSchema = z.object({
+  content: z.string().min(1, "Content cannot be empty"),
+  projectId: z.string().optional().nullable(),
+  chatType: z.enum(["CLIENT_CHAT", "INTERNAL_CHAT", "ADMIN_CHAT"]).optional(),
+  receiverId: z.string().optional().nullable(),
+});
 
 export async function GET(req) {
   try {
+    const user = await getAuthUser(req);
+    if (!user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const projectId = searchParams.get('projectId');
     const chatType = searchParams.get('type');
@@ -59,7 +72,15 @@ export async function POST(req) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId, content, chatType, receiverId } = await req.json();
+    const body = await req.json();
+    const result = messageSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMessages = result.error.issues.map(issue => issue.message).join(", ");
+      return NextResponse.json({ message: errorMessages }, { status: 400 });
+    }
+
+    const { projectId, content, chatType, receiverId } = result.data;
 
     const newMessage = await prisma.message.create({
       data: {

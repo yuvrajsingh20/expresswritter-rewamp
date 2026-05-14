@@ -139,6 +139,7 @@ export default function NewOrderPage() {
           });
 
           if (verifyRes.ok) {
+            router.refresh();
             router.push(`/student/orders/${project.id}?success=true`);
           }
         },

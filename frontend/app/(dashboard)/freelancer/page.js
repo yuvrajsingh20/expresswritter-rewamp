@@ -112,16 +112,8 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
       </nav>
 
       {/* Bottom links */}
-      <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <Link href="/student" style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, transition: 'all .2s', display: 'block' }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
-          ← Client View</Link>
-        <button style={{ width: '100%', padding: '8px 0', borderRadius: 6, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--teal)'; e.currentTarget.style.color = 'var(--teal-light)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
-          🔒 Change Status</button>
-        <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}
+      <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
+        <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
           <span>🚪</span> Logout</button>

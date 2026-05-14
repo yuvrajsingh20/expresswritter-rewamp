@@ -13,7 +13,7 @@ export async function createNotification(prisma, { userId, type, title, msg, ico
       await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL}/notify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, title, msg, icon }),
+        body: JSON.stringify({ userId, type, title, msg, icon }),
       }).catch(err => console.error("Socket notification error:", err));
     }
 

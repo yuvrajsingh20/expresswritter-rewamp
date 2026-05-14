@@ -203,97 +203,101 @@ function OrderStrip({ order, isActive, onClick }) {
 /* ═══════════════════════════════════════════════
    CHAT THREAD MESSAGE
 ═══════════════════════════════════════════════ */
-function ChatMessage({ msg, writerAvatar }) {
-  if (msg.type === 'system') return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0', animation: 'fadeIn .3s ease' }}>
-      <div style={{ fontSize: 10, color: 'var(--text-dim)', background: 'var(--surface3)', padding: '4px 12px', borderRadius: 100, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span style={{ color: 'var(--teal)', fontSize: 11 }}>🔒</span>{msg.text || msg.content} · <span style={{ fontFamily: 'var(--mono)', fontSize: 9 }}>{msg.time}</span>
-      </div>
-    </div>);
+function ChatMessage({ msg, writerName = 'Writer' }) {
+  const isWriter = msg.from === 'writer';
+  const isAdmin = msg.from === 'admin';
+  const getInitials = (name) => {
+    if (typeof name !== 'string' || !name) return '?';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
+  const initials = isWriter ? getInitials(writerName) : isAdmin ? 'AD' : getInitials(msg.alias || 'Client');
 
-  if (msg.type === 'status') return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0', animation: 'statusSlide .35s ease' }}>
-      <div style={{ fontSize: 10, background: 'rgba(13,148,136,0.08)', border: '1px solid var(--border-teal)', padding: '5px 14px', borderRadius: 100, color: 'var(--teal-light)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 11 }}>⟳</span>{msg.text} · <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--text-dim)' }}>{msg.time}</span>
-      </div>
-    </div>);
-
-
-  if (msg.type === 'file') {
-    const isWriter = msg.from === 'writer';
+  // System / status messages — centered pill
+  if (msg.type === 'system' || msg.type === 'status' || msg.isSystem) {
     return (
-      <div style={{ display: 'flex', justifyContent: isWriter ? 'flex-end' : 'flex-start', padding: '2px 0', animation: 'fadeIn .3s ease' }}>
-        {!isWriter && <Avatar initials={msg.alias?.slice(-4) || 'C'} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />}
-        <div style={{ maxWidth: '70%', marginLeft: !isWriter ? 8 : 0, marginRight: isWriter ? 0 : 0 }}>
-          {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias}</div>}
-          <div style={{ background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, borderRadius: 8, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 7, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.fileName}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{msg.size}</span>
-                {msg.watermarked && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 100, background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}>🔒 Secured</span>}
-              </div>
-            </div>
-            <button style={{ flexShrink: 0, background: 'var(--teal)', border: 'none', color: '#fff', padding: '5px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 600 }}>↓</button>
-          </div>
-          <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 3, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)' }}>{msg.time}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0' }}>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', background: 'var(--surface3)', padding: '4px 14px', borderRadius: 100, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: 'var(--teal)', fontSize: 12 }}>🔒</span>
+          {msg.content || msg.text}
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, opacity: 0.6 }}>{msg.time}</span>
         </div>
-        {isWriter && <Avatar initials={writerAvatar} size={26} style={{ marginLeft: 8 }} />}
-      </div>);
-
+      </div>
+    );
   }
 
-  const isWriter = msg.from === 'writer';
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isWriter ? 'flex-end' : 'flex-start', gap: 4, padding: '2px 0', animation: 'fadeIn .3s ease' }}>
-      <div style={{ display: 'flex', justifyContent: isWriter ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 7 }}>
-        {!isWriter && <Avatar initials={msg.alias?.slice(-4) || 'C'} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />}
-        <div style={{ maxWidth: '85%' }}>
-          {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias} <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>· Identity Protected</span></div>}
-          <div style={{ padding: '9px 13px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'var(--teal)' : 'var(--surface3)', color: isWriter ? '#fff' : 'var(--text)', fontSize: 13, lineHeight: 1.55, border: isWriter ? 'none' : '1px solid var(--border)' }}>
-            {msg.content || msg.text}
-          </div>
-        </div>
-        {isWriter && <Avatar initials={writerAvatar} size={26} />}
-      </div>
+  const hasText = !!(msg.content || msg.text);
+  const hasAttachments = Array.isArray(msg.attachments) && msg.attachments.length > 0;
 
-      {msg.attachments && msg.attachments.length > 0 && (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 6, 
-          width: '70%', 
-          marginLeft: isWriter ? 0 : 33, 
-          marginRight: isWriter ? 33 : 0 
-        }}>
-          {msg.attachments.map((file, idx) => {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isWriter ? 'flex-end' : 'flex-start', gap: 2, padding: '2px 0' }}>
+      {/* Name label */}
+      {!isWriter && (
+        <div style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 34, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isAdmin ? (
+            <><span>🛡</span><span style={{ fontWeight: 700, color: 'var(--teal-light)' }}>Master Admin</span> <span style={{ opacity: 0.5 }}>· Supervisor</span></>
+          ) : (
+            <><span>🛡</span>{msg.alias || 'Client'} <span style={{ opacity: 0.5 }}>· Protected</span></>
+          )}
+        </div>
+      )}
+
+      {/* Bubble row */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: isWriter ? 'row-reverse' : 'row' }}>
+        {/* Avatar */}
+        <div style={{
+          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+          background: isWriter ? 'linear-gradient(135deg,#0d9488,#0f766e)' : isAdmin ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg,#1e1e35,#2a2a4a)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontWeight: 700, fontSize: 9, color: '#fff', letterSpacing: '-0.01em'
+        }}>{initials}</div>
+
+        {/* Bubble */}
+        <div style={{ maxWidth: '72%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {hasText && (
+            <div style={{
+              padding: '9px 13px',
+              borderRadius: isWriter ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+              background: isWriter ? 'var(--teal)' : 'var(--surface3)',
+              color: isWriter ? '#fff' : 'var(--text)',
+              fontSize: 13, lineHeight: 1.55,
+              border: isWriter ? 'none' : '1px solid var(--border)',
+              wordBreak: 'break-word'
+            }}>
+              {msg.content || msg.text}
+            </div>
+          )}
+
+          {hasAttachments && msg.attachments.map((file, idx) => {
+            if (!file || !file.url) return null;
             const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
             return (
-              <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ 
-                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, 
-                background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', 
-                border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, 
-                textDecoration: 'none', color: 'inherit' 
+              <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10,
+                background: isWriter ? 'rgba(13,148,136,0.12)' : 'var(--surface3)',
+                border: `1px solid ${isWriter ? 'rgba(13,148,136,0.3)' : 'var(--border)'}`,
+                textDecoration: 'none', color: 'inherit'
               }}>
-                {isImg ? (
-                  <img src={file.url} alt="attachment" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: 34, height: 34, borderRadius: 7, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
-                )}
+                {isImg
+                  ? <img src={file.url} alt="img" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                  : <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📄</div>
+                }
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
-                  <div style={{ fontSize: 9, opacity: 0.7 }}>DOCUMENT</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name || 'File'}</div>
+                  <div style={{ fontSize: 10, opacity: 0.6 }}>{isImg ? 'Image' : 'Document'} · open ↗</div>
                 </div>
               </a>
             );
           })}
         </div>
-      )}
-      <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 1, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)', marginLeft: isWriter ? 0 : 33, marginRight: isWriter ? 33 : 0 }}>{msg.time}</div>
-    </div>);
+      </div>
 
+      {/* Timestamp */}
+      <div style={{ fontSize: 9, color: 'var(--text-dim)', fontFamily: 'var(--mono)', marginLeft: isWriter ? 0 : 34, marginRight: isWriter ? 34 : 0, marginTop: 1 }}>
+        {msg.time}
+      </div>
+    </div>
+  );
 }
 
 /* ═══════════════════════════════════════════════
@@ -311,7 +315,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
   const inputRef = useRef();
 
   const handleDownload = (file) => {
-    if (!file.url) return;
+    if (!file || !file.url) return;
     const link = document.createElement('a');
     link.href = file.url;
     link.download = file.name || 'document';
@@ -382,12 +386,19 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
       });
       
       const savedMessage = await res.json();
+      if (!res.ok) {
+        console.error('Send failed:', savedMessage);
+        return;
+      }
       onSend(order.id, { 
         id: savedMessage.id,
-        from: 'writer', 
-        text: savedMessage.content, 
-        attachments: savedMessage.attachments,
-        time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+        type: 'text',
+        from: 'writer',
+        text: savedMessage.content,
+        content: savedMessage.content,
+        attachments: Array.isArray(savedMessage.attachments) ? savedMessage.attachments : [],
+        time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: savedMessage.createdAt || new Date().toISOString()
       });
 
       if (socket) {
@@ -478,10 +489,10 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
               <span style={{ fontSize: 14 }}>🔐</span>
               <span style={{ fontSize: 11, color: '#a78bfa', lineHeight: 1.4 }}>This conversation is end-to-end encrypted. Client identity is anonymized. All files are watermarked & tracked.</span>
             </div>
-            {(order.thread || []).map((msg, i) => <ChatMessage key={msg.id || i} msg={msg} writerAvatar={userName?.split(' ').map(n => n[0]).join('').toUpperCase()} />)}
+            {(order.thread || []).map((msg, i) => <ChatMessage key={msg.id || i} msg={msg} writerName={userName} />)}
             {typing &&
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeIn .3s ease' }}>
-                <Avatar initials={order.clientCode.slice(0, 2)} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />
+                <Avatar initials={(order.clientCode || 'CL').slice(0, 2).toUpperCase()} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '8px 12px', background: 'var(--surface3)', borderRadius: '10px 10px 10px 3px', border: '1px solid var(--border)' }}>
                   {[0, 1, 2].map((i) => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--text-dim)', display: 'inline-block', animation: `pulse 1.2s ease ${i * 0.2}s infinite` }} />)}
                 </div>
@@ -688,15 +699,19 @@ const mapProjectsToOrders = (rawProjects, userId) => {
       thread: (p.messages || [])
         .filter(m => !m.chatType || m.chatType === 'CLIENT_CHAT')
         .map(m => {
-          const isWriter = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+          const isWriterMsg = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+          const isAdminMsg = m.sender?.role === 'ADMIN';
+          const rawTs = m.createdAt ? new Date(m.createdAt) : new Date();
+          const time = isNaN(rawTs.getTime()) ? '' : rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           return {
             id: m.id,
-            type: m.isSystem ? 'system' : 'text',
-            from: isWriter ? 'writer' : 'client',
-            alias: isWriter ? (p.freelancer?.name || 'Writer') : (p.student?.name || `Client #${p.studentId?.slice(-4)}`),
-            text: m.content,
-            content: m.content,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: m.isSystem ? 'system' : (m.type || 'text'),
+            from: isWriterMsg ? 'writer' : isAdminMsg ? 'admin' : 'client',
+            alias: isWriterMsg ? (p.freelancer?.name || 'Writer') : isAdminMsg ? 'Master Admin' : (p.student?.name || `Client #${p.studentId?.slice(-4)}`),
+            text: m.content || '',
+            content: m.content || '',
+            time,
+            createdAt: m.createdAt || new Date().toISOString(),
             fileName: Array.isArray(m.attachments) && m.attachments[0] ? m.attachments[0].name : undefined,
             size: Array.isArray(m.attachments) && m.attachments[0] ? m.attachments[0].size : undefined,
             attachments: Array.isArray(m.attachments) ? m.attachments : [],
@@ -707,33 +722,76 @@ const mapProjectsToOrders = (rawProjects, userId) => {
 };
 
 function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
-
   const [orders, setOrders] = useState(() => mapProjectsToOrders(projects, userId));
 
+  // When projects changes (e.g. socket adds a client message to App state),
+  // MERGE threads instead of replacing — preserving optimistically added writer messages
   useEffect(() => {
-    setOrders(mapProjectsToOrders(projects, userId));
+    setOrders(prev => {
+      const fresh = mapProjectsToOrders(projects, userId);
+      if (prev.length === 0) return fresh;
+      return fresh.map(freshOrder => {
+        const existing = prev.find(o => o.id === freshOrder.id);
+        if (!existing) return freshOrder;
+        // Merge threads: keep all messages, deduplicate by id
+        const mergedThread = [...freshOrder.thread];
+        for (const msg of existing.thread) {
+          if (!msg.id || !mergedThread.some(m => m.id === msg.id)) {
+            mergedThread.push(msg);
+          }
+        }
+        // Sort by createdAt timestamp
+        mergedThread.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        return { ...freshOrder, thread: mergedThread, status: existing.status };
+      });
+    });
   }, [projects, userId]);
+
+  // Also handle incoming client messages directly via socket for instant rendering
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      if (data.chatType !== 'CLIENT_CHAT') return;
+      if (data.senderId === userId) return; // already added optimistically
+      setOrders(prev => prev.map(o => {
+        if (o.id !== data.projectId) return o;
+        if (o.thread.some(m => m.id === data.id)) return o; // dedupe
+        const newMsg = {
+          id: data.id || `tmp-${Date.now()}`,
+          type: 'text',
+          from: data.senderRole === 'ADMIN' ? 'admin' : 'client',
+          alias: data.senderRole === 'ADMIN' ? 'Master Admin' : o.client,
+          text: data.content,
+          content: data.content,
+          attachments: Array.isArray(data.attachments) ? data.attachments : [],
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          createdAt: data.timestamp || new Date().toISOString(),
+        };
+        return { ...o, thread: [...o.thread, newMsg], unreadMsgs: o.unreadMsgs + 1 };
+      }));
+    };
+    socket.on('receive_message', handler);
+    return () => socket.off('receive_message', handler);
+  }, [socket, userId]);
 
   const [activeOrder, setActiveOrder] = useState(null);
   const [filter, setFilter] = useState('All');
 
   const filterTabs = [
   { id: 'All', label: 'All', count: orders.length },
-  { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status)).length },
+  { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Quality Check'].includes(o.status)).length },
   { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision').length },
   { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }];
 
-
   const filtered = orders.filter((o) => {
     if (filter === 'All') return true;
-    if (filter === 'Active') return ['New Order', 'In Progress', 'Under Review'].includes(o.status);
+    if (filter === 'Active') return ['New Order', 'In Progress', 'Quality Check', 'Under Review'].includes(o.status);
     if (filter === 'Revision') return o.status === 'Revision';
     if (filter === 'Delivered') return o.status === 'Delivered';
     return true;
   });
 
   const handleStatusChange = async (id, newStatus) => {
-    // Map UI status to valid Prisma Enum values
     const dbStatus = 
       newStatus === 'In Progress' ? 'IN_PROGRESS' : 
       newStatus === 'Delivered' ? 'COMPLETED' : 
@@ -758,17 +816,8 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
             })
           });
         }
-        
-        // Emit socket event for real-time update
-        if (socket) {
-          socket.emit('status_update', { projectId: id, status: dbStatus });
-        }
-
-        // Update local state instead of reload
+        if (socket) socket.emit('status_update', { projectId: id, status: dbStatus });
         setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-        
-        // Also update main projects state in App
-        if (typeof onUpdate === 'function') onUpdate();
       } else {
         console.error("Failed to update status");
       }
@@ -780,8 +829,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
   const handleSend = (id, msg) => {
     setOrders((prev) => prev.map((o) => {
       if (o.id !== id) return o;
-      const newUnread = msg.from === 'client' ? o.unreadMsgs + 1 : o.unreadMsgs;
-      return { ...o, thread: [...o.thread, msg], unreadMsgs: msg.from === 'writer' ? 0 : newUnread };
+      return { ...o, thread: [...o.thread, msg] };
     }));
   };
 
@@ -1382,13 +1430,19 @@ export default function App() {
 
       s.on('receive_message', (data) => {
         if (data.chatType === 'CLIENT_CHAT') {
-           // Skip messages sent by this user — already added optimistically via onSend
+           // Skip messages sent by this freelancer — already added optimistically
            if (data.senderId === session?.user?.id) return;
            setProjects(prev => prev.map(p => {
              if (p.id === data.projectId) {
                const alreadyHas = p.messages?.some(m => m.id === data.id);
                if (alreadyHas) return p;
-               return { ...p, messages: [...(p.messages || []), { ...data, createdAt: data.timestamp }] };
+               // Attach sender.role so mapProjectsToOrders can determine 'client' direction
+               const newMsg = {
+                 ...data,
+                 createdAt: data.timestamp || new Date().toISOString(),
+                 sender: data.sender || { role: data.senderRole || 'STUDENT' }
+               };
+               return { ...p, messages: [...(p.messages || []), newMsg] };
              }
              return p;
            }));

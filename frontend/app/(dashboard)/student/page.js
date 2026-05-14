@@ -578,7 +578,31 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
               </div>
             </div>
 
-            <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
+            <div style={{ marginTop: 32, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Project Brief & Initial Files</h4>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, background: 'var(--surface2)', padding: 16, borderRadius: 10, marginBottom: 16 }}>
+                {projects.find(p => p.id === o.id)?.description || 'No detailed brief provided.'}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                {(projects.find(p => p.id === o.id)?.attachments || []).map((file, idx) => (
+                  <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ 
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, 
+                    background: 'var(--surface2)', border: '1px solid var(--border2)', textDecoration: 'none', color: 'inherit' 
+                  }}>
+                    {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? '🖼️' : '📄'}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Initial Document</div>
+                    </div>
+                  </a>
+                ))}
+                {(projects.find(p => p.id === o.id)?.attachments || []).length === 0 && (
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>No files attached to this project.</div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
               <div>
                 <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Writer Information</h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -900,16 +924,26 @@ function Messages({ projects = [], userId, isMobile }) {
                   <span style={{ fontSize: 11, padding: '4px 12px', borderRadius: 100, background: 'var(--surface2)', color: 'var(--text-dim)', border: '1px solid var(--border2)' }}>🔒 {msg.content}</span>
                 </div>
               );
-              const isMe = msg.senderId === userId;
+              const isMe = String(msg.senderId) === String(userId);
+              const isAdmin = msg.senderRole === 'ADMIN';
+
               return (
-                <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', animation: 'fadeIn 0.2s ease' }}>
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', animation: 'fadeIn 0.2s ease' }}>
                   {!isMe && (
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginRight: 8, flexShrink: 0, alignSelf: 'flex-end' }}>
-                      {(msg.senderName || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, marginLeft: 36, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontWeight: 700 }}>{isAdmin ? 'Master Admin' : (msg.senderName || 'Writer')}</span>
+                      {isAdmin && <span style={{ fontSize: 9, background: 'var(--teal)', color: '#fff', padding: '1px 5px', borderRadius: 4 }}>ADMIN</span>}
                     </div>
                   )}
-                    <div style={{ maxWidth: '65%' }}>
-                      <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: isMe ? 'var(--teal)' : 'var(--surface2)', fontSize: 13, lineHeight: 1.55, color: isMe ? '#fff' : 'var(--text)' }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems: 'flex-end', width: '100%' }}>
+                    {!isMe && (
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: isAdmin ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginRight: 8, flexShrink: 0 }}>
+                        {isAdmin ? 'AD' : (msg.senderName || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ maxWidth: '75%' }}>
+                      <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: isMe ? 'var(--teal)' : isAdmin ? 'rgba(239,68,68,0.1)' : 'var(--surface2)', border: isAdmin ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--border)', fontSize: 13, lineHeight: 1.55, color: isMe ? '#fff' : 'var(--text)' }}>
                         {msg.content}
 
                         {msg.attachments && msg.attachments.length > 0 && (
@@ -917,13 +951,13 @@ function Messages({ projects = [], userId, isMobile }) {
                             {msg.attachments.map((file, idx) => {
                               const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
                               return (
-                                <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ 
+                                <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ 
                                   display: 'flex', alignItems: 'center', gap: 8, padding: '8px', borderRadius: 6, 
                                   background: isMe ? 'rgba(255,255,255,0.1)' : 'var(--surface3)', 
                                   border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', color: 'inherit' 
                                 }}>
                                   {isImg ? (
-                                    <img src={file.url} alt="attachment" style={{ width: 40, height: 40, borderRadius: 4, objectCover: 'cover' }} />
+                                    <img src={file.url} alt="attachment" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
                                   ) : (
                                     <span style={{ fontSize: 18 }}>📄</span>
                                   )}
@@ -941,6 +975,7 @@ function Messages({ projects = [], userId, isMobile }) {
                         {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </div>
                     </div>
+                  </div>
                 </div>
               );
             })}
@@ -1231,7 +1266,8 @@ function ProfilePrompt({ onComplete }) {
 /* ── NEW ORDER ── */
 function NewOrder({ setActive, isMobile, onOrderCreated }) {
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '' });
+  const [form, setForm] = useState({ category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '', attachments: [] });
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -1257,6 +1293,32 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
       }
     }
   }, []);
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+      const uploaded = await Promise.all(uploadPromises);
+      setForm(f => ({ ...f, attachments: [...f.attachments, ...uploaded] }));
+    } catch (error) {
+      console.error('File upload failure:', error);
+      alert("File upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAttachment = (url) => {
+    setForm(f => ({ ...f, attachments: f.attachments.filter(a => a.url !== url) }));
+  };
 
   const SERVICES = useMemo(() => {
     return Object.values(servicesData.individualServices).flat().map(s => {
@@ -1297,7 +1359,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
           deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
           serviceType: selectedService.id,
           amount: amountToCharge,
-          attachments: []
+          attachments: form.attachments
         }),
       });
 
@@ -1442,6 +1504,34 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
                 <div style={{ marginBottom: 32 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>BRIEF / REQUIREMENTS</label>
                   <textarea value={form.details} onChange={e => setForm(f => ({ ...f, details: e.target.value }))} placeholder="Describe what you need. The more detail, the better the match..." style={{ width: '100%', height: 120, background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '16px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', resize: 'vertical', outline: 'none' }} />
+                </div>
+
+                <div style={{ marginBottom: 32 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>PROJECT FILES / BRIEF DOCUMENTS</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                    {form.attachments.map((file, idx) => (
+                      <div key={idx} style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, background: 'var(--surface2)', border: '1.5px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? (
+                          <img src={file.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 24 }}>📄</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: 60, padding: '0 5px' }}>{file.name}</div>
+                          </div>
+                        )}
+                        <button onClick={() => removeAttachment(file.url)} style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(239,68,68,0.9)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                      </div>
+                    ))}
+                    <label style={{ width: 80, height: 80, borderRadius: 10, border: '1.5px dashed var(--border2)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--teal)'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border2)'}
+                    >
+                      <span style={{ fontSize: 20, color: 'var(--text-dim)' }}>+</span>
+                      <span style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>{uploading ? '...' : 'Upload'}</span>
+                      <input type="file" multiple onChange={handleFileUpload} style={{ display: 'none' }} disabled={uploading} />
+                    </label>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>Upload any references, rubrics, or instructions for your writer (PDF, Word, or Images).</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>

@@ -204,16 +204,6 @@ function AdminSidebar({ active, setActive, dark }) {
 
       {/* Bottom links */}
       <div style={{ padding: '10px 10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {[
-          { label: 'Customer Dashboard', href: '/student' },
-          { label: 'Writer Studio', href: '/freelancer' },
-          { label: 'Landing Site', href: '/' }].
-          map((l) =>
-            <Link key={l.label} href={l.href} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
-              ↗ {l.label}</Link>
-          )}
         <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>

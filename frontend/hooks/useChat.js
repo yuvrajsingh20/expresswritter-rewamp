@@ -64,7 +64,8 @@ export function useChat({ projectId, userId, role, chatType = "CLIENT_CHAT", rec
     const params = new URLSearchParams({ type: chatType });
     if (projectId) params.set("projectId", projectId);
     if (receiverId) params.set("receiverId", receiverId);
-    if (userId)     params.set("senderId", userId);
+    // Only filter by senderId for direct chats (ADMIN_CHAT) without a project
+    if (userId && chatType === 'ADMIN_CHAT' && !projectId) params.set("senderId", userId);
 
     fetch(`/api/messages?${params}`)
       .then((r) => r.json())
@@ -99,6 +100,7 @@ export function useChat({ projectId, userId, role, chatType = "CLIENT_CHAT", rec
         chatType,
         senderId: userId,
         senderRole: role,
+        senderName: saved.sender?.name || null,
         receiverId: receiverId || null,
       });
 
@@ -119,8 +121,9 @@ function normalise(m) {
   return {
     id:        m.id        || Date.now().toString(),
     content:   m.content,
-    senderId:  m.senderId,
-    senderName: m.sender?.name || null,
+    senderId:  m.senderId  || m.sender?.id || null,
+    senderRole: m.senderRole || m.sender?.role || 'STUDENT',
+    senderName: m.senderName || m.sender?.name || null,
     isSystem:  m.isSystem  || false,
     createdAt: m.createdAt ? new Date(m.createdAt) : (m.timestamp ? new Date(m.timestamp) : new Date()),
     chatType:  m.chatType,

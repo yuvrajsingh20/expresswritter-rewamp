@@ -1229,7 +1229,7 @@ function ProfilePrompt({ onComplete }) {
 
 
 /* ── NEW ORDER ── */
-function NewOrder({ setActive, isMobile }) {
+function NewOrder({ setActive, isMobile, onOrderCreated }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -1337,6 +1337,7 @@ function NewOrder({ setActive, isMobile }) {
 
           if (verifyRes.ok) {
             setSubmitted(true);
+            if (onOrderCreated) onOrderCreated();
             setTimeout(() => {
               setActive('orders');
             }, 3000);
@@ -1576,29 +1577,29 @@ export default function App() {
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Fetch projects error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWriters = async () => {
+    try {
+      const res = await fetch('/api/writers');
+      const data = await res.json();
+      setWriters(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Fetch writers error:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        setProjects(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Fetch projects error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchWriters = async () => {
-      try {
-        const res = await fetch('/api/writers');
-        const data = await res.json();
-        setWriters(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Fetch writers error:", err);
-      }
-    };
-
     fetchProjects();
     fetchWriters();
     fetchProfile();
@@ -1662,7 +1663,7 @@ export default function App() {
 
   const content = {
     overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} isMobile={isMobile} />,
-    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} />,
+    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} onOrderCreated={fetchProjects} />,
     orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} projects={projects} setActive={setActive} isMobile={isMobile} />,
     wallet: <Wallet projects={projects} userName={userName} isMobile={isMobile} />,
     messages: <Messages projects={projects} userId={session?.user?.id} isMobile={isMobile} />,

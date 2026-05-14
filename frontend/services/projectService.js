@@ -76,7 +76,12 @@ export const getProjectsByUser = async (userId, role) => {
       student: { select: { id: true, name: true, role: true, email: true } },
       orders: { select: { paymentStatus: true } },
       logs: { orderBy: { timestamp: 'desc' }, take: 5 },
-      messages: { orderBy: { createdAt: 'asc' } },
+      messages: { 
+        orderBy: { createdAt: 'asc' },
+        include: {
+          sender: { select: { id: true, name: true, role: true } }
+        }
+      },
     },
     orderBy: { createdAt: 'desc' },
   });

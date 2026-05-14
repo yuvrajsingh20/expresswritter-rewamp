@@ -280,6 +280,7 @@ export default function OrderDetailsPage() {
             if (socketRef.current) {
                socketRef.current.emit('status_update', { projectId: id, status: 'ASSIGNED' });
             }
+            router.refresh();
           }
           setPaymentLoading(false);
           setShowSuccessModal(true);

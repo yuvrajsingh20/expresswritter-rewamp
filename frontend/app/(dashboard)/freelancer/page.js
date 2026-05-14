@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
 import io from 'socket.io-client';
 import Notifications from "@/components/NotificationsView";
+import servicesData from '@/data/services_data.json';
 
 
 /* ═══════════════════════════════════════════════
@@ -63,7 +64,8 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
   const totalUnread = orders.reduce((a, o) => a + (o.unreadMsgs || 0), 0);
   const nav = [
     { id: 'overview', icon: '⊞', label: 'Overview' },
-    { id: 'orders', icon: '📋', label: 'Orders', badge: orders.filter((o) => ['NEW', 'REVISION'].includes(o.status)).length },
+    { id: 'orders', icon: '💬', label: 'Active Chat', badge: orders.filter((o) => ['New Order', 'In Progress', 'Revision', 'Quality Check'].includes(o.status)).length },
+    { id: 'all-orders', icon: '📋', label: 'Orders List' },
     { id: 'earnings', icon: '💰', label: 'Earnings' },
     { id: 'profile', icon: '👤', label: 'My Profile' }
   ];
@@ -110,16 +112,8 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
       </nav>
 
       {/* Bottom links */}
-      <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <Link href="/student" style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, transition: 'all .2s', display: 'block' }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
-          ← Client View</Link>
-        <button style={{ width: '100%', padding: '8px 0', borderRadius: 6, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--teal)'; e.currentTarget.style.color = 'var(--teal-light)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
-          🔒 Change Status</button>
-        <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}
+      <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
+        <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
           <span>🚪</span> Logout</button>
@@ -649,60 +643,76 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
 
 }
 
-function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
-  const mapDBStatusToUI = (status) => {
-    switch (status) {
-      case 'CREATED': return 'New Order';
-      case 'ASSIGNED':
-      case 'IN_PROGRESS': return 'In Progress';
-      case 'REVIEW':
-      case 'QUALITY_CHECK': 
-      case 'UNDER_REVIEW': return 'Quality Check';
-      case 'REVISION': return 'Revision';
-      case 'COMPLETED': return 'Delivered';
-      case 'CLOSED': return 'Closed';
-      default: return 'In Progress';
-    }
-  };
+const mapDBStatusToUI = (status) => {
+  switch (status) {
+    case 'CREATED': return 'New Order';
+    case 'ASSIGNED':
+    case 'IN_PROGRESS': return 'In Progress';
+    case 'REVIEW':
+    case 'QUALITY_CHECK': 
+    case 'UNDER_REVIEW': return 'Quality Check';
+    case 'REVISION': return 'Revision';
+    case 'COMPLETED': return 'Delivered';
+    case 'CLOSED': return 'Closed';
+    default: return 'In Progress';
+  }
+};
 
-  const mapProjectsToOrders = useCallback((rawProjects) => {
-    return (rawProjects || []).map(p => ({
+// Build a flat lookup: serviceId -> service name, from the same JSON students use when ordering
+const SERVICE_LABELS = Object.values(servicesData.individualServices)
+  .flat()
+  .reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {});
+
+const mapProjectsToOrders = (rawProjects, userId) => {
+  return (rawProjects || []).map(p => {
+    const serviceLabel = SERVICE_LABELS[p.serviceType] || SERVICE_LABELS[p.serviceType?.toLowerCase()] || p.serviceType || p.title || 'Writing Service';
+    return {
       id: p.id,
       displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
-      service: p.serviceType || p.title,
+      service: serviceLabel,
       client: p.student?.name || `Client #${p.studentId?.slice(-4)}`,
-      clientCode: p.studentId?.slice(-4),
+      clientCode: p.studentId?.slice(-4) || '????',
       deliveryType: p.deadline && (new Date(p.deadline) - new Date()) < 86400000 * 2 ? 'urgent' : 'timeline',
       due: p.deadline ? new Date(p.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No Date',
       submitted: new Date(p.createdAt).toLocaleDateString(),
       words: 0, 
       price: p.amount || 0,
       status: mapDBStatusToUI(p.status),
-      progress: p.status === 'COMPLETED' ? 100 : p.status === 'REVIEW' || p.status === 'QUALITY_CHECK' ? 90 : p.status === 'CREATED' ? 0 : 50,
-      unreadMsgs: p.messages?.filter(m => !m.read && m.senderId !== userId).length || 0,
+      progress: p.status === 'COMPLETED' ? 100 : (p.status === 'REVIEW' || p.status === 'QUALITY_CHECK') ? 90 : p.status === 'CREATED' ? 10 : 50,
+      // Count messages not sent by this freelancer as "unread" (schema has no read field)
+      unreadMsgs: (p.messages || []).filter(m => m.senderId !== userId && m.sender?.role === 'STUDENT').length || 0,
       hasNDA: p.hasNDA || false,
       brief: p.description || 'No brief provided.',
-      files: p.attachments || [],
-      deliveredFiles: (p.attachments || []).filter(a => a.type === 'DELIVERY'),
-      thread: (p.messages || []).map(m => ({
-        id: m.id,
-        type: m.isSystem ? 'system' : 'text',
-        from: m.senderId === userId ? 'writer' : 'client',
-        alias: p.student?.name || `Client #${p.studentId?.slice(-4)}`,
-        text: m.content,
-        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        fileName: m.attachments?.[0]?.name,
-        size: m.attachments?.[0]?.size,
-        attachments: m.attachments || []
-      }))
-    }));
-  }, [userId]);
+      files: (p.attachments || []).filter(a => a && !a.type),
+      deliveredFiles: (p.attachments || []).filter(a => a && a.type === 'DELIVERY'),
+      thread: (p.messages || [])
+        .filter(m => !m.chatType || m.chatType === 'CLIENT_CHAT')
+        .map(m => {
+          const isWriter = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+          return {
+            id: m.id,
+            type: m.isSystem ? 'system' : 'text',
+            from: isWriter ? 'writer' : 'client',
+            alias: isWriter ? (p.freelancer?.name || 'Writer') : (p.student?.name || `Client #${p.studentId?.slice(-4)}`),
+            text: m.content,
+            content: m.content,
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            fileName: Array.isArray(m.attachments) && m.attachments[0] ? m.attachments[0].name : undefined,
+            size: Array.isArray(m.attachments) && m.attachments[0] ? m.attachments[0].size : undefined,
+            attachments: Array.isArray(m.attachments) ? m.attachments : [],
+          };
+        })
+    };
+  });
+};
 
-  const [orders, setOrders] = useState(() => mapProjectsToOrders(projects));
+function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
+
+  const [orders, setOrders] = useState(() => mapProjectsToOrders(projects, userId));
 
   useEffect(() => {
-    setOrders(mapProjectsToOrders(projects));
-  }, [projects, mapProjectsToOrders]);
+    setOrders(mapProjectsToOrders(projects, userId));
+  }, [projects, userId]);
 
   const [activeOrder, setActiveOrder] = useState(null);
   const [filter, setFilter] = useState('All');
@@ -831,6 +841,82 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
       }
     </div>);
 
+}
+
+function AllOrdersList({ orders = [], isMobile }) {
+  const [filter, setFilter] = useState('All');
+  
+  const filtered = orders.filter((o) => {
+    if (filter === 'All') return true;
+    if (filter === 'Active') return ['New Order', 'In Progress', 'Under Review'].includes(o.status);
+    if (filter === 'Revision') return o.status === 'Revision';
+    if (filter === 'Delivered') return o.status === 'Delivered';
+    return o.status === filter;
+  });
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'CREATED': return '#3b82f6';
+      case 'IN_PROGRESS': return '#0d9488';
+      case 'REVIEW': return '#8b5cf6';
+      case 'REVISION': return '#f59e0b';
+      case 'COMPLETED': return '#22c55e';
+      default: return '#6b7280';
+    }
+  };
+
+  return (
+    <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Orders Management</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Complete history of all assigned projects and their status.</p>
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Order ID</th>
+              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Service / Title</th>
+              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Client</th>
+              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Deadline</th>
+              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Amount</th>
+              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length > 0 ? filtered.map((o) => (
+              <tr key={o.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                <td style={{ padding: '16px 18px', fontWeight: 600, color: 'var(--teal-light)', fontFamily: 'var(--mono)', fontSize: 12 }}>{o.displayId}</td>
+                <td style={{ padding: '16px 18px' }}>
+                  <div style={{ fontWeight: 600 }}>{o.service}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{o.displayId}</div>
+                </td>
+                <td style={{ padding: '16px 18px' }}>{o.client}</td>
+                <td style={{ padding: '16px 18px', color: 'var(--text-muted)' }}>{o.due}</td>
+                <td style={{ padding: '16px 18px', fontWeight: 700 }}>${o.price}</td>
+                <td style={{ padding: '16px 18px' }}>
+                  <span style={{ 
+                    padding: '3px 10px', borderRadius: 100, fontSize: 10, fontWeight: 700,
+                    background: 'rgba(13,148,136,0.1)', color: 'var(--teal-light)',
+                    border: '1px solid rgba(13,148,136,0.2)', textTransform: 'uppercase'
+                  }}>
+                    {o.status}
+                  </span>
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No orders found matching your criteria.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function Overview({ setActive, projects = [], userName = "Writer", isMobile, session, userProfile }) {
@@ -1331,6 +1417,7 @@ export default function App() {
   const views = {
     overview: <Overview setActive={setActive} projects={projects} userName={userName} isMobile={isMobile} session={session} userProfile={userProfile} />,
     orders: <OrdersView projects={projects} userId={session?.user?.id} isMobile={isMobile} userName={userName} socket={socket} />,
+    'all-orders': <AllOrdersList orders={mapProjectsToOrders(projects, session?.user?.id)} isMobile={isMobile} />,
     earnings: <Earnings isMobile={isMobile} />,
     profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />

@@ -151,13 +151,26 @@ export async function POST(req) {
       }
 
       if (targetUserId) {
+        // Determine recipient's role for proper link generation
+        const recipient = await prisma.user.findUnique({
+          where: { id: targetUserId },
+          select: { role: true }
+        });
+        
+        // Generate role-specific link
+        const roleLink = recipient?.role === 'STUDENT' 
+          ? `/student/orders/${projectId}` 
+          : recipient?.role === 'FREELANCER' 
+            ? `/freelancer/orders/${projectId}`
+            : `/admin/orders/${projectId}`;
+        
         await createNotification(prisma, {
           userId: targetUserId,
           type: 'message',
           title: 'New message',
           msg: `${session.user.name || 'Someone'} sent you a message`,
           icon: '💬',
-          link: projectId ? `/dashboard/orders/${projectId}` : `/dashboard/messages`,
+          link: projectId ? roleLink : `/${recipient?.role?.toLowerCase()}/messages`,
           sender: newMessage.sender
         });
       }

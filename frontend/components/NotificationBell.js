@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import io from 'socket.io-client';
 
-export default function NotificationBell() {
+export default function NotificationBell({ onNavigate }) {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
@@ -81,6 +83,35 @@ export default function NotificationBell() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleNotificationClick = (link) => {
+    if (!link) return;
+
+    // If we're inside the SPA (student/freelancer dashboard), use onNavigate
+    // to do an in-place tab switch with zero page reload.
+    if (onNavigate) {
+      onNavigate(link);
+      setOpen(false);
+      return;
+    }
+
+    // Fallback: hard navigate via router (for contexts without onNavigate)
+    const currentRole = session?.user?.role?.toLowerCase();
+    if (link.includes('/orders/')) {
+      const orderId = link.split('/orders/')[1]?.split('?')[0];
+      const base = (currentRole === 'admin' || currentRole === 'sub_admin') ? '/admin' : `/${currentRole}`;
+      router.push(`${base}?tab=orders&orderId=${orderId}`);
+    } else if (link.includes('/messages')) {
+      router.push(`/${currentRole}?tab=messages`);
+    } else if (link.includes('?tab=')) {
+      const tab = link.split('?tab=')[1]?.split('&')[0];
+      router.push(`/${currentRole}?tab=${tab}`);
+    } else {
+      router.push(`/${currentRole}`);
+    }
+
+    setOpen(false);
   };
 
   if (status === 'loading') {
@@ -180,7 +211,12 @@ export default function NotificationBell() {
                         {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       {n.link && (
-                        <Link href={n.link} style={{ fontSize: 11, color: 'var(--teal-light, #0d9488)', marginTop: 4, display: 'inline-block' }}>View Details →</Link>
+                        <button 
+                          onClick={() => handleNotificationClick(n.link)}
+                          style={{ fontSize: 11, color: 'var(--teal-light, #0d9488)', marginTop: 4, display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                        >
+                          View Details →
+                        </button>
                       )}
                     </div>
                     {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--teal, #0d9488)', alignSelf: 'center' }} />}
@@ -190,9 +226,18 @@ export default function NotificationBell() {
             )}
           </div>
           <div style={{ padding: '8px', borderTop: '1px solid var(--border, #e5e7eb)', textAlign: 'center', background: 'var(--surface2, #f9fafb)' }}>
-            <Link href={`/${session.user.role.toLowerCase()}?tab=notifications`} style={{ fontSize: 12, color: 'var(--teal, #0d9488)', textDecoration: 'none', fontWeight: 500 }}>
-              View all notifications
-            </Link>
+            {onNavigate ? (
+              <button
+                onClick={() => { onNavigate('?tab=notifications'); setOpen(false); }}
+                style={{ fontSize: 12, color: 'var(--teal, #0d9488)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
+              >
+                View all notifications
+              </button>
+            ) : (
+              <Link href={`/${session.user.role.toLowerCase()}?tab=notifications`} style={{ fontSize: 12, color: 'var(--teal, #0d9488)', textDecoration: 'none', fontWeight: 500 }}>
+                View all notifications
+              </Link>
+            )}
           </div>
         </div>
       )}

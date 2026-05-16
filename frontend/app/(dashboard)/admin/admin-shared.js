@@ -135,4 +135,134 @@ export function SaveBar({ onSave, saved }) {
   );
 }
 
-// 
+// ── TOAST NOTIFICATION SYSTEM ──
+// Replaces browser alert() with a styled inline toast card
+
+const ToastContext = React.createContext(null);
+
+export function useToast() {
+  const ctx = React.useContext(ToastContext);
+  if (!ctx) {
+    // Fallback if used outside provider — still works but uses alert
+    return { toast: (msg) => { if (typeof window !== 'undefined') window.__adminToast?.(msg) || console.log('[Toast]', msg); } };
+  }
+  return ctx;
+}
+
+export function AdminToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+
+  const toast = React.useCallback((message, type = 'success') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  }, []);
+
+  const dismiss = React.useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // Expose globally for files that can't easily use context
+  React.useEffect(() => {
+    window.__adminToast = toast;
+    return () => { delete window.__adminToast; };
+  }, [toast]);
+
+  return (
+    <ToastContext.Provider value={{ toast }}>
+      {children}
+      {/* Toast container - fixed bottom-right */}
+      <div style={{
+        position: 'fixed',
+        bottom: 24,
+        right: 24,
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column-reverse',
+        gap: 10,
+        pointerEvents: 'none',
+        maxWidth: 400,
+      }}>
+        {toasts.map((t, i) => (
+          <div
+            key={t.id}
+            style={{
+              pointerEvents: 'auto',
+              background: t.type === 'error'
+                ? 'linear-gradient(135deg, rgba(244,63,94,0.15) 0%, rgba(30,10,15,0.97) 100%)'
+                : t.type === 'warning'
+                ? 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(30,20,5,0.97) 100%)'
+                : 'linear-gradient(135deg, rgba(13,148,136,0.15) 0%, rgba(10,30,28,0.97) 100%)',
+              border: `1px solid ${
+                t.type === 'error' ? 'rgba(244,63,94,0.3)' :
+                t.type === 'warning' ? 'rgba(245,158,11,0.3)' :
+                'rgba(13,148,136,0.3)'
+              }`,
+              borderRadius: 12,
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset',
+              animation: 'toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+              minWidth: 280,
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>
+              {t.type === 'error' ? '✕' : t.type === 'warning' ? '⚠' : '✓'}
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: t.type === 'error' ? '#fca5a5' : t.type === 'warning' ? '#fcd34d' : '#5eead4',
+                marginBottom: 2,
+              }}>
+                {t.type === 'error' ? 'Error' : t.type === 'warning' ? 'Warning' : 'Success'}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
+                {t.message}
+              </div>
+            </div>
+            <button
+              onClick={() => dismiss(t.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.3)',
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: '2px 4px',
+                flexShrink: 0,
+                lineHeight: 1,
+              }}
+            >✕</button>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes toastSlideIn {
+          from {
+            opacity: 0;
+            transform: translateX(40px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+        }
+      `}</style>
+    </ToastContext.Provider>
+  );
+}
+
+// Helper for files that can't use the hook (called outside React tree)
+export function showToast(message, type = 'success') {
+  if (typeof window !== 'undefined' && window.__adminToast) {
+    window.__adminToast(message, type);
+  }
+}

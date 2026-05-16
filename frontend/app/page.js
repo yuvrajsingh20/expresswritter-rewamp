@@ -87,7 +87,7 @@ function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabl
 /* ─── NAVBAR ─── */
 function Navbar({ cart, onCartClick, onLogin }) {
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(10,10,20,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(10,10,20,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>X</div>
         <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
@@ -124,7 +124,8 @@ function ProductCard({ prod, onOpen }) {
       background: hov ? 'var(--surface2)' : 'var(--surface)', border: `1px solid ${hov ? 'var(--teal)' : 'var(--border)'}`, borderRadius: 12, padding: '22px 22px 18px', cursor: 'pointer', transition: 'all .2s', position: 'relative', overflow: 'hidden',
       transform: hov ? 'translateY(-2px)' : 'translateY(0)',
       boxShadow: hov ? '0 12px 32px rgba(13,148,136,0.15)' : 'none',
-      animation: 'fadeUp .3s ease both'
+      animation: 'fadeUp .3s ease both',
+      height: '100%', display: 'flex', flexDirection: 'column'
     }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: hov ? 3 : 0, background: 'linear-gradient(90deg,var(--teal),var(--teal-light))', transition: 'height .2s' }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -132,7 +133,7 @@ function ProductCard({ prod, onOpen }) {
         <span style={{ padding: '3px 9px', borderRadius: 4, background: 'var(--surface3)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{prod.cat}</span>
       </div>
       <h3 style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 5, lineHeight: 1.3 }}>{prod.name}</h3>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, fontWeight: 300, marginBottom: 14, minHeight: 36 }}>{prod.tagline}</p>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, fontWeight: 300, marginBottom: 14, minHeight: 36, flex: 1 }}>{prod.tagline}</p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
         <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Starting at</span>
         <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--teal-light)', letterSpacing: '-0.02em' }}>{fmt(minPrice)}</span>
@@ -172,8 +173,8 @@ function ProductDrawer({ prod, onClose, onAdd }) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 80, animation: 'fadeIn .2s ease' }} />
-      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(620px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 90, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 1100, animation: 'fadeIn .2s ease' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(620px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 1200, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '22px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           <div style={{ width: 54, height: 54, borderRadius: 12, background: 'linear-gradient(135deg,rgba(13,148,136,0.25),rgba(13,148,136,0.08))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{prod.icon}</div>
           <div style={{ flex: 1 }}>
@@ -277,8 +278,8 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
   const total = subtotal + fee + tax;
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, animation: 'fadeIn .2s' }} />
-      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(480px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 110, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, animation: 'fadeIn .2s' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(480px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 1200, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div><div style={{ fontSize: 17, fontWeight: 700 }}>Your Cart</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{cart.length} {cart.length === 1 ? 'item' : 'items'}</div></div>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font)' }}>✕</button>
@@ -436,7 +437,7 @@ function WritersMarketplace() {
           <p className="lead">Every writer is verified: PhD or 5+ years of professional experience, English fluency tested, sample work reviewed, NDA signed.</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
-          {WRITERS.map((w, i) => (<div key={i} className="card" style={{ padding: '22px 20px' }}>
+          {WRITERS.map((w, i) => (<div key={i} className="card" style={{ padding: '22px 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
               <div style={{ width: 54, height: 54, borderRadius: '50%', background: w.c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#fff', flexShrink: 0, boxShadow: `0 0 0 3px ${w.c}25` }}>{w.av}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -448,7 +449,7 @@ function WritersMarketplace() {
                 <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{w.exp}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14, flex: 1, alignContent: 'flex-start' }}>
               {w.tags.map((t, j) => <span key={j} style={{ padding: '3px 8px', borderRadius: 4, background: 'var(--surface2)', border: '1px solid var(--border2)', fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>{t}</span>)}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border2)' }}>
@@ -712,7 +713,7 @@ export default function App() {
       <TrustBar />
 
       {/* Category bar */}
-      <div id="services" style={{ position: 'sticky', top: 69, zIndex: 30, background: 'rgba(10,10,20,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
+      <div id="services" style={{ position: 'sticky', top: 66, zIndex: 50, background: 'rgba(10,10,20,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
         <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 5, padding: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 9, flexWrap: 'wrap' }}>
             <button onClick={() => setActiveCat('all')} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === 'all' ? 'var(--teal)' : 'transparent', color: activeCat === 'all' ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>All</button>

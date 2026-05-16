@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { io } from "socket.io-client";
-import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, StatusDot } from "./admin-shared";
+import { getSocket } from "@/lib/socket";
+import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, StatusDot, showToast } from "./admin-shared";
 
 // ── SECTION 5: WRITER MANAGEMENT ──
 export function AdminWriters({ freelancers = [], isMobile }) {
@@ -69,7 +69,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
       const ok = await handleUpdate(id, data);
       if (ok) successCount++;
     }
-    alert(`Bulk action applied to ${successCount} writers.`);
+    showToast(`Bulk action applied to ${successCount} writers.`);
     setSelectedIds([]);
     setBulkAction('');
   };
@@ -387,14 +387,15 @@ export function AdminWriters({ freelancers = [], isMobile }) {
 export function EagleEyePanel({ isMobile }) {
   const [flagged, setFlagged] = React.useState([]);
   const [live, setLive] = React.useState([]);
-  const socketRef = React.useRef(null);
   React.useEffect(() => {
-    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
-    socketRef.current = s;
+    const s = getSocket();
     s.emit('join_chat', { role: 'ADMIN', userId: 'admin' });
     s.on('flagged_message', (d) => setFlagged(p => [d, ...p].slice(0, 50)));
     s.on('monitor_message', (d) => setLive(p => [{ ...d, ts: new Date() }, ...p].slice(0, 100)));
-    return () => s.disconnect();
+    return () => {
+      s.off('flagged_message');
+      s.off('monitor_message');
+    };
   }, []);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, height: isMobile ? 'auto' : 'calc(100vh - 320px)' }}>
@@ -450,16 +451,14 @@ export function DirectChatPanel({ freelancers, isMobile }) {
   const [input, setInput] = React.useState('');
   const [messages, setMessages] = React.useState([]);
   const [adminId, setAdminId] = React.useState(null);
-  const socketRef = React.useRef(null);
   const endRef = React.useRef(null);
   React.useEffect(() => {
     fetch('/api/auth/session').then(r => r.json()).then(s => { if (s && s.user && s.user.id) setAdminId(s.user.id); });
-    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
-    socketRef.current = s;
+    const s = getSocket();
     s.on('receive_message', (data) => {
       if (data.chatType === 'ADMIN_CHAT') setMessages(p => p.some(m => m.id === data.id) ? p : [...p, { id: data.id, content: data.content, from: 'them', time: new Date(data.timestamp) }]);
     });
-    return () => s.disconnect();
+    return () => s.off('receive_message');
   }, []);
   React.useEffect(() => {
     if (!activeId || !adminId) return;
@@ -467,7 +466,7 @@ export function DirectChatPanel({ freelancers, isMobile }) {
     fetch('/api/messages?senderId=' + adminId + '&receiverId=' + activeId + '&type=ADMIN_CHAT').then(r => r.json()).then(data => {
       if (Array.isArray(data)) setMessages(data.map(m => ({ id: m.id, content: m.content, from: m.senderId === adminId ? 'me' : 'them', time: new Date(m.createdAt) })));
     });
-    if (socketRef.current) socketRef.current.emit('join_chat', { userId: adminId, role: 'ADMIN' });
+    getSocket().emit('join_chat', { userId: adminId, role: 'ADMIN' });
   }, [activeId, adminId]);
   React.useEffect(() => { if (endRef.current) endRef.current.parentElement.scrollTop = 99999; }, [messages.length]);
   const send = async () => {
@@ -475,7 +474,7 @@ export function DirectChatPanel({ freelancers, isMobile }) {
     const res = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: input, chatType: 'ADMIN_CHAT', receiverId: activeId }) });
     if (res.ok) {
       const saved = await res.json();
-      if (socketRef.current) socketRef.current.emit('send_message', { id: saved.id, content: saved.content, senderId: adminId, receiverId: activeId, senderRole: 'ADMIN', chatType: 'ADMIN_CHAT' });
+      getSocket().emit('send_message', { id: saved.id, content: saved.content, senderId: adminId, receiverId: activeId, senderRole: 'ADMIN', chatType: 'ADMIN_CHAT' });
       setMessages(p => [...p, { id: saved.id, content: saved.content, from: 'me', time: new Date() }]);
       setInput('');
     }

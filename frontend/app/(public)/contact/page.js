@@ -1,71 +1,90 @@
 "use client";
 import React from 'react';
+import PublicNavbar from '@/components/PublicNavbar';
+import PublicFooter from '@/components/PublicFooter';
+import '@/app/(auth)/landing.css';
 
 export default function ContactPage() {
   return (
-    <div style={{ background: '#fff', color: '#0f172a', fontFamily: 'Inter, sans-serif' }}>
-      <section style={{ padding: '80px 20px', maxWidth: '1000px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <h1 style={{ fontSize: '42px', fontWeight: '900', marginBottom: '16px' }}>Get in Touch</h1>
-          <p style={{ color: '#64748b', fontSize: '18px' }}>Have a question? We're here to help you 24/7.</p>
-        </div>
+    <div className="landing-page-container">
+      <PublicNavbar />
+      <div style={{ background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font)' }}>
+        <section style={{ padding: '140px 20px 60px', textAlign: 'center', background: 'radial-gradient(60% 100% at 50% 0%,rgba(13,148,136,0.12),transparent)', borderBottom: '1px solid var(--border)' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: '800', marginBottom: '16px', letterSpacing: '-0.02em' }}>Get in Touch</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '18px', maxWidth: '600px', margin: '0 auto', fontWeight: 300 }}>Have a question? Our support team is here for you 24/7.</p>
+        </section>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '50px' }}>
-          {/* Contact Form */}
-          <div style={{ background: '#f8fafc', padding: '40px', borderRadius: '24px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px' }}>Send us a Message</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Name</label>
-                <input placeholder="Your full name" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Email</label>
-                <input placeholder="email@example.com" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
-              </div>
+        <section style={{ padding: '80px 32px', maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '60px' }}>
+            {/* Contact Form */}
+            <div style={{ background: 'var(--surface)', padding: '40px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', letterSpacing: '-0.01em' }}>Send us a Message</h2>
+              <form onSubmit={(e) => { e.preventDefault(); alert('Message received! We will get back to you shortly.'); e.target.reset(); }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Name</label>
+                    <input required placeholder="Your full name" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Email</label>
+                    <input required type="email" placeholder="email@example.com" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Subject</label>
+                  <select style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', outline: 'none' }}>
+                    <option>General Inquiry</option>
+                    <option>Order Support</option>
+                    <option>Writer Application</option>
+                    <option>Billing Issues</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: '32px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Message</label>
+                  <textarea required placeholder="How can we help?" rows={5} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', outline: 'none', resize: 'none' }} />
+                </div>
+                <button type="submit" style={{ width: '100%', padding: '16px', background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 10px 20px rgba(13, 148, 136, 0.3)', transition: 'transform 0.2s' }}>
+                  Send Message
+                </button>
+              </form>
             </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Subject</label>
-              <select style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff' }}>
-                <option>General Inquiry</option>
-                <option>Order Support</option>
-                <option>Writer Application</option>
-                <option>Billing Issues</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Message</label>
-              <textarea placeholder="How can we help?" rows={5} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', resize: 'none' }} />
-            </div>
-            <button style={{ width: '100%', padding: '16px', background: '#14b8a6', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}>
-              Send Message
-            </button>
-          </div>
 
-          {/* Info Side */}
-          <div>
-            <div style={{ marginBottom: '40px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Email Support</h3>
-              <p style={{ color: '#64748b', fontSize: '15px', marginBottom: '8px' }}>support@xpresswriters.com</p>
-              <p style={{ color: '#64748b', fontSize: '15px' }}>billing@xpresswriters.com</p>
-            </div>
-            <div style={{ marginBottom: '40px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>WhatsApp Support</h3>
-              <p style={{ color: '#64748b', fontSize: '15px' }}>+91 98765 43210</p>
-              <div style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#dcfce7', color: '#166534', borderRadius: '100px', fontSize: '12px', fontWeight: '700' }}>
-                <span style={{ width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%' }} /> Active Now
+            {/* Info Side */}
+            <div style={{ paddingTop: 10 }}>
+              <div style={{ marginBottom: '48px' }}>
+                <h3 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--teal-light)', marginBottom: '16px', letterSpacing: '0.1em' }}>Email Support</h3>
+                <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>support@xpresswriters.com</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 300 }}>For billing and invoice related queries:<br/>billing@xpresswriters.com</p>
+              </div>
+
+              <div style={{ marginBottom: '48px' }}>
+                <h3 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--teal-light)', marginBottom: '16px', letterSpacing: '0.1em' }}>Direct Contact</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 12 }}>
+                   <div style={{ width: 44, height: 44, background: 'rgba(34,197,94,0.1)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontSize: 20 }}>💬</div>
+                   <div>
+                     <p style={{ fontSize: '18px', fontWeight: '600' }}>+91 98765 43210</p>
+                     <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>WhatsApp Support Available 24/7</p>
+                   </div>
+                </div>
+                <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', borderRadius: '100px', fontSize: '12px', fontWeight: '600' }}>
+                  <span style={{ width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', animation: 'pulse 2s infinite' }} /> Active Support Online
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--teal-light)', marginBottom: '16px', letterSpacing: '0.1em' }}>Headquarters</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '15px', lineHeight: '1.7', fontWeight: 300 }}>
+                  Floor 7, Phoenix Marketcity,<br />
+                  LBS Marg, Kurla West,<br />
+                  Mumbai, Maharashtra 400070
+                </p>
               </div>
             </div>
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Office Address</h3>
-              <p style={{ color: '#64748b', fontSize: '15px', lineHeight: '1.6' }}>
-                123 Creative Plaza, Sector 44,<br />
-                Gurugram, Haryana, India - 122003
-              </p>
-            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
+

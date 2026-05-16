@@ -37,7 +37,7 @@ export default function StudentOrdersPage() {
     };
 
     fetchProjects();
-  }, [session]);
+  }, []);
 
   const filteredProjects = projects.filter(p => 
     p.title?.toLowerCase().includes(searchTerm.toLowerCase())

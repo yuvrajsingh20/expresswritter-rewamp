@@ -1,7 +1,9 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+import PublicNavbar from '@/components/PublicNavbar';
+import PublicFooter from '@/components/PublicFooter';
+import '@/app/(auth)/landing.css';
 
 export default function PricingPage() {
+
   const [service, setService] = useState('Academic Writing');
   const [deadline, setDeadline] = useState('7 Days');
   const [pages, setPages] = useState(1);
@@ -29,92 +31,98 @@ export default function PricingPage() {
   }, [service, deadline, pages]);
 
   return (
-    <div style={{ background: '#fff', color: '#0f172a', fontFamily: 'Inter, sans-serif' }}>
-      <section style={{ padding: '80px 20px', textAlign: 'center', background: '#f8fafc' }}>
-        <h1 style={{ fontSize: '42px', fontWeight: '900', marginBottom: '16px' }}>Transparent Pricing</h1>
-        <p style={{ color: '#64748b', fontSize: '18px' }}>Calculate your project cost instantly with our smart estimator.</p>
-      </section>
+    <div className="landing-page-container">
+      <PublicNavbar />
+      <div style={{ background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font)' }}>
+        <section style={{ padding: '140px 20px 80px', textAlign: 'center', background: 'radial-gradient(60% 100% at 50% 0%,rgba(13,148,136,0.12),transparent)', borderBottom: '1px solid var(--border)' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: '800', marginBottom: '16px', letterSpacing: '-0.02em' }}>Transparent Pricing</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '18px', maxWidth: '600px', margin: '0 auto', fontWeight: 300 }}>Calculate your project cost instantly with our smart estimator.</p>
+        </section>
 
-      <section style={{ padding: '80px 20px', maxWidth: '1000px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '50px', alignItems: 'center' }}>
-          {/* Calculator */}
-          <div style={{ background: '#fff', padding: '40px', borderRadius: '24px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '24px' }}>Pricing Calculator</h2>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b', display: 'block', marginBottom: '8px' }}>Select Service</label>
-              <select 
-                value={service} 
-                onChange={(e) => setService(e.target.value)}
-                style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '15px' }}
-              >
-                {Object.keys(RATES).map(s => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b', display: 'block', marginBottom: '8px' }}>Deadline</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                {Object.keys(MULTIPLIERS).map(d => (
-                  <button 
-                    key={d}
-                    onClick={() => setDeadline(d)}
-                    style={{ 
-                      padding: '12px', 
-                      borderRadius: '8px', 
-                      border: deadline === d ? '2px solid #14b8a6' : '1px solid #e2e8f0',
-                      background: deadline === d ? '#f0fdfa' : '#fff',
-                      color: deadline === d ? '#0d9488' : '#64748b',
-                      fontWeight: '600',
-                      fontSize: '13px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {d}
-                  </button>
-                ))}
+        <section style={{ padding: '80px 32px', maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '60px', alignItems: 'start' }}>
+            {/* Calculator */}
+            <div style={{ background: 'var(--surface)', padding: '40px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', letterSpacing: '-0.01em' }}>Pricing Calculator</h2>
+              
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Select Service</label>
+                <select 
+                  value={service} 
+                  onChange={(e) => setService(e.target.value)}
+                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: '15px', outline: 'none' }}
+                >
+                  {Object.keys(RATES).map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
-            </div>
 
-            <div style={{ marginBottom: '32px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b', display: 'block', marginBottom: '8px' }}>Number of Pages (250 words/page)</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <button onClick={() => setPages(Math.max(1, pages - 1))} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0', background: '#fff', fontSize: '20px', cursor: 'pointer' }}>-</button>
-                <span style={{ fontSize: '20px', fontWeight: '800', width: '40px', textAlign: 'center' }}>{pages}</span>
-                <button onClick={() => setPages(pages + 1)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0', background: '#fff', fontSize: '20px', cursor: 'pointer' }}>+</button>
-              </div>
-            </div>
-
-            <div style={{ borderTop: '2px dashed #e2e8f0', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Estimated Cost</div>
-                <div style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a' }}>₹{total.toLocaleString()}</div>
-              </div>
-              <a href="/order" style={{ padding: '14px 28px', background: '#14b8a6', color: '#fff', borderRadius: '12px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 10px 15px -3px rgba(20, 184, 166, 0.3)' }}>
-                Order Now →
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <h2 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '24px' }}>Why choose Xpresswriters?</h2>
-            {[
-              { t: 'Plagiarism-Free', d: 'Every project is scanned with Turnitin for 100% originality.' },
-              { t: 'Expert Writers', d: 'Only PhD and Master level writers handle your academic tasks.' },
-              { t: 'Secure Payments', d: 'SSL encrypted transactions with industry leaders.' },
-              { t: '24/7 Support', d: 'Human assistance available round the clock via chat.' },
-            ].map((f, i) => (
-              <div key={i} style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ width: '48px', height: '48px', background: '#f0fdfa', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#14b8a6', fontSize: '20px', flexShrink: 0 }}>✓</div>
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{f.t}</h3>
-                  <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>{f.d}</p>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Deadline</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
+                  {Object.keys(MULTIPLIERS).map(d => (
+                    <button 
+                      key={d}
+                      onClick={() => setDeadline(d)}
+                      style={{ 
+                        padding: '12px', 
+                        borderRadius: '10px', 
+                        border: deadline === d ? '1.5px solid var(--teal)' : '1px solid var(--border)',
+                        background: deadline === d ? 'rgba(13,148,136,0.15)' : 'var(--surface2)',
+                        color: deadline === d ? 'var(--teal-light)' : 'var(--text-muted)',
+                        fontWeight: '600',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {d}
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))}
+
+              <div style={{ marginBottom: '36px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '10px', letterSpacing: '0.05em' }}>Number of Pages (250 words/page)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <button onClick={() => setPages(Math.max(1, pages - 1))} style={{ width: '44px', height: '44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: '20px', cursor: 'pointer' }}>-</button>
+                  <span style={{ fontSize: '24px', fontWeight: '700', width: '40px', textAlign: 'center' }}>{pages}</span>
+                  <button onClick={() => setPages(pages + 1)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: '20px', cursor: 'pointer' }}>+</button>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: 4 }}>Estimated Cost</div>
+                  <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--text)', letterSpacing: '-0.02em' }}>₹{total.toLocaleString()}</div>
+                </div>
+                <Link href="/" style={{ padding: '16px 32px', background: 'var(--teal)', color: '#fff', borderRadius: '14px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 10px 20px rgba(13, 148, 136, 0.3)', transition: 'transform 0.2s' }}>
+                  Order Now →
+                </Link>
+              </div>
+            </div>
+
+            <div style={{ paddingTop: 20 }}>
+              <h2 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '32px', letterSpacing: '-0.02em' }}>The Xpresswriters Promise</h2>
+              {[
+                { t: 'Plagiarism-Free Content', d: 'Every project is scanned with Turnitin for 100% originality. Reports provided on request.', i: '🛡️' },
+                { t: 'Expert Human Writers', d: 'Only PhD and Master level writers handle your tasks. No AI-generated filler.', i: '🎓' },
+                { t: 'Secure Transactions', d: 'SSL encrypted payments with Razorpay and Stripe for complete peace of mind.', i: '🔒' },
+                { t: 'Round-the-clock Support', d: 'Human assistance available 24/7 via WhatsApp and live dashboard chat.', i: '💬' },
+              ].map((f, i) => (
+                <div key={i} style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
+                  <div style={{ width: '52px', height: '52px', background: 'rgba(13,148,136,0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-light)', fontSize: '24px', flexShrink: 0 }}>{f.i}</div>
+                  <div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '6px' }}>{f.t}</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6', fontWeight: 300 }}>{f.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
+

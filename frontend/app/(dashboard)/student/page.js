@@ -11,6 +11,22 @@ import io from 'socket.io-client';
 import Notifications from "@/components/NotificationsView";
 import NotificationBell from '@/components/NotificationBell';
 
+const SERVICE_LABELS = Object.values(servicesData.individualServices)
+  .flat()
+  .reduce((acc, s) => {
+    acc[s.id.toLowerCase()] = s.name;
+    return acc;
+  }, {});
+
+const getStandardServiceName = (p) => {
+  if (!p) return 'Writing Service';
+  const type = (p.serviceType || '').toLowerCase();
+  if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+  let t = p.title || 'Writing Service';
+  t = t.replace(/ Order$/i, '');
+  return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+};
+
 
 
 /* ── DATA ── */
@@ -75,7 +91,7 @@ function OrderStrip({ order, isActive, onClick }) {
         </div>
 
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, lineHeight: 1.3, color: isActive ? 'var(--teal-light)' : 'var(--text)' }}>{order.service}</div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <StatusPill status={order.status} small />
           {order.unreadMsgs > 0 &&
@@ -100,7 +116,7 @@ function DeliveredPopup({ project, onClose, onAction }) {
         <div style={{ width: 64, height: 64, background: 'rgba(34,197,94,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px' }}>🎉</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>Service Delivered!</h2>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
-          Great news! Your service <strong>"{project.serviceType || project.title}"</strong> has been successfully delivered and is ready for your review.
+          Great news! Your service <strong>"{getStandardServiceName(project)}"</strong> has been successfully delivered and is ready for your review.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button onClick={() => onAction('view')} style={{ width: '100%', padding: '12px', background: 'var(--teal)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>View Order & Files</button>
@@ -117,6 +133,7 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
   const nav = [
     { id: 'overview', icon: '⊞', label: 'Overview' },
     { id: 'new-order', icon: '📝', label: 'New Order' },
+    { id: 'services', icon: '💎', label: 'Services Catalog' },
     { id: 'orders', icon: '📋', label: 'My Orders' },
     { id: 'wallet', icon: '💳', label: 'Wallet & Credits' },
     { id: 'messages', icon: '💬', label: 'Messages' },
@@ -203,7 +220,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
 
     return {
       id: o.id,
-      service: o.serviceType || o.title,
+      service: getStandardServiceName(o),
       writer: o.freelancer?.name || 'Assigning...',
       status: displayStatus,
       progress,
@@ -261,7 +278,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, padding: 16 }}>
             {projects.filter(p => p.status === 'COMPLETED').slice(0, 2).map(p => (
               <div key={p.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border2)' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{p.serviceType || p.title}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{getStandardServiceName(p)}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>₹{p.amount?.toLocaleString()}</span>
                   <button onClick={() => setActive('new-order')} style={{ padding: '4px 10px', borderRadius: 4, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--teal)', color: 'var(--teal-light)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>REORDER</button>
@@ -352,6 +369,12 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const [ratingComment, setRatingComment] = useState('');
   const [ratingSuccess, setRatingSuccess] = useState(false);
 
+  const o = selectedOrder ? MAPPED_ORDERS.find(x => x.id === selectedOrder) : null;
+  const sc = o ? (STATUS_META[o.status] || STATUS_META['In Progress']) : null;
+  const TRACK = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
+  const stepIdx = o ? (o.status === 'Delivered' ? 4 : (o.status === 'Quality Check' || o.status === 'Under Review' || o.status === 'Revision Requested') ? 3 : o.status === 'In Progress' ? 2 : (o.status === 'Writer Assigned') ? 1 : 0) : 0;
+
+
   const handleDownloadWork = (project) => {
     const deliveryFiles = (project.attachments || []).filter(a => a.type === 'DELIVERY');
     if (deliveryFiles.length === 0) {
@@ -367,7 +390,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     // Find proper service name for NewOrder form pre-filling
     const allSvcs = Object.values(servicesData.individualServices).flat();
     const svc = allSvcs.find(s => s.id === project.serviceType) || allSvcs.find(s => s.name === project.serviceType);
-    
+
     localStorage.setItem('pendingOrder', JSON.stringify({
       category: svc?.name || project.serviceType || project.title,
       details: `[REORDER] Original Order: XW-${project.id.slice(-5).toUpperCase()}\n\n${project.description || ''}`,
@@ -453,7 +476,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     return {
       id: p.id,
       displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
-      service: p.serviceType || p.title,
+      service: getStandardServiceName(p),
       writer: p.freelancer?.name || 'Unassigned',
       status: displayStatus,
       due: p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A',
@@ -544,82 +567,99 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
       </div>
 
       {/* Expanded detail */}
-      {selectedOrder && (() => {
-        const o = MAPPED_ORDERS.find(x => x.id === selectedOrder);
-        if (!o) return null;
-        const sc = STATUS_META[o.status] || STATUS_META['In Progress'];
-        const TRACK = ['Order Placed', 'Writer Assigned', 'In Progress', 'Quality Check', 'Delivered'];
-        const stepIdx = o.status === 'Delivered' ? 4 : (o.status === 'Quality Check' || o.status === 'Under Review' || o.status === 'Revision Requested') ? 3 : o.status === 'In Progress' ? 2 : (o.status === 'Writer Assigned') ? 1 : 0;
-        return (
-          <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
-              <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{o.displayId} · Submitted {o.submitted} · {o.words.toLocaleString()} words</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, background: sc.bg, color: sc.color, display: 'block', marginBottom: 8 }}>{o.status}</span>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>₹{o.price.toLocaleString()}</div>
-              </div>
+      {selectedOrder && o && (
+        <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{o.displayId} · Submitted {o.submitted} · {o.words.toLocaleString()} words</div>
             </div>
-            {/* Track */}
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Order Tracking</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                {TRACK.map((step, i) => (
-                  <React.Fragment key={i}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, transition: 'all 0.3s', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', color: i <= stepIdx ? '#fff' : 'var(--text-dim)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}` }}>{i < stepIdx ? '✓' : i + 1}</div>
-                      <div style={{ fontSize: 11, color: i <= stepIdx ? 'var(--text)' : 'var(--text-dim)', textAlign: 'center', maxWidth: 70, position: 'absolute', top: 40, width: 80 }}>{step}</div>
-                    </div>
-                    {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', marginBottom: 0, transition: 'background 0.3s' }} />}
-                  </React.Fragment>
-                ))}
-              </div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, background: sc.bg, color: sc.color, display: 'block', marginBottom: 8 }}>{o.status}</span>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>₹{o.price.toLocaleString()}</div>
             </div>
-
-            <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
-              <div>
-                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Writer Information</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✍️</div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{o.writer}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Top Rated Writer</div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Actions</h4>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button onClick={() => setActive('messages')} style={{ padding: '9px 18px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Message Writer</button>
-                  <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Download Brief</button>
-                </div>
-              </div>
-            </div>
-
-            {o.status === 'Delivered' && (
-              <div style={{ marginTop: 12, padding: 20, background: 'rgba(34,197,94,0.05)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.2)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#4ade80' }}>✅ Content Ready for Download</div>
-                  <button onClick={() => handleDownloadWork(projects.find(p => p.id === o.id))} style={{ padding: '6px 14px', borderRadius: 6, background: '#22c55e', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Download Work ↓</button>
-                </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => setShowRatingModal(true)} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>Rate Writer ★</button>
-                  <button onClick={() => { setTicketSubject(`Revision: ${o.displayId}`); setTicketMessage(`I would like to request a revision for order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Request Revision</button>
-                  <button onClick={() => handleReorder(projects.find(p => p.id === o.id))} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Reorder Item 🔄</button>
-                </div>
-              </div>
-            )}
-
-            {o.status !== 'Delivered' && (
-              <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
-                <button onClick={() => { setTicketSubject(`Issue: ${o.displayId}`); setTicketMessage(`I am reporting an issue with order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
-              </div>
-            )}
           </div>
-        );
-      })()}
+          {/* Track */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Order Tracking</div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {TRACK.map((step, i) => (
+                <React.Fragment key={i}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, transition: 'all 0.3s', background: i <= stepIdx ? 'var(--teal)' : 'var(--surface3)', color: i <= stepIdx ? '#fff' : 'var(--text-dim)', border: `2px solid ${i <= stepIdx ? 'var(--teal)' : 'var(--border2)'}` }}>{i < stepIdx ? '✓' : i + 1}</div>
+                    <div style={{ fontSize: 11, color: i <= stepIdx ? 'var(--text)' : 'var(--text-dim)', textAlign: 'center', maxWidth: 70, position: 'absolute', top: 40, width: 80 }}>{step}</div>
+                  </div>
+                  {i < TRACK.length - 1 && <div style={{ flex: 1, height: 2, background: i < stepIdx ? 'var(--teal)' : 'var(--surface3)', marginBottom: 0, transition: 'background 0.3s' }} />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 32, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
+            <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Project Brief & Initial Files</h4>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, background: 'var(--surface2)', padding: 16, borderRadius: 10, marginBottom: 16 }}>
+              {projects.find(p => p.id === o.id)?.description || 'No detailed brief provided.'}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              {(projects.find(p => p.id === o.id)?.attachments || []).map((file, idx) => (
+                <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10,
+                  background: 'var(--surface2)', border: '1px solid var(--border2)', textDecoration: 'none', color: 'inherit'
+                }}>
+                  {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? '🖼️' : '📄'}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Initial Document</div>
+                  </div>
+                </a>
+              ))}
+              {(projects.find(p => p.id === o.id)?.attachments || []).length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>No files attached to this project.</div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Writer Information</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✍️</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{o.writer}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Top Rated Writer</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Actions</h4>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button onClick={() => setActive('messages')} style={{ padding: '9px 18px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Message Writer</button>
+                <button style={{ padding: '9px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Download Brief</button>
+              </div>
+            </div>
+          </div>
+
+          {o.status === 'Delivered' && (
+            <div style={{ marginTop: 12, padding: 20, background: 'rgba(34,197,94,0.05)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#4ade80' }}>✅ Content Ready for Download</div>
+                <button onClick={() => handleDownloadWork(projects.find(p => p.id === o.id))} style={{ padding: '6px 14px', borderRadius: 6, background: '#22c55e', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Download Work ↓</button>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setShowRatingModal(true)} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>Rate Writer ★</button>
+                <button onClick={() => { setTicketSubject(`Revision: ${o.displayId}`); setTicketMessage(`I would like to request a revision for order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Request Revision</button>
+                <button onClick={() => handleReorder(projects.find(p => p.id === o.id))} style={{ flex: 1, padding: '10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>Reorder Item 🔄</button>
+              </div>
+            </div>
+          )}
+
+          {o.status !== 'Delivered' && (
+            <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
+              <button onClick={() => { setTicketSubject(`Issue: ${o.displayId}`); setTicketMessage(`I am reporting an issue with order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ticket Modal */}
       {showTicketModal && (
@@ -821,7 +861,7 @@ function Messages({ projects = [], userId, isMobile }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           {projects.map(p => {
             const mapStatus = (s) => {
-              switch(s) {
+              switch (s) {
                 case 'CREATED': return 'Finding Writer';
                 case 'ASSIGNED': return 'Writer Assigned';
                 case 'IN_PROGRESS': return 'In Progress';
@@ -835,7 +875,7 @@ function Messages({ projects = [], userId, isMobile }) {
             const orderObj = {
               id: p.id,
               displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
-              service: p.serviceType || p.title,
+              service: getStandardServiceName(p),
               status: mapStatus(p.status),
               due: p.deadline ? new Date(p.deadline).toLocaleDateString() : 'No Date',
               progress: p.status === 'COMPLETED' ? 100 : (p.status === 'REVIEW' || p.status === 'QUALITY_CHECK') ? 90 : p.status === 'CREATED' ? 10 : 50,
@@ -843,11 +883,11 @@ function Messages({ projects = [], userId, isMobile }) {
               deliveryType: p.deadline && (new Date(p.deadline) - new Date()) < 86400000 * 2 ? 'urgent' : 'timeline',
             };
             return (
-              <OrderStrip 
-                key={p.id} 
-                order={orderObj} 
-                isActive={activeProjectId === p.id} 
-                onClick={() => setActiveProjectId(p.id)} 
+              <OrderStrip
+                key={p.id}
+                order={orderObj}
+                isActive={activeProjectId === p.id}
+                onClick={() => setActiveProjectId(p.id)}
               />
             );
           })}
@@ -900,16 +940,26 @@ function Messages({ projects = [], userId, isMobile }) {
                   <span style={{ fontSize: 11, padding: '4px 12px', borderRadius: 100, background: 'var(--surface2)', color: 'var(--text-dim)', border: '1px solid var(--border2)' }}>🔒 {msg.content}</span>
                 </div>
               );
-              const isMe = msg.senderId === userId;
+              const isMe = String(msg.senderId) === String(userId);
+              const isAdmin = msg.senderRole === 'ADMIN';
+
               return (
-                <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', animation: 'fadeIn 0.2s ease' }}>
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', animation: 'fadeIn 0.2s ease' }}>
                   {!isMe && (
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginRight: 8, flexShrink: 0, alignSelf: 'flex-end' }}>
-                      {(msg.senderName || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, marginLeft: 36, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontWeight: 700 }}>{isAdmin ? 'Master Admin' : (msg.senderName || 'Writer')}</span>
+                      {isAdmin && <span style={{ fontSize: 9, background: 'var(--teal)', color: '#fff', padding: '1px 5px', borderRadius: 4 }}>ADMIN</span>}
                     </div>
                   )}
-                    <div style={{ maxWidth: '65%' }}>
-                      <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: isMe ? 'var(--teal)' : 'var(--surface2)', fontSize: 13, lineHeight: 1.55, color: isMe ? '#fff' : 'var(--text)' }}>
+
+                  <div style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems: 'flex-end', width: '100%' }}>
+                    {!isMe && (
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: isAdmin ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginRight: 8, flexShrink: 0 }}>
+                        {isAdmin ? 'AD' : (msg.senderName || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ maxWidth: '75%' }}>
+                      <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: isMe ? 'var(--teal)' : isAdmin ? 'rgba(239,68,68,0.1)' : 'var(--surface2)', border: isAdmin ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--border)', fontSize: 13, lineHeight: 1.55, color: isMe ? '#fff' : 'var(--text)' }}>
                         {msg.content}
 
                         {msg.attachments && msg.attachments.length > 0 && (
@@ -917,13 +967,13 @@ function Messages({ projects = [], userId, isMobile }) {
                             {msg.attachments.map((file, idx) => {
                               const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
                               return (
-                                <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ 
-                                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px', borderRadius: 6, 
-                                  background: isMe ? 'rgba(255,255,255,0.1)' : 'var(--surface3)', 
-                                  border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', color: 'inherit' 
+                                <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{
+                                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px', borderRadius: 6,
+                                  background: isMe ? 'rgba(255,255,255,0.1)' : 'var(--surface3)',
+                                  border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', color: 'inherit'
                                 }}>
                                   {isImg ? (
-                                    <img src={file.url} alt="attachment" style={{ width: 40, height: 40, borderRadius: 4, objectCover: 'cover' }} />
+                                    <img src={file.url} alt="attachment" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
                                   ) : (
                                     <span style={{ fontSize: 18 }}>📄</span>
                                   )}
@@ -941,6 +991,7 @@ function Messages({ projects = [], userId, isMobile }) {
                         {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </div>
                     </div>
+                  </div>
                 </div>
               );
             })}
@@ -974,19 +1025,19 @@ function Messages({ projects = [], userId, isMobile }) {
                   rows={1}
                   style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 40px 10px 14px', color: 'var(--text)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'var(--font)', lineHeight: 1.5 }}
                 />
-                <button 
+                <button
                   onClick={() => chatFileInputRef.current?.click()}
                   disabled={chatUploading}
                   style={{ position: 'absolute', right: 10, bottom: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}
                 >
                   📎
                 </button>
-                <input 
-                  type="file" 
-                  ref={chatFileInputRef} 
-                  style={{ display: 'none' }} 
-                  multiple 
-                  onChange={handleChatFileUpload} 
+                <input
+                  type="file"
+                  ref={chatFileInputRef}
+                  style={{ display: 'none' }}
+                  multiple
+                  onChange={handleChatFileUpload}
                 />
               </div>
               <button onClick={handleSend} disabled={(!input.trim() && chatAttachments.length === 0) || chatUploading} style={{ background: 'var(--teal)', border: 'none', color: '#fff', width: 40, height: 40, borderRadius: 8, cursor: 'pointer', fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (!input.trim() && chatAttachments.length === 0) || chatUploading ? 0.5 : 1 }}>
@@ -1227,16 +1278,155 @@ function ProfilePrompt({ onComplete }) {
   );
 }
 
+function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
+  const [tab, setTab] = useState('All');
 
-/* ── NEW ORDER ── */
-function NewOrder({ setActive, isMobile, onOrderCreated }) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '' });
+  const getServiceIcon = (catId) => {
+    const icons = {
+      sop: '🎓',
+      lor: '📜',
+      resume: '💼',
+      essays: '📝',
+      scholarship: '🏆',
+      gmat_waiver: '📜',
+      app_fee_waiver: '💸',
+      linkedin: '💎',
+      email_templates: '✉️',
+      media_article: '🖋️',
+      visa_application: '🛂'
+    };
+    return icons[catId] || '📄';
+  };
+
+  const cats = ['All', ...Object.keys(servicesData.individualServices).map(c =>
+    c.charAt(0).toUpperCase() + c.slice(1).replace('_', ' ')
+  )];
+
+  const allServices = useMemo(() => {
+    return Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) =>
+      svcs.map(s => ({
+        ...s,
+        cat: catId.charAt(0).toUpperCase() + catId.slice(1).replace('_', ' '),
+        catId
+      }))
+    );
+  }, []);
+
+  const filtered = tab === 'All' ? allServices : allServices.filter(s => s.cat === tab);
+
+  return (
+    <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Services Catalog</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Explore our range of premium writing services, vetted by experts.</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap', overflowX: 'auto', paddingBottom: 4 }}>
+        {cats.map(c => (
+          <button key={c} onClick={() => setTab(c)} style={{
+            padding: '8px 18px', borderRadius: 8, border: tab === c ? '1.5px solid var(--teal)' : '1.5px solid var(--border2)',
+            background: tab === c ? 'rgba(13,148,136,0.12)' : 'var(--surface)',
+            color: tab === c ? 'var(--teal-light)' : 'var(--text-muted)',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
+          }}>{c}</button>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        {filtered.map((s, i) => (
+          <div key={i} onClick={() => {
+            setOrderForm(f => ({ ...f, category: s.name }));
+            setActive('new-order');
+          }} style={{
+            background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, padding: 24, cursor: 'pointer',
+            transition: 'all 0.25s', display: 'flex', flexDirection: 'column', gap: 12
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+          >
+            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{getServiceIcon(s.catId)}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--teal-light)', textTransform: 'uppercase' }}>{s.cat}</div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{s.name}</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, flex: 1, margin: 0 }}>{s.description}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--border2)' }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal-light)' }}>{s.price}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)', fontWeight: 600 }}>ORDER NOW →</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const fmt = n => typeof n === 'number' ? `₹${n.toLocaleString('en-IN')}` : n;
+
+function AddonRow({ checked, onChange, icon, label, sub, price }) {
+  return (
+    <button onClick={() => onChange(!checked)} style={{
+      textAlign: 'left', padding: '12px 14px', borderRadius: 8, border: checked ? '1.5px solid var(--teal)' : '1px solid var(--border2)',
+      background: checked ? 'rgba(13,148,136,0.1)' : 'var(--surface2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+      display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: 12, alignItems: 'center'
+    }}>
+      <div style={{ width: 18, height: 18, borderRadius: 5, border: checked ? 'none' : '1.5px solid var(--text-dim)', background: checked ? 'var(--teal)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{checked ? '✓' : ''}</div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1 }}>{icon} {label}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 300 }}>{sub}</div>
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal-light)' }}>+{fmt(price)}</div>
+    </button>
+  );
+}
+
+function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm }) {
+  const [step, setStep] = useState(form.category ? 2 : 1);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [tab, setTab] = useState('All');
 
-  // Form is auto-filled from parent/localStorage in the step 2 view logic if needed
-  // But we can still keep a small check here to sync the local form state
+  const getServiceIcon = (catId) => {
+    const icons = {
+      sop: '🎓',
+      lor: '📜',
+      resume: '💼',
+      essays: '📝',
+      scholarship: '🏆',
+      gmat_waiver: '📜',
+      app_fee_waiver: '💸',
+      linkedin: '💎',
+      email_templates: '✉️',
+      media_article: '🖋️',
+      visa_application: '🛂'
+    };
+    return icons[catId] || '📄';
+  };
+
+  const allServices = useMemo(() => {
+    return Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) =>
+      svcs.map(s => {
+        const basePrice = typeof s.price === 'string' ? parseInt(s.price.replace(/[^\d]/g, '')) || 2499 : s.price || 2499;
+        return {
+          ...s,
+          cat: catId.charAt(0).toUpperCase() + catId.slice(1).replace('_', ' '),
+          catId,
+          label: s.name,
+          desc: s.description,
+          variants: [
+            { id: s.id + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
+            { id: s.id + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: catId === 'resume' ? 299 : undefined }
+          ]
+        };
+      })
+    );
+  }, []);
+
+  const cats = ['All', ...Object.keys(servicesData.individualServices).map(c =>
+    c.charAt(0).toUpperCase() + c.slice(1).replace('_', ' ')
+  )];
+
+  const filteredServices = tab === 'All' ? allServices : allServices.filter(s => s.cat === tab);
+
   useEffect(() => {
     const pending = localStorage.getItem('pendingOrder');
     if (pending) {
@@ -1250,43 +1440,62 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
           details: data.details || '',
           deadline: data.deadline || ''
         }));
-        setStep(2); // Jump to details step
-        localStorage.removeItem('pendingOrder'); // Clear it after successful application
+        setStep(2);
+        localStorage.removeItem('pendingOrder');
       } catch (e) {
         console.error("Error parsing pending order", e);
       }
     }
   }, []);
 
-  const SERVICES = useMemo(() => {
-    return Object.values(servicesData.individualServices).flat().map(s => {
-      const priceNum = typeof s.price === 'string'
-        ? parseFloat(s.price.replace(/[^\d.]/g, ''))
-        : (s.price || 0);
-      return { ...s, price: priceNum || 0, icon: '📄', label: s.name, desc: s.description };
-    });
-  }, []);
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body });
+        if (!res.ok) throw new Error('Upload failed');
+        return await res.json();
+      });
+      const uploaded = await Promise.all(uploadPromises);
+      setForm(f => ({ ...f, attachments: [...f.attachments, ...uploaded] }));
+    } catch (error) {
+      console.error('File upload failure:', error);
+      alert("File upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
-  const turnaroundOptions = [
-    { label: '12 Hours', id: '12h', price: '+80%', badge: 'Rush' },
-    { label: '24 Hours', id: '24h', price: '+40%', badge: 'Express' },
-    { label: '72 Hours', id: '72h', price: 'Standard', badge: '' },
-    { label: '7 Days', id: '7d', price: '-10%', badge: 'Economy' },
-  ];
+  const removeAttachment = (url) => {
+    setForm(f => ({ ...f, attachments: f.attachments.filter(a => a.url !== url) }));
+  };
+
+  const selectedService = allServices.find(s => s.label === form.category);
+  const variants = selectedService?.variants || [];
+  const variant = form.variant ? variants.find(v => v.id === form.variant) : variants[0];
+
+  const computePricing = () => {
+    if (!variant) return { total: 0, breakdown: [] };
+    let total = variant.price;
+    let breakdown = [{ l: variant.label, v: variant.price }];
+    if (form.fast && typeof variant.fast === 'number') { total += variant.fast; breakdown.push({ l: 'Fast track delivery', v: variant.fast }); }
+    if (form.addon && typeof variant.addon === 'number') { total += variant.addon; breakdown.push({ l: '+500 words addon', v: variant.addon }); }
+    if (form.custom && typeof variant.custom === 'number') { total += variant.custom; breakdown.push({ l: 'Customisation', v: variant.custom }); }
+    if (form.ats && variant.ats) { total += variant.ats; breakdown.push({ l: 'ATS Optimization', v: variant.ats }); }
+    return { total, breakdown };
+  };
+
+  const pricing = computePricing();
+  const amountToCharge = pricing.total;
 
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const selectedService = SERVICES.find(s => s.label === form.category);
       if (!selectedService) throw new Error("Service not selected");
-
-      let multiplier = 1;
-      if (form.turnaround === '12h') multiplier = 1.8;
-      else if (form.turnaround === '24h') multiplier = 1.4;
-      else if (form.turnaround === '7d') multiplier = 0.9;
-
-      const finalAmount = Math.round((form.wordCount / 100) * 12 * multiplier);
-      const amountToCharge = selectedService.price > 0 ? selectedService.price : finalAmount;
 
       const projectRes = await fetch('/api/projects', {
         method: 'POST',
@@ -1297,7 +1506,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
           deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
           serviceType: selectedService.id,
           amount: amountToCharge,
-          attachments: []
+          attachments: form.attachments
         }),
       });
 
@@ -1366,82 +1575,132 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
 
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ maxWidth: step === 1 ? 1200 : 800, margin: '0 auto' }}>
         {submitted ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ fontSize: 64, marginBottom: 20 }}>🎉</div>
-            <h3 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12 }}>Order Placed!</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: 15, marginBottom: 28 }}>Your order has been received. We're matching you with the perfect writer.</p>
-            <button onClick={() => setActive('orders')} style={{ padding: '12px 24px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>View My Orders</button>
+            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Order Placed!</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>Your project has been created successfully. Redirecting you to your orders...</p>
+            <div style={{ width: 40, height: 40, border: '3px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
           </div>
         ) : (
-          <>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 36 }}>
+          <div>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 40, justifyContent: 'center' }}>
               {[1, 2, 3].map(s => (
-                <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: s <= step ? 'var(--teal)' : 'var(--surface3)', transition: 'background 0.3s' }} />
+                <div key={s} style={{ width: 40, height: 4, borderRadius: 2, background: step >= s ? 'var(--teal)' : 'var(--border2)' }} />
               ))}
             </div>
 
             {step === 1 && (
               <div style={{ animation: 'fadeUp 0.3s ease' }}>
-                <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>What do you need?</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>Select a service category to begin</p>
+                <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                  <h3 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12 }}>What do you need?</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 16 }}>Select a service category to begin your project</p>
+                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 32 }}>
-                  {SERVICES.map((svc, i) => (
-                    <div key={i} onClick={() => setForm(f => ({ ...f, category: svc.label }))} style={{
-                      padding: '20px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'flex-start', gap: 14,
-                      background: form.category === svc.label ? 'rgba(13,148,136,0.15)' : 'var(--surface)',
-                      border: `1.5px solid ${form.category === svc.label ? 'var(--teal)' : 'var(--border2)'}`,
-                    }}>
-                      <span style={{ fontSize: 24 }}>{svc.icon}</span>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: form.category === svc.label ? 'var(--teal-light)' : 'var(--text)', marginBottom: 4 }}>{svc.label}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{svc.desc}</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal)', marginTop: 8 }}>₹{svc.price}</div>
-                      </div>
-                    </div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {cats.map(c => (
+                    <button key={c} onClick={() => setTab(c)} style={{
+                      padding: '8px 18px', borderRadius: 8, border: tab === c ? '1.5px solid var(--teal)' : '1.5px solid var(--border2)',
+                      background: tab === c ? 'rgba(13,148,136,0.12)' : 'var(--surface)',
+                      color: tab === c ? 'var(--teal-light)' : 'var(--text-muted)',
+                      fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                    }}>{c}</button>
                   ))}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button style={{ padding: '12px 32px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: form.category ? 1 : 0.5 }} disabled={!form.category} onClick={() => setStep(2)}>Continue →</button>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+                  {filteredServices.map((svc, i) => (
+                    <div key={i} onClick={() => { setForm(f => ({ ...f, category: svc.label })); setStep(2); }} style={{
+                      padding: '24px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.25s', display: 'flex', flexDirection: 'column', gap: 12,
+                      background: form.category === svc.label ? 'rgba(13,148,136,0.15)' : 'var(--surface)',
+                      border: `1.5px solid ${form.category === svc.label ? 'var(--teal)' : 'var(--border2)'}`,
+                    }}
+                      onMouseEnter={e => { if (form.category !== svc.label) e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; }}
+                      onMouseLeave={e => { if (form.category !== svc.label) e.currentTarget.style.borderColor = 'var(--border2)'; }}
+                    >
+                      <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{getServiceIcon(svc.catId)}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--teal-light)', textTransform: 'uppercase' }}>{svc.cat}</div>
+                      <div style={{ fontSize: 16, fontWeight: 600, color: form.category === svc.label ? 'var(--teal-light)' : 'var(--text)', margin: 0 }}>{svc.label}</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, flex: 1, margin: 0 }}>{svc.desc}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal)', marginTop: 8 }}>{svc.price}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {step === 2 && (
               <div style={{ animation: 'fadeUp 0.3s ease' }}>
-                <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Order details</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                  <button onClick={() => setStep(1)} style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', color: 'var(--text)', width: 32, height: 32, borderRadius: 8, cursor: 'pointer' }}>←</button>
+                  <h3 style={{ fontSize: 26, fontWeight: 700 }}>Order details</h3>
+                </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 32 }}>Tell us more so we can match the perfect writer</p>
 
                 <div style={{ marginBottom: 28 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>TURNAROUND TIME</label>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>CHOOSE YOUR VARIANT</label>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-                    {turnaroundOptions.map(t => (
-                      <div key={t.id} onClick={() => setForm(f => ({ ...f, turnaround: t.id }))} style={{
+                    {variants.map(v => (
+                      <div key={v.id} onClick={() => setForm(f => ({ ...f, variant: v.id }))} style={{
                         padding: '16px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s',
-                        background: form.turnaround === t.id ? 'rgba(13,148,136,0.15)' : 'var(--surface)',
-                        border: `1.5px solid ${form.turnaround === t.id ? 'var(--teal)' : 'var(--border2)'}`,
+                        background: form.variant === v.id || (!form.variant && variant.id === v.id) ? 'rgba(13,148,136,0.15)' : 'var(--surface)',
+                        border: `1.5px solid ${form.variant === v.id || (!form.variant && variant.id === v.id) ? 'var(--teal)' : 'var(--border2)'}`,
                       }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 15, fontWeight: form.turnaround === t.id ? 600 : 400, color: form.turnaround === t.id ? 'var(--text)' : 'var(--text)' }}>{t.label}</span>
-                          {t.badge && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 100, background: 'rgba(13,148,136,0.2)', color: 'var(--teal-light)' }}>{t.badge}</span>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 15, fontWeight: (form.variant === v.id || (!form.variant && variant.id === v.id)) ? 600 : 400, color: 'var(--text)' }}>{v.label}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal-light)' }}>{fmt(v.price)}</span>
                         </div>
-                        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 4 }}>{t.price}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          <span>📝 {v.words}</span>
+                          <span>⏱ {v.delivery}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div style={{ marginBottom: 28 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>APPROXIMATE WORD COUNT: <span style={{ color: 'var(--teal-light)' }}>{form.wordCount.toLocaleString()}</span></label>
-                  <input type="range" min={100} max={10000} step={100} value={form.wordCount} onChange={e => setForm(f => ({ ...f, wordCount: +e.target.value }))} style={{ width: '100%', accentColor: 'var(--teal)', cursor: 'pointer' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}><span>100</span><span>10,000</span></div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>CUSTOMISATIONS & ADD-ONS</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+                    {typeof variant.fast === 'number' && <AddonRow checked={form.fast} onChange={c => setForm(f => ({ ...f, fast: c }))} icon="⚡" label="Fast Track Delivery" sub="Get it 2-3× faster" price={variant.fast} />}
+                    {typeof variant.addon === 'number' && <AddonRow checked={form.addon} onChange={c => setForm(f => ({ ...f, addon: c }))} icon="📝" label="+500 words content" sub="Add extra detail" price={variant.addon} />}
+                    {typeof variant.custom === 'number' && <AddonRow checked={form.custom} onChange={c => setForm(f => ({ ...f, custom: c }))} icon="✨" label="Customisation" sub="Tailor to requirements" price={variant.custom} />}
+                    {variant.ats && <AddonRow checked={form.ats} onChange={c => setForm(f => ({ ...f, ats: c }))} icon="🤖" label="ATS Format" sub="ATS-optimized version" price={variant.ats} />}
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: 32 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>BRIEF / REQUIREMENTS</label>
                   <textarea value={form.details} onChange={e => setForm(f => ({ ...f, details: e.target.value }))} placeholder="Describe what you need. The more detail, the better the match..." style={{ width: '100%', height: 120, background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '16px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font)', resize: 'vertical', outline: 'none' }} />
+                </div>
+
+                <div style={{ marginBottom: 32 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>PROJECT FILES / BRIEF DOCUMENTS</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                    {form.attachments.map((file, idx) => (
+                      <div key={idx} style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, background: 'var(--surface2)', border: '1.5px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? (
+                          <img src={file.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 24 }}>📄</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: 60, padding: '0 5px' }}>{file.name}</div>
+                          </div>
+                        )}
+                        <button onClick={() => removeAttachment(file.url)} style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(239,68,68,0.9)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                      </div>
+                    ))}
+                    <label style={{ width: 80, height: 80, borderRadius: 10, border: '1.5px dashed var(--border2)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--teal)'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border2)'}
+                    >
+                      <span style={{ fontSize: 20, color: 'var(--text-dim)' }}>+</span>
+                      <span style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>{uploading ? '...' : 'Upload'}</span>
+                      <input type="file" multiple onChange={handleFileUpload} style={{ display: 'none' }} disabled={uploading} />
+                    </label>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>Upload any references, rubrics, or instructions for your writer (PDF, Word, or Images).</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -1451,53 +1710,42 @@ function NewOrder({ setActive, isMobile, onOrderCreated }) {
               </div>
             )}
 
-            {step === 3 && (() => {
-              const selectedService = SERVICES.find(s => s.label === form.category);
-              let multiplier = 1;
-              if (form.turnaround === '12h') multiplier = 1.8;
-              else if (form.turnaround === '24h') multiplier = 1.4;
-              else if (form.turnaround === '7d') multiplier = 0.9;
+            {step === 3 && (
+              <div style={{ animation: 'fadeUp 0.3s ease' }}>
+                <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Confirm & pay</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 32 }}>Review your order summary</p>
 
-              const finalAmount = Math.round((form.wordCount / 100) * 12 * multiplier);
-              const amountToCharge = selectedService?.price > 0 ? selectedService.price : finalAmount;
-
-              return (
-                <div style={{ animation: 'fadeUp 0.3s ease' }}>
-                  <h3 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Confirm & pay</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 32 }}>Review your order summary</p>
-
-                  <div style={{ background: 'var(--surface)', borderRadius: 10, padding: 28, marginBottom: 28, border: '1px solid var(--border2)' }}>
-                    {[
-                      { label: 'Service', val: form.category },
-                      { label: 'Word Count', val: `${form.wordCount.toLocaleString()} words` },
-                      { label: 'Turnaround', val: turnaroundOptions.find(t => t.id === form.turnaround)?.label },
-                    ].map(row => (
-                      <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--surface3)' }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: 15 }}>{row.label}</span>
-                        <span style={{ fontWeight: 600, fontSize: 15 }}>{row.val}</span>
-                      </div>
-                    ))}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8 }}>
-                      <span style={{ fontSize: 16, fontWeight: 600 }}>Total Price</span>
-                      <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--teal-light)' }}>₹{amountToCharge}</span>
+                <div style={{ background: 'var(--surface)', borderRadius: 10, padding: 28, marginBottom: 28, border: '1px solid var(--border2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--surface3)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 15 }}>Service</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{form.category}</span>
+                  </div>
+                  {pricing.breakdown.map((row, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--surface3)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: 15 }}>{row.l}</span>
+                      <span style={{ fontWeight: 600, fontSize: 15 }}>{fmt(row.v)}</span>
                     </div>
-                  </div>
-
-                  <div style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 32 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--teal-light)', marginBottom: 6 }}>🔄 Revision Policy</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>Unlimited revisions within 7 days of delivery. We guarantee satisfaction — or a full refund.</div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                    <button style={{ padding: '12px 24px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => setStep(2)}>← Back</button>
-                    <button style={{ padding: '12px 32px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }} onClick={handleSubmit} disabled={submitting}>
-                      {submitting ? '⏳ Processing...' : '🔒 Place Order'}
-                    </button>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 600 }}>Total Price</span>
+                    <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--teal-light)' }}>{fmt(amountToCharge)}</span>
                   </div>
                 </div>
-              );
-            })()}
-          </>
+
+                <div style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 32 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--teal-light)', marginBottom: 6 }}>🔄 Revision Policy</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>Unlimited revisions within 7 days of delivery. We guarantee satisfaction — or a full refund.</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                  <button style={{ padding: '12px 24px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => setStep(2)}>← Back</button>
+                  <button style={{ padding: '12px 32px', borderRadius: 6, background: 'var(--teal)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }} onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? '⏳ Processing...' : '🔒 Place Order'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -1524,32 +1772,36 @@ export default function App() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else if (status === "authenticated" && session?.user?.role !== "STUDENT") {
-      router.push("/login");
+    } else if (status === "authenticated") {
+      if (session?.user?.role !== "STUDENT") {
+        router.push("/login");
+      } else {
+        // Tab initialization after login
+        const params = new URLSearchParams(window.location.search);
+        const isCheckout = params.get('action') === 'checkout';
+        const pending = localStorage.getItem('pendingOrder');
+
+        if (isCheckout || pending) {
+          setActive('new-order');
+          if (pending) localStorage.removeItem('pendingOrder');
+          if (isCheckout) window.history.replaceState({}, '', window.location.pathname);
+        } else if (!active || active === 'overview') {
+          const tabParam = params.get('tab');
+          if (tabParam) {
+            setActive(tabParam);
+          } else {
+            const savedTab = localStorage.getItem('xw_dash_tab');
+            if (savedTab) setActive(savedTab);
+          }
+        }
+      }
     }
   }, [status, session, router]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-
     checkMobile();
     window.addEventListener('resize', checkMobile);
-
-    // Checkout / saved tab logic
-    const params = new URLSearchParams(window.location.search);
-    const isCheckout = params.get('action') === 'checkout';
-    const tabParam = params.get('tab');
-
-    const pending = localStorage.getItem('pendingOrder');
-    if (isCheckout || pending) {
-      setActive('new-order');
-      if (isCheckout) window.history.replaceState({}, '', window.location.pathname);
-    } else if (tabParam) {
-      setActive(tabParam);
-    } else {
-      const savedTab = localStorage.getItem('xw_dash_tab');
-      if (savedTab) setActive(savedTab);
-    }
 
     const handlePopState = () => {
       const p = new URLSearchParams(window.location.search);
@@ -1564,6 +1816,16 @@ export default function App() {
     };
   }, []);
 
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Fetch projects error:", err);
+    }
+  };
+
   const fetchProfile = async () => {
     try {
       const res = await fetch('/api/user/profile');
@@ -1577,17 +1839,6 @@ export default function App() {
     }
   };
 
-  const fetchProjects = async () => {
-    try {
-      const res = await fetch('/api/projects');
-      const data = await res.json();
-      setProjects(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Fetch projects error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchWriters = async () => {
     try {
@@ -1600,9 +1851,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchProjects();
-    fetchWriters();
-    fetchProfile();
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchProjects(), fetchWriters(), fetchProfile()]);
+      } catch (err) {
+        console.error("Student dashboard init error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
   // Socket Logic
@@ -1630,7 +1889,7 @@ export default function App() {
         // Re-fetch projects on certain notifications to ensure sync
         if (data.type === 'status' || data.type === 'assignment') {
           fetch('/api/projects').then(r => r.json()).then(d => {
-             if (Array.isArray(d)) setProjects(d);
+            if (Array.isArray(d)) setProjects(d);
           });
         }
       });
@@ -1661,9 +1920,37 @@ export default function App() {
   const userName = userProfile?.name || session?.user?.name || "Student";
   const unreadCount = 0;
 
+  const [orderForm, setOrderForm] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const pending = localStorage.getItem('pendingOrder');
+      if (pending) {
+        try {
+          const item = JSON.parse(pending);
+          return {
+            category: item.prod.name,
+            variant: item.variant?.id || null,
+            details: '',
+            deadline: '',
+            attachments: [],
+            fast: item.fast || false,
+            addon: item.addon || false,
+            custom: item.custom || false,
+            ats: item.variant?.ats ? true : false, // In app/page.js, ATS is part of variant
+            turnaround: '72h',
+            wordCount: 500
+          };
+        } catch (e) {
+          console.error("Failed to parse pending order", e);
+        }
+      }
+    }
+    return { category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '', attachments: [], variant: null, fast: false, addon: false, custom: false, ats: false };
+  });
+
   const content = {
     overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} isMobile={isMobile} />,
-    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} onOrderCreated={fetchProjects} />,
+    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} onOrderCreated={fetchProjects} form={orderForm} setForm={setOrderForm} />,
+    services: <ServicesCatalog setActive={setActive} setOrderForm={setOrderForm} isMobile={isMobile} />,
     orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} projects={projects} setActive={setActive} isMobile={isMobile} />,
     wallet: <Wallet projects={projects} userName={userName} isMobile={isMobile} />,
     messages: <Messages projects={projects} userId={session?.user?.id} isMobile={isMobile} />,
@@ -1684,9 +1971,9 @@ export default function App() {
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       {showProfilePrompt && <ProfilePrompt onComplete={() => setShowProfilePrompt(false)} />}
       {deliveredProject && (
-        <DeliveredPopup 
-          project={deliveredProject} 
-          onClose={() => setDeliveredProject(null)} 
+        <DeliveredPopup
+          project={deliveredProject}
+          onClose={() => setDeliveredProject(null)}
           onAction={(type) => {
             if (type === 'view') {
               setActive('orders');

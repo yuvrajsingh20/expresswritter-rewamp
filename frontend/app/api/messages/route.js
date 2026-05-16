@@ -18,6 +18,21 @@ const messageSchema = z.object({
   path: ["content"]
 });
 
+async function canAccessProject(user, projectId) {
+  if (!projectId) return true; // For direct DMs not tied to a project
+  if (user.role === 'ADMIN' || user.role === 'SUB_ADMIN') return true;
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { studentId: true, freelancerId: true, collaboratorIds: true }
+  });
+
+  if (!project) return false;
+  return project.studentId === user.id || 
+         project.freelancerId === user.id || 
+         (project.collaboratorIds || []).includes(user.id);
+}
+
 export async function GET(req) {
   try {
     const user = await getAuthUser(req);
@@ -31,6 +46,14 @@ export async function GET(req) {
     const receiverId = searchParams.get('receiverId');
     const senderId = searchParams.get('senderId');
 
+    // 🛡️ AUTHORIZATION CHECK
+    if (projectId) {
+      const hasAccess = await canAccessProject(user, projectId);
+      if (!hasAccess) {
+        return NextResponse.json({ message: "Forbidden: You are not assigned to this project" }, { status: 403 });
+      }
+    }
+
     const where = {};
     if (projectId) where.projectId = projectId;
     if (chatType) where.chatType = chatType;
@@ -40,7 +63,6 @@ export async function GET(req) {
       where.OR = [
         { senderId, receiverId },
         { senderId: receiverId, receiverId: senderId },
-        // Also include messages sent to "The Admin Team" (null receiver)
         ...(chatType === 'ADMIN_CHAT' ? [
            { senderId, receiverId: null, chatType: 'ADMIN_CHAT' },
            { senderId: receiverId, receiverId: null, chatType: 'ADMIN_CHAT' }
@@ -59,7 +81,7 @@ export async function GET(req) {
       where,
       include: {
         sender: {
-          select: { name: true, image: true }
+          select: { name: true, image: true, role: true } // 🛡️ CRITICAL: role needed for frontend alignment
         }
       },
       orderBy: { createdAt: 'asc' }
@@ -88,6 +110,14 @@ export async function POST(req) {
     }
 
     const { projectId, content, chatType, receiverId, attachments } = result.data;
+
+    // 🛡️ AUTHORIZATION CHECK
+    if (projectId) {
+      const hasAccess = await canAccessProject(session.user, projectId);
+      if (!hasAccess) {
+        return NextResponse.json({ message: "Forbidden: You cannot post to this project" }, { status: 403 });
+      }
+    }
 
     const newMessage = await prisma.message.create({
       data: {

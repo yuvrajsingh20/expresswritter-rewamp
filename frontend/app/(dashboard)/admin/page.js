@@ -63,7 +63,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
     { label: 'Monthly Revenue', val: `${baseSymbol}${(projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) * multiplier).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
     { label: 'Total Writers', val: freelancers.length, sub: 'Approved partners', color: 'var(--amber)', icon: '✍️' },
-    { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p.logs?.length || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
+    { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p._count?.logs || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
     { label: 'Avg Project Val', val: `${baseSymbol}${projects.length ? ((projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) / projects.length) * multiplier).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
   ];
 
@@ -204,16 +204,6 @@ function AdminSidebar({ active, setActive, dark }) {
 
       {/* Bottom links */}
       <div style={{ padding: '10px 10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {[
-          { label: 'Customer Dashboard', href: '/student' },
-          { label: 'Writer Studio', href: '/freelancer' },
-          { label: 'Landing Site', href: '/' }].
-          map((l) =>
-            <Link key={l.label} href={l.href} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
-              ↗ {l.label}</Link>
-          )}
         <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
@@ -341,6 +331,7 @@ export default function App() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 

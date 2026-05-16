@@ -1,5 +1,8 @@
 "use client";
 import React, { useState } from 'react';
+import PublicNavbar from '@/components/PublicNavbar';
+import PublicFooter from '@/components/PublicFooter';
+import '@/app/(auth)/landing.css';
 
 export default function FAQPage() {
   const [search, setSearch] = useState('');
@@ -15,43 +18,50 @@ export default function FAQPage() {
   const filtered = FAQS.filter(f => f.q.toLowerCase().includes(search.toLowerCase()) || f.a.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '80px 20px', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-          <h1 style={{ fontSize: '42px', fontWeight: '900', marginBottom: '16px', color: '#0f172a' }}>Frequently Asked Questions</h1>
-          <p style={{ color: '#64748b', fontSize: '18px', marginBottom: '32px' }}>Everything you need to know about Xpresswriters.</p>
+    <div className="landing-page-container">
+      <PublicNavbar />
+      <div style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh', fontFamily: 'var(--font)' }}>
+        <section style={{ padding: '140px 20px 60px', textAlign: 'center', background: 'radial-gradient(60% 100% at 50% 0%,rgba(13,148,136,0.12),transparent)', borderBottom: '1px solid var(--border)' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: '800', marginBottom: '16px', letterSpacing: '-0.02em' }}>Help Center</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '18px', maxWidth: '600px', margin: '0 auto', fontWeight: 300, marginBottom: '32px' }}>Everything you need to know about Xpresswriters.</p>
           
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto' }}>
             <input 
               placeholder="Search for answers..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '16px 20px 16px 50px', borderRadius: '14px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '16px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }} 
+              style={{ width: '100%', padding: '16px 20px 16px 50px', borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: '16px' }} 
             />
-            <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px' }}>🔍</span>
+            <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', opacity: 0.5 }}>🔍</span>
           </div>
-        </div>
+        </section>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {filtered.map((f, i) => (
-            <div key={i} style={{ background: '#fff', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '12px', color: '#0f172a' }}>{f.q}</h3>
-              <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.6' }}>{f.a}</p>
-            </div>
-          ))}
-          {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#94a8b3' }}>No results found for "{search}". Try another keyword.</div>
-          )}
-        </div>
+        <section style={{ maxWidth: '800px', margin: '60px auto', padding: '0 20px 100px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {filtered.map((f, i) => (
+              <div key={i} style={{ background: 'var(--surface)', padding: '26px 30px', borderRadius: '18px', border: '1px solid var(--border)', transition: 'border 0.2s' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '12px', letterSpacing: '-0.01em' }}>{f.q}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '15px', lineHeight: '1.7', fontWeight: 300 }}>{f.a}</p>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-dim)', fontSize: '15px' }}>
+                No results found for "{search}". Try another keyword or contact support.
+              </div>
+            )}
+          </div>
 
-        <div style={{ marginTop: '60px', textAlign: 'center', padding: '40px', background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', borderRadius: '24px', color: '#fff' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '12px' }}>Still have questions?</h2>
-          <p style={{ opacity: 0.9, marginBottom: '24px' }}>Our support team is available 24/7 to assist you with any inquiries.</p>
-          <a href="/contact" style={{ display: 'inline-block', padding: '12px 32px', background: '#fff', color: '#0d9488', borderRadius: '100px', fontWeight: '700', textDecoration: 'none', transition: 'transform 0.2s' }}>
-            Contact Support
-          </a>
-        </div>
+          <div style={{ marginTop: '80px', textAlign: 'center', padding: '50px 40px', background: 'linear-gradient(135deg, var(--teal) 0%, #0d9488 100%)', borderRadius: '28px', color: '#fff', boxShadow: '0 20px 40px rgba(13, 148, 136, 0.2)' }}>
+            <h2 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.02em' }}>Still have questions?</h2>
+            <p style={{ opacity: 0.9, marginBottom: '28px', fontWeight: 300, fontSize: '15px' }}>Our support team is available 24/7 to assist you with any inquiries.</p>
+            <a href="/contact" style={{ display: 'inline-block', padding: '14px 40px', background: '#fff', color: '#0d9488', borderRadius: '14px', fontWeight: '700', textDecoration: 'none', transition: 'transform 0.2s', fontSize: '15px' }}>
+              Contact Support
+            </a>
+          </div>
+        </section>
       </div>
+      <PublicFooter />
     </div>
   );
 }
+

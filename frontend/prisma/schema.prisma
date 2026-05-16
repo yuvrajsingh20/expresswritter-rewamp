@@ -80,6 +80,8 @@ model User {
   payoutRequests    PayoutRequest[]
   clientTickets    Ticket[] @relation("ClientTickets")
   writerTickets    Ticket[] @relation("WriterTickets")
+
+  @@index([role])
 }
 
 model FreelancerProfile {
@@ -102,6 +104,7 @@ model FreelancerProfile {
   isVerified    Boolean  @default(false)
   availability  Boolean  @default(true)
   status        String   @default("Pending Approval")
+  rejectionReason String?
   
   // Regional Settings
   country       String?
@@ -180,6 +183,11 @@ model Project {
   
   rating           Int?
   ratingComment    String?
+
+  @@index([studentId])
+  @@index([freelancerId])
+  @@index([subAdminId])
+  @@index([createdAt])
 }
 
 model Message {
@@ -202,6 +210,9 @@ model Message {
 
   chatId      String?  @db.ObjectId
   chat        Chat?    @relation(fields: [chatId], references: [id])
+
+  @@index([projectId])
+  @@index([createdAt])
 }
 
 model Notification {

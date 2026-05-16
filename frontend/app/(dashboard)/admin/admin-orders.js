@@ -4,9 +4,27 @@ import { Pill, Btn, SectionHeader, Table } from "./admin-shared";
 import { EagleEyePanel, DirectChatPanel } from "./admin-writers";
 import { useChat } from "@/hooks/useChat";
 import { useSession } from "next-auth/react";
+import servicesData from "@/data/services_data.json";
 
 export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
+  
+  const SERVICE_LABELS = React.useMemo(() => {
+    return Object.values(servicesData.individualServices)
+      .flat()
+      .reduce((acc, s) => {
+        acc[s.id.toLowerCase()] = s.name;
+        return acc;
+      }, {});
+  }, []);
+
+  const getStandardServiceName = (p) => {
+    const type = (p.serviceType || '').toLowerCase();
+    if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+    let t = p.title || 'Writing Service';
+    t = t.replace(/ Order$/i, '');
+    return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
   const [loading, setLoading] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -128,7 +146,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
               rows={unassignedProjects.map(p => [
                 <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />,
                 <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>XW-{p.id.slice(-5).toUpperCase()}</span>,
-                <span style={{ fontSize: 13 }}>{p.title}</span>,
+                <span style={{ fontSize: 13 }}>{getStandardServiceName(p)}</span>,
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A'}</span>,
                 <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -167,7 +185,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
                     cols={['Order ID', 'Service', 'Status', 'Writer', 'Client', 'Action']}
                     rows={projects.filter(p => p.status !== 'CREATED' && p.status !== 'UNASSIGNED' && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').map(p => [
                       <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>XW-{p.id.slice(-5).toUpperCase()}</span>,
-                      <span style={{ fontSize: 13 }}>{p.title}</span>,
+                      <span style={{ fontSize: 13 }}>{getStandardServiceName(p)}</span>,
                       <Pill label={p.status} color="var(--teal)" />,
                       <span style={{ fontSize: 13 }}>{p.freelancer?.name || 'Unassigned'}</span>,
                       <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
@@ -190,12 +208,37 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
   const [collabId, setCollabId] = useState('');
   const [adding, setAdding] = useState(false);
 
-  const { messages, loading, errorAlert } = useChat({
+  const SERVICE_LABELS = React.useMemo(() => {
+    return Object.values(servicesData.individualServices)
+      .flat()
+      .reduce((acc, s) => {
+        acc[s.id.toLowerCase()] = s.name;
+        return acc;
+      }, {});
+  }, []);
+
+  const getStandardServiceName = (p) => {
+    const type = (p.serviceType || '').toLowerCase();
+    if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+    let t = p.title || 'Writing Service';
+    t = t.replace(/ Order$/i, '');
+    return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
+
+  const { messages, loading, errorAlert, sendMessage } = useChat({
     projectId: project.id,
     userId: userId || 'admin',
     role: 'ADMIN',
     chatType: 'CLIENT_CHAT',
   });
+
+  const [input, setInput] = useState('');
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    sendMessage(input, []);
+    setInput('');
+  };
 
   const handleAddCollaborator = async () => {
     if (!collabId) return;
@@ -210,18 +253,21 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
       const res = await fetch(`/api/projects/${project.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collaboratorIds: [...existingCollabs, collabId] })
+        body: JSON.stringify({ collaboratorIds: [...(project.collaboratorIds || []), collabId] })
       });
       if (res.ok) {
         const writerName = freelancers.find(f => f.id === collabId)?.name || 'A writer';
-        await fetch('/api/chat', {
+        
+        // Add a system message to the chat
+        await fetch('/api/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             projectId: project.id,
             content: `${writerName} has joined as a collaborator.`,
             chatType: 'CLIENT_CHAT',
-            isSystem: true
+            isSystem: true,
+            senderId: userId // The admin who added them
           })
         });
         alert("Collaborator added successfully!");
@@ -243,7 +289,11 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Project XW-{project.id.slice(-5).toUpperCase()} Chat Feed</div>
+            <div style={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+              XW-{project.id.slice(-5).toUpperCase()} 
+              <span style={{ fontWeight: 400, fontSize: 13, color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: 'var(--teal-light)' }}>{getStandardServiceName(project)}</span>
+            </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Student: {project.student?.name} | Writer: {project.freelancer?.name}</div>
           </div>
         </div>
@@ -264,18 +314,91 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
         {errorAlert && <div style={{ color: 'var(--red)', fontSize: 13 }}>{errorAlert}</div>}
         {!loading && messages.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>No messages in this project yet.</div>}
         {messages.map(msg => {
-          const isWriter = msg.role === 'FREELANCER';
+          const isMe = String(msg.senderId) === String(userId);
+          const isWriter = msg.senderRole === 'FREELANCER';
+          const isAdmin = msg.senderRole === 'ADMIN';
+          const isSystem = msg.isSystem;
+
+          if (isSystem) return (
+            <div key={msg.id} style={{ textAlign: 'center', padding: '10px 0' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-dim)', background: 'var(--surface2)', padding: '4px 12px', borderRadius: 100, border: '1px solid var(--border)' }}>🔒 {msg.content}</span>
+            </div>
+          );
+
+          const isLeadWriter = project.freelancerId && String(msg.senderId) === String(project.freelancerId);
+          const roleLabel = isLeadWriter ? 'Lead Writer' : isAdmin ? 'Admin' : isWriter ? 'Collaborator' : 'Student';
+          const bubbleColor = isMe ? 'var(--teal)' : 'var(--surface3)';
+          const textColor = isMe ? '#fff' : 'var(--text)';
+          const borderColor = isMe ? 'var(--border-teal)' : isWriter ? 'rgba(13,148,136,0.3)' : 'var(--border)';
+
           return (
-            <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isWriter ? 'flex-end' : 'flex-start' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>
-                {msg.senderId === project.freelancerId ? 'Lead Writer' : isWriter ? 'Collaborator' : 'Student'} · {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString() : ''}
+            <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                <span style={{ fontWeight: 700 }}>{msg.senderName || (isAdmin ? 'Admin' : 'User')}</span>
+                <span style={{ opacity: 0.6 }}>({roleLabel})</span>
+                <span style={{ opacity: 0.4 }}>· {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
               </div>
-              <div style={{ padding: '10px 14px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, color: 'var(--text)', fontSize: 13, maxWidth: '75%' }}>
+              <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: bubbleColor, border: `1px solid ${borderColor}`, color: textColor, fontSize: 13, maxWidth: '80%' }}>
                 {msg.content}
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {msg.attachments.map((file, idx) => {
+                      const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
+                      return (
+                        <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ 
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, 
+                          background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.05)', 
+                          textDecoration: 'none', color: 'inherit' 
+                        }}>
+                          {isImg ? <span style={{ fontSize: 16 }}>🖼️</span> : <span style={{ fontSize: 16 }}>📄</span>}
+                          <span style={{ fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Input */}
+      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', gap: 10 }}>
+        <input 
+          value={input} 
+          onChange={e => setInput(e.target.value)} 
+          onKeyDown={e => e.key === 'Enter' && handleSend()}
+          placeholder="Type a message as Admin..." 
+          style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', color: 'var(--text)', fontSize: 13, outline: 'none' }} 
+        />
+        <Btn small onClick={handleSend} disabled={!input.trim()}>Send</Btn>
+      </div>
+
+      {/* Project Info Section */}
+      <div style={{ padding: 20, borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--teal-light)' }}>Project Brief & Initial Files</h4>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, background: 'var(--surface3)', padding: 16, borderRadius: 8, border: '1px solid var(--border)', marginBottom: 16 }}>
+          {project.description || 'No brief provided.'}
+        </div>
+        
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {(project.attachments || []).map((file, idx) => (
+            <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ 
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, 
+              background: 'var(--surface3)', border: '1px solid var(--border)', textDecoration: 'none', color: 'inherit' 
+            }}>
+              {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? '🖼️' : '📄'}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>{file.name}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Initial Upload</div>
+              </div>
+            </a>
+          ))}
+          {(project.attachments || []).length === 0 && (
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>No initial files uploaded by student.</div>
+          )}
+        </div>
       </div>
     </div>
   );

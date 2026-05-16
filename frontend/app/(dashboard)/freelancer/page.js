@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
 import io from 'socket.io-client';
 import Notifications from "@/components/NotificationsView";
+import NotificationBell from "@/components/NotificationBell";
 import servicesData from '@/data/services_data.json';
 
 
@@ -15,16 +16,17 @@ import servicesData from '@/data/services_data.json';
 // Replaced with dynamic userProfile from App component
 
 const STATUS_META = {
-  'New Order': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
-  'In Progress': { color: '#0d9488', bg: 'rgba(13,148,136,.12)', dot: '#0d9488', rank: 1 },
-  'Under Review': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 2 },
-  'Revision': { color: '#f59e0b', bg: 'rgba(245,158,11,.12)', dot: '#f59e0b', rank: 3 },
+  'Finding Writer': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
+  'Writer Assigned': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 1 },
+  'In Progress': { color: '#0d9488', bg: 'rgba(13,148,136,.12)', dot: '#0d9488', rank: 2 },
+  'Under Review': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 3 },
   'Quality Check': { color: '#f59e0b', bg: 'rgba(245,158,11,.12)', dot: '#f59e0b', rank: 4 },
-  'Delivered': { color: '#22c55e', bg: 'rgba(34,197,94,.12)', dot: '#22c55e', rank: 5 },
-  'Closed': { color: '#334e4c', bg: 'rgba(51,78,76,.1)', dot: '#334e4c', rank: 6 }
+  'Revision Requested': { color: '#f43f5e', bg: 'rgba(244,63,94,.12)', dot: '#f43f5e', rank: 5 },
+  'Delivered': { color: '#22c55e', bg: 'rgba(34,197,94,.12)', dot: '#22c55e', rank: 6 },
+  'Closed': { color: '#334e4c', bg: 'rgba(51,78,76,.1)', dot: '#334e4c', rank: 7 }
 };
 
-const ALL_STATUSES = ['New Order', 'In Progress', 'Under Review', 'Revision', 'Quality Check', 'Delivered'];
+const ALL_STATUSES = ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested', 'Delivered'];
 
 // Replaced with dynamic projects from App component
 
@@ -64,7 +66,7 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
   const totalUnread = orders.reduce((a, o) => a + (o.unreadMsgs || 0), 0);
   const nav = [
     { id: 'overview', icon: '⊞', label: 'Overview' },
-    { id: 'orders', icon: '💬', label: 'Active Chat', badge: orders.filter((o) => ['New Order', 'In Progress', 'Revision', 'Quality Check'].includes(o.status)).length },
+    { id: 'orders', icon: '💬', label: 'Active Chat', badge: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Revision Requested', 'Quality Check'].includes(o.status)).length },
     { id: 'all-orders', icon: '📋', label: 'Orders List' },
     { id: 'earnings', icon: '💰', label: 'Earnings' },
     { id: 'profile', icon: '👤', label: 'My Profile' }
@@ -203,103 +205,107 @@ function OrderStrip({ order, isActive, onClick }) {
 /* ═══════════════════════════════════════════════
    CHAT THREAD MESSAGE
 ═══════════════════════════════════════════════ */
-function ChatMessage({ msg, writerAvatar }) {
-  if (msg.type === 'system') return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0', animation: 'fadeIn .3s ease' }}>
-      <div style={{ fontSize: 10, color: 'var(--text-dim)', background: 'var(--surface3)', padding: '4px 12px', borderRadius: 100, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span style={{ color: 'var(--teal)', fontSize: 11 }}>🔒</span>{msg.text || msg.content} · <span style={{ fontFamily: 'var(--mono)', fontSize: 9 }}>{msg.time}</span>
-      </div>
-    </div>);
+function ChatMessage({ msg, writerName = 'Writer' }) {
+  const isWriter = msg.from === 'writer';
+  const isAdmin = msg.from === 'admin';
+  const getInitials = (name) => {
+    if (typeof name !== 'string' || !name) return '?';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
+  const initials = isWriter ? getInitials(writerName) : isAdmin ? 'AD' : getInitials(msg.alias || 'Client');
 
-  if (msg.type === 'status') return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0', animation: 'statusSlide .35s ease' }}>
-      <div style={{ fontSize: 10, background: 'rgba(13,148,136,0.08)', border: '1px solid var(--border-teal)', padding: '5px 14px', borderRadius: 100, color: 'var(--teal-light)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 11 }}>⟳</span>{msg.text} · <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--text-dim)' }}>{msg.time}</span>
-      </div>
-    </div>);
-
-
-  if (msg.type === 'file') {
-    const isWriter = msg.from === 'writer';
+  // System / status messages — centered pill
+  if (msg.type === 'system' || msg.type === 'status' || msg.isSystem) {
     return (
-      <div style={{ display: 'flex', justifyContent: isWriter ? 'flex-end' : 'flex-start', padding: '2px 0', animation: 'fadeIn .3s ease' }}>
-        {!isWriter && <Avatar initials={msg.alias?.slice(-4) || 'C'} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />}
-        <div style={{ maxWidth: '70%', marginLeft: !isWriter ? 8 : 0, marginRight: isWriter ? 0 : 0 }}>
-          {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias}</div>}
-          <div style={{ background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, borderRadius: 8, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 7, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.fileName}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{msg.size}</span>
-                {msg.watermarked && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 100, background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}>🔒 Secured</span>}
-              </div>
-            </div>
-            <button style={{ flexShrink: 0, background: 'var(--teal)', border: 'none', color: '#fff', padding: '5px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 600 }}>↓</button>
-          </div>
-          <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 3, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)' }}>{msg.time}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0' }}>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', background: 'var(--surface3)', padding: '4px 14px', borderRadius: 100, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: 'var(--teal)', fontSize: 12 }}>🔒</span>
+          {msg.content || msg.text}
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, opacity: 0.6 }}>{msg.time}</span>
         </div>
-        {isWriter && <Avatar initials={writerAvatar} size={26} style={{ marginLeft: 8 }} />}
-      </div>);
-
+      </div>
+    );
   }
 
-  const isWriter = msg.from === 'writer';
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isWriter ? 'flex-end' : 'flex-start', gap: 4, padding: '2px 0', animation: 'fadeIn .3s ease' }}>
-      <div style={{ display: 'flex', justifyContent: isWriter ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 7 }}>
-        {!isWriter && <Avatar initials={msg.alias?.slice(-4) || 'C'} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />}
-        <div style={{ maxWidth: '85%' }}>
-          {!isWriter && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 3, marginLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 10 }}>🛡</span>{msg.alias} <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>· Identity Protected</span></div>}
-          <div style={{ padding: '9px 13px', borderRadius: isWriter ? '10px 10px 3px 10px' : '10px 10px 10px 3px', background: isWriter ? 'var(--teal)' : 'var(--surface3)', color: isWriter ? '#fff' : 'var(--text)', fontSize: 13, lineHeight: 1.55, border: isWriter ? 'none' : '1px solid var(--border)' }}>
-            {msg.content || msg.text}
-          </div>
-        </div>
-        {isWriter && <Avatar initials={writerAvatar} size={26} />}
-      </div>
+  const hasText = !!(msg.content || msg.text);
+  const hasAttachments = Array.isArray(msg.attachments) && msg.attachments.length > 0;
 
-      {msg.attachments && msg.attachments.length > 0 && (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 6, 
-          width: '70%', 
-          marginLeft: isWriter ? 0 : 33, 
-          marginRight: isWriter ? 33 : 0 
-        }}>
-          {msg.attachments.map((file, idx) => {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isWriter ? 'flex-end' : 'flex-start', gap: 2, padding: '2px 0' }}>
+      {/* Name label */}
+      {!isWriter && (
+        <div style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 34, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isAdmin ? (
+            <><span>🛡</span><span style={{ fontWeight: 700, color: 'var(--teal-light)' }}>Master Admin</span> <span style={{ opacity: 0.5 }}>· Supervisor</span></>
+          ) : (
+            <><span>🛡</span>{msg.alias || 'Client'} <span style={{ opacity: 0.5 }}>· Protected</span></>
+          )}
+        </div>
+      )}
+
+      {/* Bubble row */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: isWriter ? 'row-reverse' : 'row' }}>
+        {/* Avatar */}
+        <div style={{
+          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+          background: isWriter ? 'linear-gradient(135deg,#0d9488,#0f766e)' : isAdmin ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg,#1e1e35,#2a2a4a)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontWeight: 700, fontSize: 9, color: '#fff', letterSpacing: '-0.01em'
+        }}>{initials}</div>
+
+        {/* Bubble */}
+        <div style={{ maxWidth: '72%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {hasText && (
+            <div style={{
+              padding: '9px 13px',
+              borderRadius: isWriter ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+              background: isWriter ? 'var(--teal)' : 'var(--surface3)',
+              color: isWriter ? '#fff' : 'var(--text)',
+              fontSize: 13, lineHeight: 1.55,
+              border: isWriter ? 'none' : '1px solid var(--border)',
+              wordBreak: 'break-word'
+            }}>
+              {msg.content || msg.text}
+            </div>
+          )}
+
+          {hasAttachments && msg.attachments.map((file, idx) => {
+            if (!file || !file.url) return null;
             const isImg = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.url);
             return (
-              <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ 
-                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, 
-                background: isWriter ? 'rgba(13,148,136,0.1)' : 'var(--surface3)', 
-                border: `1px solid ${isWriter ? 'var(--border-teal)' : 'var(--border)'}`, 
-                textDecoration: 'none', color: 'inherit' 
+              <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10,
+                background: isWriter ? 'rgba(13,148,136,0.12)' : 'var(--surface3)',
+                border: `1px solid ${isWriter ? 'rgba(13,148,136,0.3)' : 'var(--border)'}`,
+                textDecoration: 'none', color: 'inherit'
               }}>
-                {isImg ? (
-                  <img src={file.url} alt="attachment" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: 34, height: 34, borderRadius: 7, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
-                )}
+                {isImg
+                  ? <img src={file.url} alt="img" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                  : <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surface4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📄</div>
+                }
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
-                  <div style={{ fontSize: 9, opacity: 0.7 }}>DOCUMENT</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name || 'File'}</div>
+                  <div style={{ fontSize: 10, opacity: 0.6 }}>{isImg ? 'Image' : 'Document'} · open ↗</div>
                 </div>
               </a>
             );
           })}
         </div>
-      )}
-      <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 1, textAlign: isWriter ? 'right' : 'left', fontFamily: 'var(--mono)', marginLeft: isWriter ? 0 : 33, marginRight: isWriter ? 33 : 0 }}>{msg.time}</div>
-    </div>);
+      </div>
 
+      {/* Timestamp */}
+      <div style={{ fontSize: 9, color: 'var(--text-dim)', fontFamily: 'var(--mono)', marginLeft: isWriter ? 0 : 34, marginRight: isWriter ? 34 : 0, marginTop: 1 }}>
+        {msg.time}
+      </div>
+    </div>
+  );
 }
 
 /* ═══════════════════════════════════════════════
    ORDER DETAIL / CHAT PANEL
 ═══════════════════════════════════════════════ */
-function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket, userName }) {
+function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket, userName, loading }) {
   const [input, setInput] = useState('');
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -311,7 +317,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
   const inputRef = useRef();
 
   const handleDownload = (file) => {
-    if (!file.url) return;
+    if (!file || !file.url) return;
     const link = document.createElement('a');
     link.href = file.url;
     link.download = file.name || 'document';
@@ -382,12 +388,19 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
       });
       
       const savedMessage = await res.json();
+      if (!res.ok) {
+        console.error('Send failed:', savedMessage);
+        return;
+      }
       onSend(order.id, { 
         id: savedMessage.id,
-        from: 'writer', 
-        text: savedMessage.content, 
-        attachments: savedMessage.attachments,
-        time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+        type: 'text',
+        from: 'writer',
+        text: savedMessage.content,
+        content: savedMessage.content,
+        attachments: Array.isArray(savedMessage.attachments) ? savedMessage.attachments : [],
+        time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: savedMessage.createdAt || new Date().toISOString()
       });
 
       if (socket) {
@@ -429,8 +442,8 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
         </div>
         {/* Status changer */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
-          {order.status === 'New Order' ? (
-            <button onClick={() => onStatusChange(order.id, 'In Progress')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
+          {order.status === 'Finding Writer' ? (
+            <button onClick={() => onStatusChange(order.id, 'Writer Assigned')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
           ) : (
             <>
               <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color || 'var(--border)'}`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
@@ -478,10 +491,17 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
               <span style={{ fontSize: 14 }}>🔐</span>
               <span style={{ fontSize: 11, color: '#a78bfa', lineHeight: 1.4 }}>This conversation is end-to-end encrypted. Client identity is anonymized. All files are watermarked & tracked.</span>
             </div>
-            {(order.thread || []).map((msg, i) => <ChatMessage key={msg.id || i} msg={msg} writerAvatar={userName?.split(' ').map(n => n[0]).join('').toUpperCase()} />)}
+            
+            {loading && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', gap: 10 }}>
+                <div style={{ width: 16, height: 16, border: '2px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Loading secure conversation history...</span>
+              </div>
+            )}
+            {(order.thread || []).map((msg, i) => <ChatMessage key={msg.id || i} msg={msg} writerName={userName} />)}
             {typing &&
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeIn .3s ease' }}>
-                <Avatar initials={order.clientCode.slice(0, 2)} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />
+                <Avatar initials={(order.clientCode || 'CL').slice(0, 2).toUpperCase()} size={26} gradient="linear-gradient(135deg,#1e1e35,#2a2a4a)" />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '8px 12px', background: 'var(--surface3)', borderRadius: '10px 10px 10px 3px', border: '1px solid var(--border)' }}>
                   {[0, 1, 2].map((i) => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--text-dim)', display: 'inline-block', animation: `pulse 1.2s ease ${i * 0.2}s infinite` }} />)}
                 </div>
@@ -645,13 +665,13 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
 
 const mapDBStatusToUI = (status) => {
   switch (status) {
-    case 'CREATED': return 'New Order';
-    case 'ASSIGNED':
+    case 'CREATED': return 'Finding Writer';
+    case 'ASSIGNED': return 'Writer Assigned';
     case 'IN_PROGRESS': return 'In Progress';
     case 'REVIEW':
-    case 'QUALITY_CHECK': 
-    case 'UNDER_REVIEW': return 'Quality Check';
-    case 'REVISION': return 'Revision';
+    case 'UNDER_REVIEW': return 'Under Review';
+    case 'QUALITY_CHECK': return 'Quality Check';
+    case 'REVISION': return 'Revision Requested';
     case 'COMPLETED': return 'Delivered';
     case 'CLOSED': return 'Closed';
     default: return 'In Progress';
@@ -661,11 +681,26 @@ const mapDBStatusToUI = (status) => {
 // Build a flat lookup: serviceId -> service name, from the same JSON students use when ordering
 const SERVICE_LABELS = Object.values(servicesData.individualServices)
   .flat()
-  .reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {});
+  .reduce((acc, s) => { 
+    acc[s.id.toLowerCase()] = s.name; 
+    return acc; 
+  }, {});
+
+const getStandardServiceName = (p) => {
+  const type = (p.serviceType || '').toLowerCase();
+  if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+  
+  // Fallback: Use title but clean it up
+  let t = p.title || 'Writing Service';
+  // Remove " Order" suffix if present
+  t = t.replace(/ Order$/i, '');
+  // Capitalize first letter of each word
+  return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+};
 
 const mapProjectsToOrders = (rawProjects, userId) => {
   return (rawProjects || []).map(p => {
-    const serviceLabel = SERVICE_LABELS[p.serviceType] || SERVICE_LABELS[p.serviceType?.toLowerCase()] || p.serviceType || p.title || 'Writing Service';
+    const serviceLabel = getStandardServiceName(p);
     return {
       id: p.id,
       displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
@@ -688,15 +723,19 @@ const mapProjectsToOrders = (rawProjects, userId) => {
       thread: (p.messages || [])
         .filter(m => !m.chatType || m.chatType === 'CLIENT_CHAT')
         .map(m => {
-          const isWriter = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+          const isWriterMsg = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+          const isAdminMsg = m.sender?.role === 'ADMIN';
+          const rawTs = m.createdAt ? new Date(m.createdAt) : new Date();
+          const time = isNaN(rawTs.getTime()) ? '' : rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           return {
             id: m.id,
-            type: m.isSystem ? 'system' : 'text',
-            from: isWriter ? 'writer' : 'client',
-            alias: isWriter ? (p.freelancer?.name || 'Writer') : (p.student?.name || `Client #${p.studentId?.slice(-4)}`),
-            text: m.content,
-            content: m.content,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: m.isSystem ? 'system' : (m.type || 'text'),
+            from: isWriterMsg ? 'writer' : isAdminMsg ? 'admin' : 'client',
+            alias: isWriterMsg ? (p.freelancer?.name || 'Writer') : isAdminMsg ? 'Master Admin' : (p.student?.name || `Client #${p.studentId?.slice(-4)}`),
+            text: m.content || '',
+            content: m.content || '',
+            time,
+            createdAt: m.createdAt || new Date().toISOString(),
             fileName: Array.isArray(m.attachments) && m.attachments[0] ? m.attachments[0].name : undefined,
             size: Array.isArray(m.attachments) && m.attachments[0] ? m.attachments[0].size : undefined,
             attachments: Array.isArray(m.attachments) ? m.attachments : [],
@@ -707,38 +746,148 @@ const mapProjectsToOrders = (rawProjects, userId) => {
 };
 
 function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
-
   const [orders, setOrders] = useState(() => mapProjectsToOrders(projects, userId));
 
+  // When projects changes (e.g. socket adds a client message to App state),
+  // MERGE threads instead of replacing — preserving optimistically added writer messages
   useEffect(() => {
-    setOrders(mapProjectsToOrders(projects, userId));
+    setOrders(prev => {
+      const fresh = mapProjectsToOrders(projects, userId);
+      if (prev.length === 0) return fresh;
+      return fresh.map(freshOrder => {
+        const existing = prev.find(o => o.id === freshOrder.id);
+        if (!existing) return freshOrder;
+        // Merge threads: keep all messages, deduplicate by id
+        const mergedThread = [...freshOrder.thread];
+        for (const msg of existing.thread) {
+          if (!msg.id || !mergedThread.some(m => m.id === msg.id)) {
+            mergedThread.push(msg);
+          }
+        }
+        // Sort by createdAt timestamp
+        mergedThread.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        return { ...freshOrder, thread: mergedThread, status: existing.status };
+      });
+    });
   }, [projects, userId]);
 
+  // Also handle incoming client messages directly via socket for instant rendering
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      if (data.chatType !== 'CLIENT_CHAT') return;
+      if (data.senderId === userId) return; // already added optimistically
+      setOrders(prev => prev.map(o => {
+        if (o.id !== data.projectId) return o;
+        if (o.thread.some(m => m.id === data.id)) return o; // dedupe
+        const newMsg = {
+          id: data.id || `tmp-${Date.now()}`,
+          type: 'text',
+          from: data.senderRole === 'ADMIN' ? 'admin' : 'client',
+          alias: data.senderRole === 'ADMIN' ? 'Master Admin' : o.client,
+          text: data.content,
+          content: data.content,
+          attachments: Array.isArray(data.attachments) ? data.attachments : [],
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          createdAt: data.timestamp || new Date().toISOString(),
+        };
+        return { ...o, thread: [...o.thread, newMsg], unreadMsgs: o.unreadMsgs + 1 };
+      }));
+    };
+    socket.on('receive_message', handler);
+    return () => socket.off('receive_message', handler);
+  }, [socket, userId]);
+
   const [activeOrder, setActiveOrder] = useState(null);
+  const [fetchingThread, setFetchingThread] = useState(false);
+  const [fetchingDetail, setFetchingDetail] = useState(false);
+
+  // Fetch full history and project details when an order is opened
+  useEffect(() => {
+    if (!activeOrder) return;
+    
+    const fetchFullData = async () => {
+      setFetchingThread(true);
+      setFetchingDetail(true);
+      
+      try {
+        // Fetch project detail and messages in parallel
+        const [msgRes, detailRes] = await Promise.all([
+          fetch(`/api/messages?projectId=${activeOrder}&type=CLIENT_CHAT`),
+          fetch(`/api/projects/${activeOrder}`)
+        ]);
+        
+        const [msgs, detail] = await Promise.all([msgRes.json(), detailRes.json()]);
+
+        if (Array.isArray(msgs)) {
+          // Normalise to UI shape
+          const fullThread = msgs.map(m => {
+            const isWriterMsg = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+            const isAdminMsg = m.sender?.role === 'ADMIN';
+            const rawTs = m.createdAt ? new Date(m.createdAt) : new Date();
+            const time = isNaN(rawTs.getTime()) ? '' : rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return {
+              id: m.id,
+              type: m.isSystem ? 'system' : (m.type || 'text'),
+              from: isWriterMsg ? 'writer' : isAdminMsg ? 'admin' : 'client',
+              alias: isWriterMsg ? (userName || 'Writer') : isAdminMsg ? 'Master Admin' : 'Client',
+              text: m.content || '',
+              content: m.content || '',
+              time,
+              createdAt: m.createdAt || new Date().toISOString(),
+              attachments: Array.isArray(m.attachments) ? m.attachments : [],
+            };
+          });
+          
+          setOrders(prev => prev.map(o => {
+            if (o.id !== activeOrder) return o;
+            return { 
+              ...o, 
+              thread: fullThread, 
+              unreadMsgs: 0,
+              // Merge in heavy details fetched on-demand
+              brief: detail.description || o.brief,
+              files: (detail.attachments || []).filter(a => a && !a.type),
+              deliveredFiles: (detail.attachments || []).filter(a => a && a.type === 'DELIVERY')
+            };
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch full order data:", err);
+      } finally {
+        setFetchingThread(false);
+        setFetchingDetail(false);
+      }
+    };
+
+    fetchFullData();
+  }, [activeOrder, userId, userName]);
+
   const [filter, setFilter] = useState('All');
 
   const filterTabs = [
   { id: 'All', label: 'All', count: orders.length },
-  { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status)).length },
-  { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision').length },
+  { id: 'Active', label: 'Active', count: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status)).length },
+  { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision Requested').length },
   { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }];
-
 
   const filtered = orders.filter((o) => {
     if (filter === 'All') return true;
-    if (filter === 'Active') return ['New Order', 'In Progress', 'Under Review'].includes(o.status);
-    if (filter === 'Revision') return o.status === 'Revision';
+    if (filter === 'Active') return ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status);
+    if (filter === 'Revision') return o.status === 'Revision Requested';
     if (filter === 'Delivered') return o.status === 'Delivered';
     return true;
   });
 
   const handleStatusChange = async (id, newStatus) => {
-    // Map UI status to valid Prisma Enum values
     const dbStatus = 
+      newStatus === 'Finding Writer' ? 'CREATED' :
+      newStatus === 'Writer Assigned' ? 'ASSIGNED' :
       newStatus === 'In Progress' ? 'IN_PROGRESS' : 
       newStatus === 'Delivered' ? 'COMPLETED' : 
-      newStatus === 'Revision' ? 'REVISION' : 
-      (newStatus === 'Quality Check' || newStatus === 'Under Review') ? 'REVIEW' : 
+      newStatus === 'Revision Requested' ? 'REVISION' : 
+      newStatus === 'Under Review' ? 'REVIEW' : 
+      newStatus === 'Quality Check' ? 'QUALITY_CHECK' : 
       newStatus;
     try {
       const res = await fetch(`/api/projects/${id}`, {
@@ -747,7 +896,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
         body: JSON.stringify({ status: dbStatus })
       });
       if (res.ok) {
-        if (newStatus === 'In Progress') {
+        if (newStatus === 'Writer Assigned') {
           await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -758,17 +907,8 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
             })
           });
         }
-        
-        // Emit socket event for real-time update
-        if (socket) {
-          socket.emit('status_update', { projectId: id, status: dbStatus });
-        }
-
-        // Update local state instead of reload
+        if (socket) socket.emit('status_update', { projectId: id, status: dbStatus });
         setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-        
-        // Also update main projects state in App
-        if (typeof onUpdate === 'function') onUpdate();
       } else {
         console.error("Failed to update status");
       }
@@ -780,8 +920,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
   const handleSend = (id, msg) => {
     setOrders((prev) => prev.map((o) => {
       if (o.id !== id) return o;
-      const newUnread = msg.from === 'client' ? o.unreadMsgs + 1 : o.unreadMsgs;
-      return { ...o, thread: [...o.thread, msg], unreadMsgs: msg.from === 'writer' ? 0 : newUnread };
+      return { ...o, thread: [...o.thread, msg] };
     }));
   };
 
@@ -830,7 +969,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
       {/* Chat / Detail panel */}
       {selectedOrder ?
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} userId={userId} socket={socket} userName={userName} />
+          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} userId={userId} socket={socket} userName={userName} loading={fetchingThread} />
         </div> :
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
@@ -848,8 +987,8 @@ function AllOrdersList({ orders = [], isMobile }) {
   
   const filtered = orders.filter((o) => {
     if (filter === 'All') return true;
-    if (filter === 'Active') return ['New Order', 'In Progress', 'Under Review'].includes(o.status);
-    if (filter === 'Revision') return o.status === 'Revision';
+    if (filter === 'Active') return ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status);
+    if (filter === 'Revision') return o.status === 'Revision Requested';
     if (filter === 'Delivered') return o.status === 'Delivered';
     return o.status === filter;
   });
@@ -929,7 +1068,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
       })
       .catch(err => console.error("Failed to fetch notifications:", err));
   }, []);
-  const active = projects.filter((o) => o.status !== 'COMPLETED');
+  const active = projects.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested'].includes(mapDBStatusToUI(o.status)));
   const earnings = projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7;
   
   // Calculate unread from real projects
@@ -973,6 +1112,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {active.length > 0 ? active.slice(0, 3).map((order) => {
+            const uiStatus = mapDBStatusToUI(order.status);
             return (
               <div key={order.id} onClick={() => setActive('orders')} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, transition: 'all .2s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.3)'; }}
@@ -980,11 +1120,11 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
 
                 <div style={{ width: 4, height: 40, borderRadius: 2, background: 'var(--teal)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.serviceType || order.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{order.student?.name} · {order.id}</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getStandardServiceName(order)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{order.student?.name} · XW-{order.id.slice(-5).toUpperCase()}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <StatusPill status={order.status === 'CREATED' ? 'New Order' : 'In Progress'} small />
+                  <StatusPill status={uiStatus} small />
                 </div>
               </div>);
 
@@ -1323,6 +1463,14 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
@@ -1340,15 +1488,18 @@ export default function App() {
     };
     window.addEventListener('popstate', handlePopState);
 
-    const fetchProjects = async () => {
+    const fetchAll = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        setProjects(Array.isArray(data) ? data : []);
-      } catch (err) { console.error(err); } finally { setLoading(false); }
+        await Promise.all([fetchProjects(), fetchProfile()]);
+      } catch (err) {
+        console.error("Dashboard init error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchProjects();
-    fetchProfile();
+
+    fetchAll();
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
@@ -1382,13 +1533,19 @@ export default function App() {
 
       s.on('receive_message', (data) => {
         if (data.chatType === 'CLIENT_CHAT') {
-           // Skip messages sent by this user — already added optimistically via onSend
+           // Skip messages sent by this freelancer — already added optimistically
            if (data.senderId === session?.user?.id) return;
            setProjects(prev => prev.map(p => {
              if (p.id === data.projectId) {
                const alreadyHas = p.messages?.some(m => m.id === data.id);
                if (alreadyHas) return p;
-               return { ...p, messages: [...(p.messages || []), { ...data, createdAt: data.timestamp }] };
+               // Attach sender.role so mapProjectsToOrders can determine 'client' direction
+               const newMsg = {
+                 ...data,
+                 createdAt: data.timestamp || new Date().toISOString(),
+                 sender: data.sender || { role: data.senderRole || 'STUDENT' }
+               };
+               return { ...p, messages: [...(p.messages || []), newMsg] };
              }
              return p;
            }));
@@ -1424,11 +1581,40 @@ export default function App() {
   };
 
   const isVerified = userProfile?.freelancerProfile?.isVerified;
+  const status = userProfile?.freelancerProfile?.status;
 
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff' }}>
         <p style={{ fontSize: 14, fontWeight: 'bold', letterSpacing: '0.1em' }}>LOADING DASHBOARD...</p>
+      </div>
+    );
+  }
+
+  if (userProfile && status === 'Rejected') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff', padding: 20, textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+          <span style={{ fontSize: 40 }}>✗</span>
+        </div>
+        <h1 style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', marginBottom: 8, letterSpacing: '-0.02em', color: '#ef4444' }}>Application Rejected</h1>
+        <p style={{ color: '#8e8e93', fontSize: 14, maxWidth: 450, marginBottom: 20, lineHeight: 1.5 }}>
+          We appreciate your interest in Express Writer. After reviewing your profile, our team has decided not to proceed with your application at this time.
+        </p>
+        
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '20px 24px', maxWidth: 400, marginBottom: 32, textAlign: 'left' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Reason for Decision:</div>
+          <p style={{ color: '#cecece', fontSize: 13, lineHeight: 1.6, fontStyle: 'italic' }}>
+            "{userProfile.freelancerProfile.rejectionReason || 'Your application did not meet our current requirements.'}"
+          </p>
+        </div>
+
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{ padding: '12px 32px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.3s' }}
+        >
+          Return to Login
+        </button>
       </div>
     );
   }
@@ -1465,6 +1651,7 @@ export default function App() {
           {isMobile && <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 24, cursor: 'pointer' }}>☰</button>}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--teal-light)', background: 'rgba(13,148,136,0.08)', padding: '4px 10px', borderRadius: 100, border: '1px solid var(--border-teal)' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} /> Available for orders</div>
+            <NotificationBell />
             <Avatar initials={userName.split(' ').map(n => n[0]).join('').toUpperCase()} size={28} />
           </div>
         </div>

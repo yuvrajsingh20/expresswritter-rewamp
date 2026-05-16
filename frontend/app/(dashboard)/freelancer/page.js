@@ -865,37 +865,20 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
 
   const [filter, setFilter] = useState('All');
 
-<<<<<<< Updated upstream
-  const filterTabs = [
-  { id: 'All', label: 'All', count: orders.length },
-  { id: 'Active', label: 'Active', count: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status)).length },
-  { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision Requested').length },
-  { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }];
-
-  const filtered = orders.filter((o) => {
-    if (filter === 'All') return true;
-    if (filter === 'Active') return ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status);
-    if (filter === 'Revision') return o.status === 'Revision Requested';
-    if (filter === 'Delivered') return o.status === 'Delivered';
-    return true;
-  });
-=======
   const filterTabs = useMemo(() => [
     { id: 'All', label: 'All', count: orders.length },
-    { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status)).length },
-    { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision').length },
+    { id: 'Active', label: 'Active', count: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status)).length },
+    { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision Requested').length },
     { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }
   ], [orders]);
 
-
   const filtered = useMemo(() => {
     if (filter === 'All') return orders;
-    if (filter === 'Active') return orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status));
-    if (filter === 'Revision') return orders.filter((o) => o.status === 'Revision');
+    if (filter === 'Active') return orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status));
+    if (filter === 'Revision') return orders.filter((o) => o.status === 'Revision Requested');
     if (filter === 'Delivered') return orders.filter((o) => o.status === 'Delivered');
     return orders;
   }, [orders, filter]);
->>>>>>> Stashed changes
 
   const handleStatusChange = async (id, newStatus) => {
     const dbStatus = 
@@ -1097,13 +1080,8 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
       clearTimeout(timeoutId);
     };
   }, []);
-<<<<<<< Updated upstream
-  const active = projects.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested'].includes(mapDBStatusToUI(o.status)));
-  const earnings = projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7;
-=======
-  const active = useMemo(() => projects.filter((o) => o.status !== 'COMPLETED'), [projects]);
+  const active = useMemo(() => projects.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested'].includes(mapDBStatusToUI(o.status))), [projects]);
   const earnings = useMemo(() => projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7, [projects]);
->>>>>>> Stashed changes
   
   const unreadCount = useMemo(() => projects.reduce((acc, p) => {
     return acc + (p.messages?.filter(m => !m.read && m.senderId !== session?.user?.id).length || 0);
@@ -1514,10 +1492,15 @@ export default function App() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('/api/projects');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch('/api/projects', { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await res.json();
       setProjects(Array.isArray(data) ? data : []);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -1540,26 +1523,11 @@ export default function App() {
     const fetchAll = async () => {
       setLoading(true);
       try {
-<<<<<<< Updated upstream
         await Promise.all([fetchProjects(), fetchProfile()]);
       } catch (err) {
         console.error("Dashboard init error:", err);
       } finally {
         setLoading(false);
-=======
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const res = await fetch('/api/projects', { signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        const data = await res.json();
-        setProjects(Array.isArray(data) ? data : []);
-      } catch (err) { 
-        if (err.name !== 'AbortError') console.error(err); 
-      } finally { 
-        setLoading(false); 
->>>>>>> Stashed changes
       }
     };
 

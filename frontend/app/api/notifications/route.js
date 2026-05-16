@@ -51,10 +51,21 @@ export async function PATCH(request) {
   }
 
   try {
-    await prisma.notification.updateMany({
-      where: { userId: user.id, read: false },
-      data: { read: true },
-    });
+    const body = await request.json().catch(() => ({}));
+    
+    // If specific ID provided, mark only that notification
+    if (body?.id) {
+      await prisma.notification.updateMany({
+        where: { id: body.id, userId: user.id },
+        data: { read: true },
+      });
+    } else {
+      // Otherwise mark all as read
+      await prisma.notification.updateMany({
+        where: { userId: user.id, read: false },
+        data: { read: true },
+      });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update notifications:", error);

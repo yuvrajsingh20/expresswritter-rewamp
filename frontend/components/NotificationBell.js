@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import io from 'socket.io-client';
+import { getNotificationLink, resolveNotificationLink } from '@/lib/notifications/links';
 
 export default function NotificationBell({ onNavigate }) {
   const router = useRouter();
@@ -11,6 +12,17 @@ export default function NotificationBell({ onNavigate }) {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [filter, setFilter] = useState('all');
+
+  const filteredNotifs = useMemo(() => {
+    if (filter === 'all') return notifications.slice(0, 10);
+    const typeMap = {
+      orders: ['new_order', 'assignment', 'status', 'order_cancelled', 'revision', 'new_job'],
+      messages: ['message'],
+      payments: ['payment_received', 'payment_confirmed', 'payout']
+    };
+    return notifications.filter(n => typeMap[filter]?.includes(n.type)).slice(0, 10);
+  }, [notifications, filter]);
 
   const fetchNotifications = async () => {
     if (!session?.user?.id) return;
@@ -70,14 +82,8 @@ export default function NotificationBell({ onNavigate }) {
 
   const markAllRead = async () => {
     try {
-      const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-      for (const id of unreadIds) {
-        await fetch('/api/notifications', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-      }
+      // Send single request - backend marks ALL unread as read
+      await fetch('/api/notifications', { method: 'PATCH' });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (err) {
@@ -85,32 +91,20 @@ export default function NotificationBell({ onNavigate }) {
     }
   };
 
-  const handleNotificationClick = (link) => {
-    if (!link) return;
-
-    // If we're inside the SPA (student/freelancer dashboard), use onNavigate
-    // to do an in-place tab switch with zero page reload.
-    if (onNavigate) {
-      onNavigate(link);
-      setOpen(false);
-      return;
+const handleNotificationClickWithEntity = (notification) => {
+    const { link, entityType, entityId, type } = notification;
+    const userRole = session?.user?.role || 'STUDENT';
+    
+    // Use new resolver for entity-based links, fallback to legacy link parsing
+    const resolvedLink = getNotificationLink(link, entityType, entityId, userRole);
+    const targetLink = resolvedLink || link;
+    
+    if (onNavigate && targetLink) {
+      onNavigate(targetLink);
+    } else if (targetLink) {
+      router.push(targetLink);
     }
-
-    // Fallback: hard navigate via router (for contexts without onNavigate)
-    const currentRole = session?.user?.role?.toLowerCase();
-    if (link.includes('/orders/')) {
-      const orderId = link.split('/orders/')[1]?.split('?')[0];
-      const base = (currentRole === 'admin' || currentRole === 'sub_admin') ? '/admin' : `/${currentRole}`;
-      router.push(`${base}?tab=orders&orderId=${orderId}`);
-    } else if (link.includes('/messages')) {
-      router.push(`/${currentRole}?tab=messages`);
-    } else if (link.includes('?tab=')) {
-      const tab = link.split('?tab=')[1]?.split('&')[0];
-      router.push(`/${currentRole}?tab=${tab}`);
-    } else {
-      router.push(`/${currentRole}`);
-    }
-
+    
     setOpen(false);
   };
 
@@ -185,11 +179,34 @@ export default function NotificationBell({ onNavigate }) {
               <button onClick={markAllRead} style={{ fontSize: 12, color: 'var(--teal-light, #0d9488)', background: 'none', border: 'none', cursor: 'pointer' }}>Mark all read</button>
             )}
           </div>
+          {/* Filter Tabs */}
+          <div style={{ display: 'flex', gap: 4, padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
+            {['all', 'orders', 'messages', 'payments'].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                style={{
+                  flex: 1,
+                  padding: '4px 8px',
+                  borderRadius: 12,
+                  border: 'none',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: filter === f ? 'var(--teal)' : 'var(--surface2)',
+                  color: filter === f ? '#fff' : 'var(--text-muted)',
+                  textTransform: 'uppercase'
+                }}
+              >
+                {f === 'all' ? 'All' : f}
+              </button>
+            ))}
+          </div>
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-            {notifications.length === 0 ? (
+            {filteredNotifs.length === 0 ? (
               <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim, #9ca3af)', fontSize: 13 }}>No notifications</div>
             ) : (
-              notifications.slice(0, 5).map(n => {
+              filteredNotifs.map(n => {
                 return (
                   <div key={n.id}
                     onClick={() => { if (!n.read) markAsRead(n.id); }}
@@ -212,7 +229,7 @@ export default function NotificationBell({ onNavigate }) {
                       </div>
                       {n.link && (
                         <button 
-                          onClick={() => handleNotificationClick(n.link)}
+                          onClick={() => handleNotificationClickWithEntity(n)}
                           style={{ fontSize: 11, color: 'var(--teal-light, #0d9488)', marginTop: 4, display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
                         >
                           View Details →

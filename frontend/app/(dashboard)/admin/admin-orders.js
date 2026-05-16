@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Pill, Btn, SectionHeader, Table } from "./admin-shared";
+import { Pill, Btn, SectionHeader, Table, showToast } from "./admin-shared";
 import { EagleEyePanel, DirectChatPanel } from "./admin-writers";
 import { useChat } from "@/hooks/useChat";
 import { useSession } from "next-auth/react";
 import servicesData from "@/data/services_data.json";
 
-export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile }) {
+export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile, activeOrderId, onOrderViewed }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
   
   // Initialize activeProject from URL query params for deep linking
@@ -18,6 +18,15 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
     }
     return null;
   });
+
+  // Sync activeProject when parent passes an orderId via notification click
+  useEffect(() => {
+    if (activeOrderId) {
+      setActiveProject(activeOrderId);
+      // Signal back to parent that we've consumed the orderId
+      if (onOrderViewed) onOrderViewed();
+    }
+  }, [activeOrderId, onOrderViewed]);
   
   const SERVICE_LABELS = React.useMemo(() => {
     return Object.values(servicesData.individualServices)
@@ -60,15 +69,15 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
         // Update local state instead of reload for smoother experience
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, freelancerId: writerId, status: 'ASSIGNED', freelancer: freelancers.find(f => f.id === writerId) } : p));
         
-        if (!silent) alert(`Success! ${writerName} has been assigned to the order for ${clientName}.`);
+        if (!silent) showToast(`${writerName} has been assigned to the order for ${clientName}.`);
         return true;
       } else {
-        if (!silent) alert("Failed to assign writer");
+        if (!silent) showToast("Failed to assign writer", 'error');
         return false;
       }
     } catch (err) {
       console.error(err);
-      alert("Error assigning writer.");
+      showToast("Error assigning writer.", 'error');
       return false;
     } finally {
       setLoading(false);
@@ -84,7 +93,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
       if (success) successCount++;
     }
     const writerName = freelancers.find(f => f.id === bulkWriterId)?.name || 'writer';
-    alert(`Successfully assigned ${successCount} orders to ${writerName}.`);
+    showToast(`Successfully assigned ${successCount} orders to ${writerName}.`);
     setSelectedIds([]);
     setBulkWriterId('');
     setLoading(false);
@@ -171,7 +180,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
                   <Btn small onClick={() => {
                     const sel = document.getElementById(`writer-select-${p.id}`);
                     if (sel.value) handleAssign(p.id, sel.value);
-                    else alert("Please select a writer from the dropdown first.");
+                    else showToast("Please select a writer from the dropdown first.", 'warning');
                   }} disabled={loading}>Assign</Btn>
                 </div>
               ])}
@@ -254,7 +263,7 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
     setAdding(true);
     const existingCollabs = project.collaborators ? project.collaborators.map(c => c.id) : [];
     if (existingCollabs.includes(collabId) || project.freelancerId === collabId) {
-      alert("This writer is already on the project.");
+      showToast("This writer is already on the project.", 'warning');
       setAdding(false);
       return;
     }
@@ -279,10 +288,10 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
             senderId: userId // The admin who added them
           })
         });
-        alert("Collaborator added successfully!");
+        showToast("Collaborator added successfully!");
         window.location.reload();
       } else {
-        alert("Failed to add collaborator.");
+        showToast("Failed to add collaborator.", 'error');
       }
     } catch (err) {
       console.error(err);

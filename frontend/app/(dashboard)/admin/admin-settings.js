@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, Input, Select, Table, StatusDot } from "./admin-shared";
+import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, Input, Select, Table, StatusDot, showToast } from "./admin-shared";
 // ── SECTIONS 6, 7, 8: THEME, WORKFLOW, USERS ──
 
 /* ── THEME SETTINGS ── */
@@ -351,7 +351,7 @@ export function AdminUsers() {
   };
 
   const handleCreateUser = async () => {
-    if (!newUser.email || !newUser.role) return alert('Email and Role are required');
+    if (!newUser.email || !newUser.role) return showToast('Email and Role are required', 'warning');
     try {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
@@ -366,7 +366,7 @@ export function AdminUsers() {
         fetchUsers();
       } else {
         const err = await res.json();
-        alert(err.message || 'Failed to create user');
+        showToast(err.message || 'Failed to create user', 'error');
       }
     } catch (err) {
       console.error(err);

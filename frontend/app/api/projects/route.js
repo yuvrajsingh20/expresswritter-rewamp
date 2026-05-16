@@ -31,15 +31,41 @@ export async function POST(req) {
 export async function GET(req) {
   try {
     const authUser = await getAuthUser(req);
+    console.log('[API /projects] Auth user:', authUser);
+    
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    const projects = await getProjectsByUser(authUser.id, authUser.role);
+    // For admin, fetch all projects directly with simpler query
+    if (authUser.role === 'ADMIN') {
+      const prisma = (await import('@/lib/prisma')).default;
+      const projects = await prisma.project.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 400,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          deadline: true,
+          createdAt: true,
+          amount: true,
+          serviceType: true,
+          studentId: true,
+          freelancerId: true,
+          student: { select: { id: true, name: true, role: true } },
+          freelancer: { select: { id: true, name: true, role: true } },
+          orders: { select: { paymentStatus: true } },
+        },
+      });
+      console.log('[API /projects] Admin projects count:', projects?.length || 0);
+      return NextResponse.json(projects, { status: 200 });
+    }
 
-    // Performance Optimization: Heavy deadline checks removed from hot path for speed
+    const projects = await getProjectsByUser(authUser.id, authUser.role);
+    console.log('[API /projects] Projects count:', projects?.length || 0);
 
     return NextResponse.json(projects, { status: 200 });
   } catch (error) {
     console.error('Project retrieval failure:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ message: 'Internal Server Error', error: error.message, stack: error.stack }, { status: 500 });
   }
 }

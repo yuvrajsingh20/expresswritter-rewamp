@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { createNotification } from "@/lib/notify";
 
 export async function POST(req) {
   try {
@@ -51,6 +52,38 @@ export async function POST(req) {
           }
         });
       });
+
+      // 6. Send payment notifications
+      try {
+        const admins = await prisma.user.findMany({ 
+          where: { role: 'ADMIN' },
+          select: { id: true }
+        });
+        
+        // Notify admins of payment received
+        for (const admin of admins) {
+          await createNotification(prisma, {
+            userId: admin.id,
+            type: 'payment_received',
+            title: 'Payment Received',
+            msg: `Payment received for "${project.title}" - Ready for writer assignment`,
+            icon: '💳',
+            link: `/admin/orders/${projectId}`
+          });
+        }
+        
+        // Notify student of successful payment (receipt)
+        await createNotification(prisma, {
+          userId: project.studentId,
+          type: 'payment_confirmed',
+          title: 'Payment Successful!',
+          msg: `Your payment for "${project.title}" has been received. We'll assign a writer soon!`,
+          icon: '✅',
+          link: `/student/orders/${projectId}`
+        });
+      } catch (notifyErr) {
+        console.error("Payment notification error:", notifyErr);
+      }
 
       return NextResponse.json({ 
         message: "Payment verified and project initialized",

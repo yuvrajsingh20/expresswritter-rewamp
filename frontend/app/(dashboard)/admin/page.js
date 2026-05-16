@@ -14,7 +14,7 @@ import { AdminRefunds } from "./admin-refunds";
 import { AdminPromos } from "./admin-promos";
 import Notifications from "@/components/NotificationsView";
 import NotificationBell from "@/components/NotificationBell";
-import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar } from "./admin-shared";
+import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar, AdminToastProvider } from "./admin-shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -79,10 +79,9 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
   const stats = React.useMemo(() => [
     { label: 'Total Orders', val: projects.length, sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
-    { label: 'Monthly Revenue', val: `${baseSymbol}${(projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) * multiplier).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
-    { label: 'Total Writers', val: freelancers.length, sub: 'Approved partners', color: 'var(--amber)', icon: '✍️' },
-    { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p._count?.logs || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
-    { label: 'Avg Project Val', val: `${baseSymbol}${projects.length ? ((projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) / projects.length) * multiplier).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
+{ label: 'Monthly Revenue', val: `${baseSymbol}${(projects.reduce((acc, p) => acc + (p.amount || 0), 0) * multiplier).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
+
+    { label: 'Avg Project Val', val: `${baseSymbol}${projects.length ? ((projects.reduce((acc, p) => acc + (p.amount || 0), 0) / projects.length) * multiplier).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
   ], [projects, freelancers, baseSymbol, multiplier]);
 
   const loadingSkeletons = (
@@ -312,7 +311,42 @@ function AdminTopbar({ section, dark, setDark, isMobile, setSidebarOpen, setSect
         </button>
 
         {/* Notification bell */}
-        <NotificationBell />
+        <NotificationBell 
+          onNavigate={(link) => {
+            if (!link) return;
+            
+            // Handle both legacy path format (/admin/orders/ID) and new query format (?tab=orders&orderId=ID)
+            const isLegacyOrder = link.includes('/orders/');
+            const url = new URL(link, window.location.origin);
+            const params = url.searchParams;
+            
+            let tab = params.get('tab');
+            let orderId = params.get('orderId');
+            
+            if (isLegacyOrder) {
+              orderId = link.split('/orders/')[1]?.split('?')[0];
+              tab = 'orders';
+            }
+
+            if (tab === 'orders' || orderId) {
+              if (orderId) setActiveOrderId(orderId);
+              setSection('orders');
+              window.history.pushState({}, '', `?tab=orders${orderId ? `&orderId=${orderId}` : ''}`);
+            } else if (tab) {
+              setSection(tab === 'notifications' ? 'notifications' : tab);
+              window.history.pushState({}, '', `?tab=${tab}`);
+            } else if (link.includes('/messages')) {
+              setSection('orders');
+              window.history.pushState({}, '', '?tab=orders');
+            } else if (link.includes('/tickets')) {
+              setSection('tickets');
+              window.history.pushState({}, '', '?tab=tickets');
+            } else if (link.includes('/finances') || link.includes('/payments')) {
+              setSection('payments');
+              window.history.pushState({}, '', '?tab=payments');
+            }
+          }}
+        />
         {/* Admin avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 10, color: '#fff' }}>SA</div>
@@ -337,6 +371,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [config, setConfig] = useState(null);
   const [displayCurrency, setDisplayCurrency] = useState('USD');
+  const [activeOrderId, setActiveOrderId] = useState(null);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -359,9 +394,10 @@ export default function App() {
       setSection('notifications');
       window.history.replaceState({}, '', window.location.pathname);
     } else if (params.get('orderId')) {
-      setSection('projects');
-      // Clean up orderId from URL after reading
-      window.history.replaceState({}, '', `${window.location.pathname}?tab=projects`);
+      const oid = params.get('orderId');
+      setActiveOrderId(oid);
+      setSection('orders');
+      // Keep orderId in URL so AdminOrders can also read it on its own mount if needed
     } else {
       const savedSection = localStorage.getItem('xw_admin_section');
       if (savedSection) setSection(savedSection);
@@ -383,7 +419,24 @@ export default function App() {
         
         clearTimeout(timeoutId);
         
+        // Debug: Log response status
+        console.log('[Admin] API Response Status:', {
+          projects: projRes.status,
+          freelancers: freeRes.status,
+          config: confRes.status
+        });
+        
         const [projData, freeData] = await Promise.all([projRes.json(), freeRes.json()]);
+        
+        // Debug: Log actual data
+        console.log('[Admin] Projects data type:', typeof projData, Array.isArray(projData));
+        console.log('[Admin] Projects data:', projData);
+        
+        // Handle error responses properly
+        if (!projRes.ok) {
+          console.error('[Admin] Projects API error:', projData);
+        }
+        
         setProjects(Array.isArray(projData) ? projData : []);
         setFreelancers(Array.isArray(freeData) ? freeData : []);
         if (confRes.ok) {
@@ -402,6 +455,26 @@ export default function App() {
     };
 
     fetchData();
+  }, []);
+
+  // Handle popstate for back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const orderIdParam = params.get('orderId');
+      
+      if (tabParam) {
+        setSection(tabParam);
+      }
+      if (orderIdParam) {
+        setActiveOrderId(orderIdParam);
+        setSection('orders');
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => { localStorage.setItem('xw_admin_section', section); }, [section]);
@@ -426,7 +499,7 @@ export default function App() {
 
   const views = useMemo(() => ({
     overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} dataLoading={dataLoading} />,
-    orders: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} isMobile={isMobile} /></div>,
+    orders: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} isMobile={isMobile} activeOrderId={activeOrderId} onOrderViewed={() => setActiveOrderId(null)} /></div>,
     integrations: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
     tickets: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
     payments: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} /></div>,
@@ -440,10 +513,44 @@ export default function App() {
     seo: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSEO /></div>,
     workflow: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
     theme: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>,
-    notifications: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><Notifications userName="Admin" isMobile={isMobile} /></div>
-  }), [section, projects, freelancers, isMobile, displayCurrency, setDisplayCurrency, config, dataLoading]);
+    notifications: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><Notifications userName="Admin" isMobile={isMobile} onNavigate={(link) => {
+          if (!link) return;
+          
+          // Handle both legacy path format (/admin/orders/ID) and new query format (?tab=orders&orderId=ID)
+          const isLegacyOrder = link.includes('/orders/');
+          const url = new URL(link, window.location.origin);
+          const params = url.searchParams;
+          
+          let tab = params.get('tab');
+          let orderId = params.get('orderId');
+          
+          if (isLegacyOrder) {
+            orderId = link.split('/orders/')[1]?.split('?')[0];
+            tab = 'orders';
+          }
+
+          if (tab === 'orders' || orderId) {
+            if (orderId) setActiveOrderId(orderId);
+            setSection('orders');
+            window.history.pushState({}, '', `?tab=orders${orderId ? `&orderId=${orderId}` : ''}`);
+          } else if (tab) {
+            setSection(tab === 'notifications' ? 'notifications' : tab);
+            window.history.pushState({}, '', `?tab=${tab}`);
+          } else if (link.includes('/messages')) {
+            setSection('orders');
+            window.history.pushState({}, '', '?tab=orders');
+          } else if (link.includes('/tickets')) {
+            setSection('tickets');
+            window.history.pushState({}, '', '?tab=tickets');
+          } else if (link.includes('/finances') || link.includes('/payments')) {
+            setSection('payments');
+            window.history.pushState({}, '', '?tab=payments');
+          }
+        }} /></div>
+  }), [section, projects, freelancers, isMobile, displayCurrency, setDisplayCurrency, config, dataLoading, activeOrderId]);
 
   return (
+    <AdminToastProvider>
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       <div style={isMobile ? {
         position: 'absolute',
@@ -471,7 +578,8 @@ export default function App() {
           {views[section] || views.overview}
         </div>
       </main>
-    </div>);
+    </div>
+    </AdminToastProvider>);
 
 }
 

@@ -192,7 +192,7 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
   );
 }
 
-function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student", isMobile }) {
+function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student", isMobile, onNavigate }) {
   const [recentNotifications, setRecentNotifications] = useState([]);
   useEffect(() => {
     const controller = new AbortController();
@@ -309,7 +309,15 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
         <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Recent Activity</h2>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflow: 'hidden' }}>
           {recentNotifications.length > 0 ? recentNotifications.map((item, i) => (
-            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < recentNotifications.length - 1 ? '1px solid var(--border2)' : 'none', cursor: 'pointer', background: item.read ? 'transparent' : 'rgba(13,148,136,0.04)' }} onClick={() => setActive('notifications')}>
+            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < recentNotifications.length - 1 ? '1px solid var(--border2)' : 'none', cursor: 'pointer', background: item.read ? 'transparent' : 'rgba(13,148,136,0.04)' }} 
+              onClick={() => {
+                if (onNavigate && item.link) {
+                  onNavigate(item.link);
+                } else {
+                  setActive('notifications');
+                }
+              }}
+            >
               <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(13,148,136,0.18)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{item.icon || '🔔'}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: 13, color: 'var(--text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: item.read ? 400 : 600 }}>{item.title}</span>
@@ -380,6 +388,31 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const [rating, setRating] = useState(5);
   const [ratingComment, setRatingComment] = useState('');
   const [ratingSuccess, setRatingSuccess] = useState(false);
+
+  const MAPPED_ORDERS = useMemo(() => projects.map(p => {
+    let displayStatus = 'In Progress';
+    let progress = 50;
+    if (p.status === 'CREATED') { displayStatus = 'Finding Writer'; progress = 10; }
+    else if (p.status === 'ASSIGNED') { displayStatus = 'Writer Assigned'; progress = 20; }
+    else if (p.status === 'REVISION') { displayStatus = 'Revision Requested'; progress = 80; }
+    else if (p.status === 'COMPLETED') { displayStatus = 'Delivered'; progress = 100; }
+    else if (p.status === 'REVIEW') { displayStatus = 'Under Review'; progress = 90; }
+    else if (p.status === 'QUALITY_CHECK') { displayStatus = 'Quality Check'; progress = 95; }
+    else if (p.status === 'UNDER_REVIEW') { displayStatus = 'Under Review'; progress = 90; }
+
+    return {
+      id: p.id,
+      displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
+      service: getStandardServiceName(p),
+      writer: p.freelancer?.name || 'Unassigned',
+      status: displayStatus,
+      due: p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A',
+      price: p.amount || 0,
+      words: 1000,
+      submitted: new Date(p.createdAt).toLocaleDateString(),
+      progress
+    };
+  }), [projects]);
 
   const o = selectedOrder ? MAPPED_ORDERS.find(x => x.id === selectedOrder) : null;
   const sc = o ? (STATUS_META[o.status] || STATUS_META['In Progress']) : null;
@@ -473,31 +506,6 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     }
     setSubmitting(false);
   };
-
-  const MAPPED_ORDERS = useMemo(() => projects.map(p => {
-    let displayStatus = 'In Progress';
-    let progress = 50;
-    if (p.status === 'CREATED') { displayStatus = 'Finding Writer'; progress = 10; }
-    else if (p.status === 'ASSIGNED') { displayStatus = 'Writer Assigned'; progress = 20; }
-    else if (p.status === 'REVISION') { displayStatus = 'Revision Requested'; progress = 80; }
-    else if (p.status === 'COMPLETED') { displayStatus = 'Delivered'; progress = 100; }
-    else if (p.status === 'REVIEW') { displayStatus = 'Under Review'; progress = 90; }
-    else if (p.status === 'QUALITY_CHECK') { displayStatus = 'Quality Check'; progress = 95; }
-    else if (p.status === 'UNDER_REVIEW') { displayStatus = 'Under Review'; progress = 90; }
-
-    return {
-      id: p.id,
-      displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
-      service: getStandardServiceName(p),
-      writer: p.freelancer?.name || 'Unassigned',
-      status: displayStatus,
-      due: p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A',
-      price: p.amount || 0,
-      words: 1000, // Dummy
-      submitted: new Date(p.createdAt).toLocaleDateString(),
-      progress
-    };
-  }), [projects]);
 
   const filtered = useMemo(() => MAPPED_ORDERS.filter(o => {
     const matchesFilter = filter === 'All' ? true :
@@ -1390,7 +1398,8 @@ function AddonRow({ checked, onChange, icon, label, sub, price }) {
   );
 }
 
-function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm }) {
+function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProfile }) {
+  const { data: session } = useSession();
   const [step, setStep] = useState(form.category ? 2 : 1);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -1458,7 +1467,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm }) {
         console.error("Error parsing pending order", e);
       }
     }
-  }, []);
+  }, [setForm]);
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -1565,8 +1574,9 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm }) {
           }
         },
         prefill: {
-          name: "Student Name",
-          email: "student@example.com",
+          name: session?.user?.name || userProfile?.name || "Student",
+          email: session?.user?.email || userProfile?.email || "",
+          contact: userProfile?.phone || "",
         },
         theme: { color: "#0d9488" },
       };
@@ -1766,8 +1776,45 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm }) {
 
 /* ── APP ── */
 export default function App() {
-  const [active, setActive] = useState('overview');
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  // Initialize active from URL immediately to prevent flash
+  const [active, setActive] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const validTabs = ['overview', 'new-order', 'services', 'orders', 'wallet', 'messages', 'notifications', 'writers', 'settings'];
+      if (tabParam && validTabs.includes(tabParam)) return tabParam;
+      // Check for order deep link via query param (from notifications)
+      if (params.get('orderId')) return 'orders';
+      // Check for order deep link via path
+      if (window.location.pathname.includes('/orders/')) return 'orders';
+      if (window.location.pathname.includes('/messages')) return 'messages';
+      const savedTab = localStorage.getItem('xw_dash_tab');
+      if (savedTab && validTabs.includes(savedTab)) return savedTab;
+    }
+    return 'overview';
+  });
+  const [selectedOrder, setSelectedOrder] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // Check query param first (from notification clicks)
+      const params = new URLSearchParams(window.location.search);
+      const orderIdParam = params.get('orderId');
+      if (orderIdParam) {
+        // Clean up orderId from URL so refresh doesn't re-select stale order
+        const tabParam = params.get('tab');
+        const newUrl = tabParam 
+          ? `${window.location.pathname}?tab=${tabParam}` 
+          : window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+        return orderIdParam;
+      }
+      
+      // Check path for deep links
+      if (window.location.pathname.includes('/orders/')) {
+        return window.location.pathname.split('/orders/')[1] || null;
+      }
+    }
+    return null;
+  });
   const [projects, setProjects] = useState([]);
   const [writers, setWriters] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
@@ -1781,35 +1828,30 @@ export default function App() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Auth guard — runs once session status is known
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
-      if (session?.user?.role !== "STUDENT") {
-        router.push("/login");
-      } else {
-        // Tab initialization after login
-        const params = new URLSearchParams(window.location.search);
-        const isCheckout = params.get('action') === 'checkout';
-        const pending = localStorage.getItem('pendingOrder');
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
 
-        if (isCheckout || pending) {
-          setActive('new-order');
-          if (pending) localStorage.removeItem('pendingOrder');
-          if (isCheckout) window.history.replaceState({}, '', window.location.pathname);
-        } else if (!active || active === 'overview') {
-          const tabParam = params.get('tab');
-          if (tabParam) {
-            setActive(tabParam);
-          } else {
-            const savedTab = localStorage.getItem('xw_dash_tab');
-            if (savedTab) setActive(savedTab);
-          }
-        }
+    if (status === 'authenticated') {
+      if (session?.user?.role !== 'STUDENT') {
+        router.push('/login');
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const isCheckout = params.get('action') === 'checkout';
+      const pending = localStorage.getItem('pendingOrder');
+
+      if (isCheckout || pending) {
+        setActive('new-order');
+        if (pending) localStorage.removeItem('pendingOrder');
+        if (isCheckout) window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, [status, session, router]);
-
+  }, [status, session?.user?.role, router]);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -1818,7 +1860,9 @@ export default function App() {
     const handlePopState = () => {
       const p = new URLSearchParams(window.location.search);
       const t = p.get('tab');
+      const orderId = p.get('orderId');
       if (t) setActive(t);
+      if (orderId) setSelectedOrder(orderId);
     };
     window.addEventListener('popstate', handlePopState);
 
@@ -1826,7 +1870,7 @@ export default function App() {
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [setSelectedOrder]);
 
   const fetchProjects = async () => {
     try {
@@ -1840,8 +1884,6 @@ export default function App() {
       setProjects(Array.isArray(data) ? data : []);
     } catch (err) {
       if (err.name !== 'AbortError') console.error("Fetch projects error:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1935,36 +1977,32 @@ export default function App() {
     }
   }, [socket, projects, session?.user?.id, session?.user?.role]);
 
+  // Persist tab to localStorage only — don't push to URL to avoid popstate loops
   useEffect(() => {
     localStorage.setItem('xw_dash_tab', active);
-    const url = new URL(window.location);
-    if (url.searchParams.get('tab') !== active) {
-      url.searchParams.set('tab', active);
-      window.history.pushState({}, '', url);
-    }
   }, [active]);
 
   const userName = useMemo(() => userProfile?.name || session?.user?.name || "Student", [userProfile, session]);
   const unreadCount = 0;
 
-  const [orderForm, setOrderForm] = useState(() => {
+const [orderForm, setOrderForm] = useState(() => {
     if (typeof window !== 'undefined') {
       const pending = localStorage.getItem('pendingOrder');
       if (pending) {
         try {
           const item = JSON.parse(pending);
           return {
-            category: item.prod.name,
+            category: item.category || item.prod?.name || '',
             variant: item.variant?.id || null,
-            details: '',
-            deadline: '',
+            details: item.details || '',
+            deadline: item.deadline || '',
             attachments: [],
             fast: item.fast || false,
             addon: item.addon || false,
             custom: item.custom || false,
-            ats: item.variant?.ats ? true : false, // In app/page.js, ATS is part of variant
-            turnaround: '72h',
-            wordCount: 500
+            ats: item.variant?.ats ? true : false,
+            turnaround: item.turnaround || '72h',
+            wordCount: item.wordCount || 500
           };
         } catch (e) {
           console.error("Failed to parse pending order", e);
@@ -1974,17 +2012,40 @@ export default function App() {
     return { category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '', attachments: [], variant: null, fast: false, addon: false, custom: false, ats: false };
   });
 
+  const handleDeepLink = useCallback((link) => {
+    if (!link) return;
+    const validTabs = ['overview', 'new-order', 'services', 'orders', 'wallet', 'messages', 'notifications', 'writers', 'settings'];
+
+    if (link.includes('/orders/')) {
+      const parts = link.split('/orders/');
+      const orderId = parts[1]?.split('?')[0];
+      if (orderId) {
+        setSelectedOrder(orderId);
+        setActive('orders');
+      }
+    } else if (link.includes('/messages')) {
+      setActive('messages');
+    } else {
+      // Parse ?tab= or bare tab name from path
+      const urlObj = new URL(link, window.location.origin);
+      const tabParam = urlObj.searchParams.get('tab');
+      if (tabParam && validTabs.includes(tabParam)) {
+        setActive(tabParam);
+      }
+    }
+  }, []);
+
   const content = useMemo(() => ({
-    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} isMobile={isMobile} />,
-    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} onOrderCreated={fetchProjects} form={orderForm} setForm={setOrderForm} />,
+    overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} isMobile={isMobile} onNavigate={handleDeepLink} />,
+    'new-order': <NewOrder setActive={setActive} isMobile={isMobile} onOrderCreated={fetchProjects} form={orderForm} setForm={setOrderForm} userProfile={userProfile} />,
     services: <ServicesCatalog setActive={setActive} setOrderForm={setOrderForm} isMobile={isMobile} />,
     orders: <Orders selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} projects={projects} setActive={setActive} isMobile={isMobile} />,
     wallet: <Wallet projects={projects} userName={userName} isMobile={isMobile} />,
     messages: <Messages projects={projects} userId={session?.user?.id} isMobile={isMobile} />,
-    notifications: <Notifications userName={userName} isMobile={isMobile} />,
+    notifications: <Notifications userName={userName} isMobile={isMobile} onNavigate={handleDeepLink} />,
     writers: <SavedWriters setActive={setActive} writers={writers} isMobile={isMobile} />,
     settings: <Settings isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
-  }), [projects, writers, userName, isMobile, userProfile, selectedOrder, socket]);
+  }), [projects, writers, userName, isMobile, userProfile, selectedOrder, socket, handleDeepLink, session, orderForm]);
 
   if (status === "loading" || loading) {
     return (
@@ -2070,7 +2131,7 @@ export default function App() {
             </button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <NotificationBell />
+            <NotificationBell onNavigate={handleDeepLink} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff' }}>{userName.split(' ').map(n => n[0]).join('').toUpperCase()}</div>
               <span style={{ fontSize: 13, fontWeight: 500 }}>{userName.split(' ')[0]}</span>

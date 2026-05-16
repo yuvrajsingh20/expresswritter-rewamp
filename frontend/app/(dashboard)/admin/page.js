@@ -41,7 +41,7 @@ const NAV = [
 
 
 /* ── OVERVIEW ── */
-function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, displayCurrency, setDisplayCurrency, config }) {
+function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, displayCurrency, setDisplayCurrency, config, dataLoading }) {
   const baseCurrency = config?.baseCurrency || 'USD';
   const baseCurrencyConfig = config?.currencies?.find(c => c.currency === baseCurrency) || { rate: 1, symbol: '$' };
   const currentDisplayConfig = config?.currencies?.find(c => c.currency === displayCurrency) || baseCurrencyConfig;
@@ -421,7 +421,7 @@ export default function App() {
   }, [dark]);
 
   const views = useMemo(() => ({
-    overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} />,
+    overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} dataLoading={dataLoading} />,
     orders: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} isMobile={isMobile} /></div>,
     integrations: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
     tickets: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
@@ -437,7 +437,7 @@ export default function App() {
     workflow: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
     theme: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>,
     notifications: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><Notifications userName="Admin" isMobile={isMobile} /></div>
-  }), [section, projects, freelancers, isMobile, displayCurrency, setDisplayCurrency, config]);
+  }), [section, projects, freelancers, isMobile, displayCurrency, setDisplayCurrency, config, dataLoading]);
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>

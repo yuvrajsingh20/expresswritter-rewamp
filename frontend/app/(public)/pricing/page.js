@@ -1,7 +1,9 @@
+"use client";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import PublicNavbar from '@/components/PublicNavbar';
 import PublicFooter from '@/components/PublicFooter';
 import '@/app/(auth)/landing.css';
-
 export default function PricingPage() {
 
   const [service, setService] = useState('Academic Writing');

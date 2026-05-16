@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
-export default function Notifications({ userName = "User", isMobile }) {
+export default function Notifications({ userName = "User", isMobile, onNavigate }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,16 +59,26 @@ export default function Notifications({ userName = "User", isMobile }) {
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(128,128,128,0.05)'}
             onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(13,148,136,0.04)'}
           >
-            {!n.read && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--teal)' }} />}
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-              {n.icon || '🔔'}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                <h3 style={{ fontSize: 15, fontWeight: n.read ? 400 : 600, color: 'var(--text)' }}>{n.title}</h3>
-                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{n.createdAt ? new Date(n.createdAt).toLocaleDateString() : ''} {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+            <div
+              onClick={() => {
+                if (onNavigate && n.link) {
+                  onNavigate(n.link);
+                }
+              }}
+              style={{ display: 'flex', gap: 16, width: '100%' }}
+            >
+              {!n.read && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--teal)' }} />}
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                {n.icon || '🔔'}
               </div>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8 }}>{n.msg}</p>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: n.read ? 400 : 600, color: 'var(--text)' }}>{n.title}</h3>
+                  <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{n.createdAt ? new Date(n.createdAt).toLocaleDateString() : ''} {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8 }}>{n.msg}</p>
+                {n.link && <span style={{ fontSize: 12, color: 'var(--teal-light)', fontWeight: 600 }}>View Details →</span>}
+              </div>
             </div>
           </div>
         )) : (

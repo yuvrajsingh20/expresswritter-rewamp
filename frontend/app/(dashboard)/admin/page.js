@@ -63,7 +63,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
     { label: 'Monthly Revenue', val: `${baseSymbol}${(projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) * multiplier).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
     { label: 'Total Writers', val: freelancers.length, sub: 'Approved partners', color: 'var(--amber)', icon: '✍️' },
-    { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p.logs?.length || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
+    { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p._count?.logs || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
     { label: 'Avg Project Val', val: `${baseSymbol}${projects.length ? ((projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) / projects.length) * multiplier).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
   ];
 
@@ -331,6 +331,7 @@ export default function App() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 

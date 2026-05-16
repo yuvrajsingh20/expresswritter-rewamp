@@ -27,11 +27,13 @@ export async function PATCH(req, { params }) {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.isVerified !== undefined && { isVerified: data.isVerified }),
         ...(data.badge !== undefined && { badge: data.badge }),
+        ...(data.rejectionReason !== undefined && { rejectionReason: data.rejectionReason }),
       },
       create: {
         userId: id,
         status: data.status || 'Pending Approval',
         isVerified: data.isVerified || false,
+        rejectionReason: data.rejectionReason || null,
       }
     });
 
@@ -60,6 +62,7 @@ export async function PATCH(req, { params }) {
           `
         });
       } else if (prevStatus === 'Pending Approval' && data.status === 'Rejected') {
+        const reason = data.rejectionReason || "Your application did not meet our current requirements.";
         await dispatchNotification('email', {
           email: user.email,
           subject: 'Application Status - Express Writer',
@@ -67,6 +70,10 @@ export async function PATCH(req, { params }) {
             <h1>Hello ${user.name},</h1>
             <p>Thank you for your interest in Express Writer.</p>
             <p>After reviewing your application, we regret to inform you that we cannot proceed at this time.</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin: 20px 0;">
+              <strong style="color: #475569; font-size: 14px; text-transform: uppercase;">Reason for Rejection:</strong>
+              <p style="color: #64748b; margin-top: 8px;">${reason}</p>
+            </div>
             <p>We appreciate your time and wish you the best in your future endeavors.</p>
           `
         });

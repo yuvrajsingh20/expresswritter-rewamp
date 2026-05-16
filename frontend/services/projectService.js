@@ -67,23 +67,48 @@ export const getProjectsByUser = async (userId, role) => {
     ADMIN: {}, // Admins see everything
   }[role] || {};
 
+  const is_admin = role === 'ADMIN';
+
   return await prisma.project.findMany({
     where: whereClause,
-    include: {
-      freelancer: { select: { id: true, name: true, role: true, email: true } },
-      collaborators: { select: { id: true, name: true, role: true, email: true } },
-      subAdmin: { select: { name: true, role: true, email: true } },
-      student: { select: { id: true, name: true, role: true, email: true } },
+    orderBy: { createdAt: 'desc' },
+    take: is_admin ? 400 : 100, // Added a safety limit for freelancers too
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      deadline: true,
+      createdAt: true,
+      amount: true,
+      serviceType: true,
+      studentId: true,
+      freelancerId: true,
+      // Only select what we need from relations
+      student: { select: { id: true, name: true, role: true } },
+      freelancer: { select: { id: true, name: true, role: true } },
+      subAdmin: is_admin ? { select: { id: true, name: true } } : false,
       orders: { select: { paymentStatus: true } },
-      logs: { orderBy: { timestamp: 'desc' }, take: 5 },
-      messages: { 
-        orderBy: { createdAt: 'asc' },
-        include: {
+      // Summary counts are much lighter than full arrays
+      _count: {
+        select: {
+          messages: true,
+          logs: true
+        }
+      },
+      // If messages are needed (for non-admins), select ONLY essential fields
+      messages: is_admin ? false : { 
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          senderId: true,
           sender: { select: { id: true, name: true, role: true } }
         }
       },
+      // Exclude heavy description and attachments from the list view
     },
-    orderBy: { createdAt: 'desc' },
   });
 };
 

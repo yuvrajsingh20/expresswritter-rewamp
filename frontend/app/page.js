@@ -1,45 +1,37 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import './(auth)/landing.css';
+import servicesData from '@/data/services_data.json';
 
-/* ─── DATA ─── */
-const STATS = [
-  { k: '12,400+', l: 'Orders Delivered' },
-  { k: '1,200+', l: 'Vetted Writers' },
-  { k: '4.9 / 5', l: 'Avg. Rating' },
-  { k: '98%', l: 'On-Time Rate' },
-];
+const fmt = n => typeof n === 'number' ? `₹${n.toLocaleString('en-IN')}` : n;
 
-const SERVICES = [
-  { icon: '🎓', cat: 'Academic', name: 'Statement of Purpose', price: 'from ₹4,499', desc: 'Admission-ready SOPs for Bachelors, Masters, MBA & PhD', pop: true },
-  { icon: '📝', cat: 'Academic', name: 'Personal Statement', price: 'from ₹2,499', desc: 'UK, EU & global admission essays' },
-  { icon: '📜', cat: 'Academic', name: 'Letters of Recommendation', price: 'from ₹1,499', desc: 'Faculty, employer, supervisor LORs' },
-  { icon: '🛂', cat: 'Visa', name: 'Visa SOP & Appeals', price: 'from ₹3,999', desc: 'Country-specific Visa SOPs · rejection appeals', pop: true },
-  { icon: '✉️', cat: 'Visa', name: 'Invitation Letters', price: 'from ₹699', desc: 'Embassy-grade visit visa documents' },
-  { icon: '💼', cat: 'Career', name: 'Resume & CV', price: 'from ₹1,999', desc: 'ATS-optimized resumes for every industry', pop: true },
-  { icon: '💎', cat: 'Career', name: 'LinkedIn Profile', price: 'from ₹1,499', desc: 'Full rewrite with keyword strategy' },
-  { icon: '📖', cat: 'Career', name: 'Cover Letters', price: 'from ₹899', desc: 'Tailored to each role and ATS-friendly' },
-  { icon: '✍️', cat: 'Content', name: 'Blog & SEO Articles', price: 'from ₹0.50/word', desc: 'Long-form, SEO-optimized content' },
-  { icon: '🧬', cat: 'Content', name: 'Thesis & Dissertation', price: 'from ₹15,000', desc: 'PhD-level research writing & editing' },
-  { icon: '📊', cat: 'Business', name: 'Business Proposals', price: 'from ₹4,999', desc: 'Pitch decks, RFPs, investor proposals' },
-  { icon: '📑', cat: 'Business', name: 'White Papers & Reports', price: 'from ₹0.80/word', desc: 'Authoritative B2B and research reports' },
-  { icon: '🗽', cat: 'Visa', name: 'B1B2 Visa Support', price: '₹25,000', desc: 'Complete B1/B2 assistance including slot booking & mocks' },
-  { icon: '📜', cat: 'Business', name: 'GMAT/GRE Waiver', price: '₹1,499', desc: 'Professional letters to waive standardized test requirements' },
-  { icon: '💸', cat: 'Business', name: 'App Fee Waiver', price: '₹1,499', desc: 'Request application fee waivers professionally' },
-  { icon: '🖋️', cat: 'Content', name: 'Media Write-up', price: 'TBD', desc: 'Professional write-ups for media, news, and magazines' },
-  { icon: '🎓', cat: 'Academic', name: 'Scholarship Essay', price: 'TBD', desc: 'Compelling essays for securing university funding' },
-  { icon: '✉️', cat: 'Career', name: 'Email Templates', price: '₹399', desc: 'Professional templates for networking and outreach' }
-];
+const CATEGORIES = servicesData.categories.map(c => ({
+  id: c.id,
+  label: c.name,
+  icon: c.id === 'sop' ? '🎓' : c.id === 'lor' ? '📜' : c.id === 'resume' ? '💼' : c.id === 'visa_application' ? '🛂' : '📄'
+}));
 
-const STEPS = [
-  { n: '01', t: 'Choose Service', d: 'Pick from 12 categories. Clear pricing, real timelines, no surprises.', icon: '🎯' },
-  { n: '02', t: 'Brief Your Writer', d: 'Upload your requirements. Smart matching pairs you with a vetted expert.', icon: '📋' },
-  { n: '03', t: 'Track in Real-Time', d: 'Watch progress, message your writer, request milestones from your dashboard.', icon: '📡' },
-  { n: '04', t: 'Approve & Pay', d: 'Get unlimited revisions on your draft. Pay only when you\'re 100% happy.', icon: '✓' },
-];
+const CATALOG = Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) => 
+  svcs.map((s, idx) => {
+    const basePrice = typeof s.price === 'string' ? parseInt(s.price.replace(/[^\d]/g, '')) || 2499 : s.price || 2499;
+    return {
+      id: s.id,
+      cat: catId.charAt(0).toUpperCase() + catId.slice(1).replace('_', ' '),
+      icon: catId === 'sop' ? '🎓' : catId === 'lor' ? '📜' : catId === 'resume' ? '💼' : catId === 'visa_application' ? '🛂' : '📄',
+      name: s.name,
+      tagline: s.description,
+      desc: s.description,
+      delivery: '3-5 days',
+      variants: [
+        { id: s.id + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
+        { id: s.id + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: catId === 'resume' ? 299 : undefined }
+      ]
+    };
+  })
+);
 
 const WRITERS = [
   { n: 'Dr. Amara Singh', av: 'AS', c: '#0d9488', spec: 'SOP · MBA Admissions', exp: '9 yrs · 340 orders', rate: 4.98, price: '₹7,999+', badge: 'Elite', tags: ['PhD Stanford', 'Wharton MBA', 'Top 1%'] },
@@ -54,26 +46,316 @@ const FEATURES = [
   { icon: '🛡️', t: 'Plagiarism-Free Guarantee', d: 'Turnitin-style report included on every delivery. 100% original or refund.' },
   { icon: '🔒', t: 'NDA-Protected', d: 'Every writer signs a confidentiality agreement. Your work is yours, forever.' },
   { icon: '⚡', t: 'Express Delivery', d: '24-hour rush option available on most services. Late = full refund, no questions.' },
-  { icon: '♾️', t: 'Unlimited Revisions', d: 'Revise until you\'re satisfied. We don\'t close orders until you say so.' },
+  { icon: '🔄', t: 'Unlimited Revisions', d: 'Revise until you\'re satisfied. We don\'t close orders until you say so.' },
   { icon: '💬', t: 'Direct Writer Chat', d: 'Talk to your writer 1-on-1 inside our messaging platform. No middlemen.' },
   { icon: '💸', t: 'Money-Back Promise', d: 'Not happy after revisions? Full refund within 7 days, no fine print.' },
 ];
 
+
 const TESTIMONIALS = [
   { q: 'My SOP went from rejections to Stanford, Wharton, and LBS admits in one cycle. The writer understood my engineering background and translated it into a story admissions actually wanted to read.', n: 'Meera Krishnan', r: "Admitted Stanford MBA '26", c: '#0d9488' },
-  { q: "I've worked with three other content agencies. Xpresswriters is the first one where I didn't have to rewrite half the draft. They actually researched our space.", n: 'Daniel Park', r: 'Marketing Director, FinTech SaaS', c: '#3b82f6' },
+  { q: "I’ve worked with three other content agencies. Xpresswriters is the first one where I didn’t have to rewrite half the draft. They actually researched our space.", n: 'Daniel Park', r: 'Marketing Director, FinTech SaaS', c: '#3b82f6' },
   { q: 'My Canadian visa was rejected twice. The appeal SOP from Priya got me approved in 3 weeks. I genuinely cannot recommend this service enough — they saved my career path.', n: 'Aditi Kapoor', r: 'Software Engineer, Toronto', c: '#a78bfa' },
 ];
 
 const FAQ = [
-  { q: 'How is Xpresswriters different from other writing services?', a: "We're a marketplace, not a content mill. You see the actual writer's profile, ratings, and portfolio before you hire. Every order has a real human accountable to you — no anonymous teams, no rewrites by junior staff." },
+  { q: 'How is Xpresswriters different from other writing services?', a: "We’re a marketplace, not a content mill. You see the actual writer’s profile, ratings, and portfolio before you hire. Every order has a real human accountable to you — no anonymous teams, no rewrites by junior staff." },
   { q: 'Is the work AI-generated?', a: 'No. We\'re an AI-detection-friendly platform — every delivery passes GPTZero, Originality.ai, and Turnitin. Writers may use AI as a research tool, but the writing is human and original.' },
-  { q: "What if I'm not happy with the draft?", a: "Unlimited free revisions within scope. If that still doesn't work, you can request a writer change or a full refund within 7 days of delivery — no questions, no fine print." },
+  { q: "What if I’m not happy with the draft?", a: "Unlimited free revisions within scope. If that still doesn’t work, you can request a writer change or a full refund within 7 days of delivery — no questions, no fine print." },
   { q: 'How fast can you deliver?', a: 'Most services have a 24-48 hour express option. A 1,500-word SOP can be turned around in 24 hours; complex thesis chapters need 5-10 days. Every product page shows exact timelines.' },
   { q: 'Do you guarantee admission / visa approval?', a: 'No ethical writing service can guarantee outcomes — those depend on your profile, target school, and a dozen other factors. What we guarantee is the highest-quality document we can produce for your case.' },
 ];
 
-/* ─── HERO ─── */
+/* ─── BUTTONS ─── */
+function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabled, full }) {
+  const [hov, setHov] = useState(false);
+  const v = {
+    primary: { bg: hov ? '#0f766e' : 'var(--teal)', c: '#fff', b: 'transparent' },
+    outline: { bg: hov ? 'rgba(13,148,136,0.08)' : 'transparent', c: 'var(--text)', b: hov ? 'var(--teal)' : 'var(--border)' },
+    ghost: { bg: hov ? 'var(--surface2)' : 'transparent', c: 'var(--text-muted)', b: 'transparent' },
+    gold: { bg: hov ? '#d4b53c' : 'var(--gold)', c: '#0a0a14', b: 'transparent' },
+  }[variant];
+  const s = { sm: { p: '7px 12px', f: 11.5 }, md: { p: '10px 18px', f: 13 }, lg: { p: '14px 26px', f: 14 } }[size];
+  return (
+    <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} disabled={disabled} style={{ padding: s.p, borderRadius: 7, border: `1.5px solid ${v.b}`, background: v.bg, color: v.c, fontSize: s.f, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)', display: full ? 'flex' : 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, transition: 'all .15s', opacity: disabled ? 0.5 : 1, width: full ? '100%' : 'auto' }}>
+      {icon && <span>{icon}</span>}
+      {children}
+    </button>
+  );
+}
+
+/* ─── NAVBAR ─── */
+function Navbar({ cart, onCartClick, onLogin }) {
+  return (
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(10,10,20,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>X</div>
+        <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
+      </Link>
+      <div style={{ display: 'flex', gap: 18, marginLeft: 28 }}>
+        {[
+          ['Services', '/services', false],
+          ['Track Order', '/track', false],
+          ['Help', '/help', false],
+          ['About', '/about', false]
+        ].map(([l, h, act]) => (
+          <a key={l} href={h} style={{ fontSize: 13.5, color: act ? 'var(--teal-light)' : 'var(--text-muted)', textDecoration: 'none', fontWeight: act ? 600 : 500, padding: '6px 0', borderBottom: act ? '2px solid var(--teal)' : '2px solid transparent' }}>{l}</a>
+        ))}
+      </div>
+      <div style={{ flex: 1 }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={onCartClick} style={{ position: 'relative', width: 38, height: 38, borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 16, fontFamily: 'var(--font)' }}>🛒
+          {cart.length > 0 && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: 'var(--teal)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg)', animation: 'bounce .4s ease' }}>{cart.length}</span>}
+        </button>
+        <Btn variant="ghost" onClick={onLogin}>Sign In</Btn>
+        <Btn variant="primary" onClick={onLogin}>Order Now</Btn>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── PRODUCT CARD ─── */
+function ProductCard({ prod, onOpen }) {
+  const [hov, setHov] = useState(false);
+  const items = prod.variants || prod.tiers || [];
+  const minPrice = Math.min(...items.map(v => typeof v.price === 'number' ? v.price : Infinity).filter(p => isFinite(p)));
+  return (
+    <div onClick={() => onOpen(prod)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
+      background: hov ? 'var(--surface2)' : 'var(--surface)', border: `1px solid ${hov ? 'var(--teal)' : 'var(--border)'}`, borderRadius: 12, padding: '22px 22px 18px', cursor: 'pointer', transition: 'all .2s', position: 'relative', overflow: 'hidden',
+      transform: hov ? 'translateY(-2px)' : 'translateY(0)',
+      boxShadow: hov ? '0 12px 32px rgba(13,148,136,0.15)' : 'none',
+      animation: 'fadeUp .3s ease both'
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: hov ? 3 : 0, background: 'linear-gradient(90deg,var(--teal),var(--teal-light))', transition: 'height .2s' }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 10, background: 'linear-gradient(135deg,rgba(13,148,136,0.2),rgba(13,148,136,0.05))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{prod.icon}</div>
+        <span style={{ padding: '3px 9px', borderRadius: 4, background: 'var(--surface3)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{prod.cat}</span>
+      </div>
+      <h3 style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 5, lineHeight: 1.3 }}>{prod.name}</h3>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, fontWeight: 300, marginBottom: 14, minHeight: 36 }}>{prod.tagline}</p>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Starting at</span>
+        <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--teal-light)', letterSpacing: '-0.02em' }}>{fmt(minPrice)}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        <span style={{ fontSize: 10.5, color: 'var(--text-dim)', padding: '2px 8px', background: 'var(--surface2)', borderRadius: 4 }}>⏱ {prod.delivery}</span>
+        <span style={{ fontSize: 10.5, color: 'var(--text-dim)', padding: '2px 8px', background: 'var(--surface2)', borderRadius: 4 }}>{items.length} variants</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+        <span style={{ fontSize: 11.5, color: hov ? 'var(--teal-light)' : 'var(--text-muted)', fontWeight: 600, transition: 'color .15s' }}>View pricing matrix →</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PRODUCT DETAIL DRAWER ─── */
+function ProductDrawer({ prod, onClose, onAdd }) {
+  const [variant, setVariant] = useState(null);
+  const [fast, setFast] = useState(false);
+  const [addon, setAddon] = useState(false);
+  const [custom, setCustom] = useState(false);
+  useEffect(() => { setVariant(null); setFast(false); setAddon(false); setCustom(false); }, [prod]);
+  if (!prod) return null;
+  const items = prod.variants || prod.tiers || [];
+
+  const compute = () => {
+    if (!variant || typeof variant.price !== 'number') return null;
+    let total = variant.price;
+    let breakdown = [{ l: variant.label, v: variant.price }];
+    if (fast && typeof variant.fast === 'number') { total += variant.fast; breakdown.push({ l: 'Fast track delivery', v: variant.fast }); }
+    if (addon && typeof variant.addon === 'number') { total += variant.addon; breakdown.push({ l: '+500 words addon', v: variant.addon }); }
+    if (custom && typeof variant.custom === 'number') { total += variant.custom; breakdown.push({ l: 'Customisation', v: variant.custom }); }
+    if (variant.ats) { total += variant.ats; breakdown.push({ l: 'ATS Optimization', v: variant.ats }); }
+    return { total, breakdown };
+  };
+  const calc = compute();
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 80, animation: 'fadeIn .2s ease' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(620px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 90, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
+        <div style={{ padding: '22px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+          <div style={{ width: 54, height: 54, borderRadius: 12, background: 'linear-gradient(135deg,rgba(13,148,136,0.25),rgba(13,148,136,0.08))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{prod.icon}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 4, background: 'var(--surface3)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>{prod.cat}</div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 5, lineHeight: 1.25 }}>{prod.name}</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.55 }}>{prod.tagline}</p>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font)', flexShrink: 0 }}>✕</button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+          <p style={{ fontSize: 13.5, color: 'var(--text)', lineHeight: 1.65, marginBottom: 24, fontWeight: 300 }}>{prod.desc}</p>
+
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>Choose your variant</div>
+          <div style={{ display: 'grid', gap: 8, marginBottom: 24 }}>
+            {items.map(v => (
+              <button key={v.id} onClick={() => setVariant(v)} style={{
+                textAlign: 'left', padding: '14px 16px', borderRadius: 9, border: variant?.id === v.id ? '1.5px solid var(--teal)' : '1px solid var(--border)',
+                background: variant?.id === v.id ? 'rgba(13,148,136,0.1)' : 'var(--surface2)',
+                color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                display: 'grid', gridTemplateColumns: '1fr auto', gap: 14, alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 7 }}>
+                    {v.label}
+                    {variant?.id === v.id && <span style={{ color: 'var(--teal-light)', fontSize: 13 }}>✓</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <span>📝 {v.words}</span>
+                    <span>⏱ {v.delivery}</span>
+                    {v.revisions && <span>🔁 {v.revisions} revisions</span>}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--teal-light)', letterSpacing: '-0.02em' }}>{typeof v.price === 'number' ? fmt(v.price) : v.price}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {variant && (<>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>Customisations & Add-ons</div>
+            <div style={{ display: 'grid', gap: 8, marginBottom: 24 }}>
+              {typeof variant.fast === 'number' && <AddonRow checked={fast} onChange={setFast} icon="⚡" label="Fast Track Delivery" sub="Get it 2-3× faster — same priority writer" price={variant.fast} />}
+              {typeof variant.addon === 'number' && <AddonRow checked={addon} onChange={setAddon} icon="📝" label="+500 words content" sub="Add extra detail and depth" price={variant.addon} />}
+              {typeof variant.custom === 'number' && <AddonRow checked={custom} onChange={setCustom} icon="✨" label="Customisation" sub="Tailor to specific requirements" price={variant.custom} />}
+              {variant.ats && <div style={{ padding: '12px 14px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 10 }}><span>🤖</span><div><div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>ATS Format</div>+₹{variant.ats} for ATS-optimized version</div></div>}
+              {variant.note && <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, fontSize: 11.5, color: 'var(--amber)', lineHeight: 1.5 }}>ℹ {variant.note}</div>}
+            </div>
+          </>)}
+
+          <div style={{ padding: '14px 16px', background: 'rgba(13,148,136,0.05)', border: '1px solid rgba(13,148,136,0.15)', borderRadius: 9, fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
+            <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 5 }}>What's included</div>
+            • Hand-crafted by domain expert writers · • 2 free revisions on most plans · • Plagiarism-free with originality report · • Full IP transferred to you · • In-app messaging with your writer
+          </div>
+        </div>
+
+        {variant && calc && (<div style={{ borderTop: '1px solid var(--border)', padding: '18px 28px', background: 'var(--surface2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>Total</div>
+              <div style={{ fontSize: 30, fontWeight: 700, color: 'var(--teal-light)', letterSpacing: '-0.02em', lineHeight: 1 }}>{fmt(calc.total)}</div>
+            </div>
+            <div style={{ fontSize: 10.5, color: 'var(--text-dim)', textAlign: 'right', lineHeight: 1.6 }}>
+              {calc.breakdown.map(b => (<div key={b.l}>{b.l} <span style={{ color: 'var(--text-muted)' }}>{fmt(b.v)}</span></div>))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn size="lg" variant="outline" full onClick={() => { onAdd({ prod, variant, fast, addon, custom, total: calc.total }); }}>🛒 Add to Cart</Btn>
+            <Btn size="lg" variant="primary" full onClick={() => { onAdd({ prod, variant, fast, addon, custom, total: calc.total }, true); }}>Buy Now →</Btn>
+          </div>
+        </div>)}
+      </div>
+    </>
+  );
+}
+
+function AddonRow({ checked, onChange, icon, label, sub, price }) {
+  return (
+    <button onClick={() => onChange(!checked)} style={{
+      textAlign: 'left', padding: '12px 14px', borderRadius: 8, border: checked ? '1.5px solid var(--teal)' : '1px solid var(--border)',
+      background: checked ? 'rgba(13,148,136,0.1)' : 'var(--surface2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+      display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: 12, alignItems: 'center'
+    }}>
+      <div style={{ width: 18, height: 18, borderRadius: 5, border: checked ? 'none' : '1.5px solid var(--text-dim)', background: checked ? 'var(--teal)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{checked ? '✓' : ''}</div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1 }}>{icon} {label}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 300 }}>{sub}</div>
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--teal-light)' }}>+{fmt(price)}</div>
+    </button>
+  );
+}
+
+/* ─── CART DRAWER ─── */
+function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
+  if (!open) return null;
+  const subtotal = cart.reduce((s, i) => s + i.total, 0);
+  const fee = Math.round(subtotal * 0.05);
+  const tax = Math.round((subtotal + fee) * 0.18);
+  const total = subtotal + fee + tax;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, animation: 'fadeIn .2s' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(480px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 110, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div><div style={{ fontSize: 17, fontWeight: 700 }}>Your Cart</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{cart.length} {cart.length === 1 ? 'item' : 'items'}</div></div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font)' }}>✕</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: cart.length ? '12px 0' : '40px 24px' }}>
+          {cart.length === 0 ? <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.4 }}>🛒</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Your cart is empty</div>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 18 }}>Browse our services to add items</div>
+            <Btn variant="primary" onClick={onClose}>Browse Services</Btn>
+          </div> : cart.map((item, i) => (<div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid var(--border2)', display: 'flex', gap: 13 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 9, background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.prod.icon}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{item.prod.name}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginBottom: 5 }}>{item.variant.label}</div>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+                {item.fast && <span style={{ fontSize: 9.5, padding: '1px 6px', borderRadius: 3, background: 'rgba(245,200,66,0.15)', color: 'var(--gold)', fontWeight: 600, letterSpacing: '0.04em' }}>⚡ FAST TRACK</span>}
+                {item.addon && <span style={{ fontSize: 9.5, padding: '1px 6px', borderRadius: 3, background: 'rgba(13,148,136,0.15)', color: 'var(--teal-light)', fontWeight: 600, letterSpacing: '0.04em' }}>+500 WORDS</span>}
+                {item.custom && <span style={{ fontSize: 9.5, padding: '1px 6px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: '#a78bfa', fontWeight: 600, letterSpacing: '0.04em' }}>✨ CUSTOM</span>}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--teal-light)' }}>{fmt(item.total)}</div>
+                <button onClick={() => setCart(cart.filter((_, idx) => idx !== i))} style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font)' }}>Remove</button>
+              </div>
+            </div>
+          </div>))}
+        </div>
+        {cart.length > 0 && <div style={{ padding: '18px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
+          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'grid', gap: 5, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal</span><span style={{ color: 'var(--text)' }}>{fmt(subtotal)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Platform fee (5%)</span><span style={{ color: 'var(--text)' }}>{fmt(fee)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>GST (18%)</span><span style={{ color: 'var(--text)' }}>{fmt(tax)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 4, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}><span>Total</span><span style={{ color: 'var(--teal-light)' }}>{fmt(total)}</span></div>
+          </div>
+          <Btn variant="primary" size="lg" full onClick={onCheckout}>Proceed to Checkout →</Btn>
+          <div style={{ textAlign: 'center', fontSize: 10.5, color: 'var(--text-dim)', marginTop: 10 }}>🔒 Secured by Stripe & Razorpay · No login required to start</div>
+        </div>}
+      </div>
+    </>
+  );
+}
+
+/* ─── JOURNEY DIAGRAM ─── */
+function Journey() {
+  const steps = [
+    { n: 1, t: 'Browse', d: 'Explore 16 services across 70+ variants', i: '🔍' },
+    { n: 2, t: 'Customize', d: 'Pick variant, add fast-track & extras', i: '⚙️' },
+    { n: 3, t: 'Cart', d: 'Bundle multiple services together', i: '🛒' },
+    { n: 4, t: 'Sign Up', d: 'Create account or continue as guest', i: '🔐' },
+    { n: 5, t: 'Brief', d: 'Share requirements & deadline', i: '📋' },
+    { n: 6, t: 'Pay', d: 'Razorpay, Stripe, UPI — all secured', i: '💳' },
+    { n: 7, t: 'Assigned', d: 'CRM auto-routes to best writer (≤30 min)', i: '🎯' },
+    { n: 8, t: 'Deliver', d: 'Track progress, chat, approve, invoice', i: '✅' },
+  ];
+  return (
+    <div id="how" style={{ padding: '56px 32px', maxWidth: 1320, margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: 36 }}>
+        <div style={{ display: 'inline-flex', padding: '4px 11px', borderRadius: 5, background: 'rgba(13,148,136,0.15)', marginBottom: 12, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--teal-light)' }}>End-to-End Journey</div>
+        <h2 className="h2" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 8 }}>From browse to delivery in 8 steps</h2>
+        <p className="lead" style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300, maxWidth: 580, margin: '0 auto' }}>Frictionless ordering with automatic CRM integration — every order flows from website → checkout → writer assignment → delivery.</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+        {steps.map((s, i) => (<div key={s.n} style={{ position: 'relative', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 11, padding: '20px 18px', animation: `fadeUp .3s ease ${i * .05}s both` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: 'linear-gradient(135deg,rgba(13,148,136,0.2),rgba(13,148,136,0.06))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{s.i}</div>
+            <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-dim)' }}>STEP {s.n}</span>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{s.t}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, fontWeight: 300 }}>{s.d}</div>
+          {(i + 1) % 4 !== 0 && i < steps.length - 1 && <div style={{ position: 'absolute', right: -9, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, borderRadius: '50%', background: 'var(--bg)', border: '2px solid var(--teal)', color: 'var(--teal-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, zIndex: 2 }}>→</div>}
+        </div>))}
+      </div>
+    </div>
+  );
+}
+
+// ── EXISTING PAGE.JS COMPONENTS THAT WE KEEP ── //
 function Hero() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -89,7 +371,7 @@ function Hero() {
     tick();
   }, []);
   return (
-    <section style={{ position: 'relative', minHeight: '82vh', padding: '80px 32px 100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+    <section style={{ position: 'relative', minHeight: '82vh', padding: '120px 32px 100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
       <div className="hero-bg">
         <div className="hero-grid" />
         <div className="hero-orb1" />
@@ -127,10 +409,10 @@ function Hero() {
           </div>))}
         </div>
       </div>
-    </section>);
+    </section>
+  );
 }
 
-/* ─── TRUST MARQUEE ─── */
 function TrustBar() {
   const items = ['🎓 University of Cambridge applicants', '💼 Goldman Sachs alumni', '✈️ Canadian Embassy approved', '📚 Stanford GSB admits', '🚀 Y Combinator founders', '🏆 Fulbright scholars', '🌍 IELTS 8+ holders', '💎 LinkedIn Top Voices'];
   const doubled = [...items, ...items];
@@ -144,119 +426,6 @@ function TrustBar() {
     </section>);
 }
 
-/* ─── SERVICES GRID ─── */
-function ServiceModal({ service, onClose }) {
-  const router = useRouter();
-  if (!service) return null;
-
-  const handleOrder = () => {
-    localStorage.setItem('pendingOrder', JSON.stringify({ category: service.name }));
-    router.push('/login');
-  };
-
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 32, maxWidth: 500, width: '100%', position: 'relative', animation: 'fadeUp 0.3s ease' }} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 24, cursor: 'pointer' }}>&times;</button>
-        <div style={{ width: 60, height: 60, borderRadius: 12, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, marginBottom: 20 }}>{service.icon}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-light)', textTransform: 'uppercase', marginBottom: 8 }}>{service.cat}</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>{service.name}</h2>
-        <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>{service.desc}</p>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, padding: '16px', background: 'var(--surface2)', borderRadius: 12 }}>
-          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Estimated Price</span>
-          <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--teal-light)' }}>{service.price}</span>
-        </div>
-        <button onClick={handleOrder} className="btn-teal" style={{ width: '100%', justifyContent: 'center' }}>Order this Service →</button>
-      </div>
-    </div>
-  );
-}
-
-function Services() {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const [selectedService, setSelectedService] = useState(null);
-  const [expanded, setExpanded] = useState(false);
-  const cats = ['All', 'Academic', 'Visa', 'Career', 'Content', 'Business'];
-  const [tab, setTab] = useState('All');
-  const filtered = tab === 'All' ? SERVICES : SERVICES.filter(s => s.cat === tab);
-  const displayServices = expanded ? filtered : filtered.slice(0, 12);
-  return (
-    <section className="section" id="services">
-      <div className="container">
-        <div className="section-head">
-          <div className="eyebrow" style={{ justifyContent: 'center' }}>What we write</div>
-          <h2 className="h2" style={{ marginBottom: 14 }}>Every type of content, <span className="gradient-text">crafted by experts</span></h2>
-          <p className="lead">12 service categories, transparent pricing, real human writers — not AI. Browse below or jump to the catalog.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 36, flexWrap: 'wrap' }}>
-          {cats.map(c => (
-            <button key={c} onClick={() => setTab(c)} style={{ padding: '8px 16px', borderRadius: 7, border: tab === c ? '1.5px solid var(--teal)' : '1.5px solid var(--border)', background: tab === c ? 'rgba(13,148,136,0.12)' : 'transparent', color: tab === c ? 'var(--teal-light)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s' }}>{c}</button>
-          ))}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
-          {displayServices.map((s, i) => (
-            <div key={i} onClick={() => {
-              if (session) {
-                router.push('/student?tab=new-order');
-              } else {
-                setSelectedService(s);
-              }
-            }} className="card" style={{ cursor: 'pointer', textDecoration: 'none', color: 'var(--text)', position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {s.pop && <div style={{ position: 'absolute', top: 14, right: 14, padding: '3px 8px', borderRadius: 4, background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)', color: 'var(--teal-light)', fontSize: 9, fontWeight: 700, letterSpacing: '0.06em' }}>POPULAR</div>}
-              <div style={{ width: 42, height: 42, borderRadius: 9, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{s.icon}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{s.cat}</div>
-              <h3 className="h3" style={{ fontSize: 16 }}>{s.name}</h3>
-              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.55, flex: 1 }}>{s.desc}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingTop: 12, borderTop: '1px solid var(--border2)' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{s.price}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Details →</span>
-              </div>
-            </div>))}
-        </div>
-        <div style={{ textAlign: 'center', marginTop: 36 }}>
-          {!expanded ? (
-            <button className="btn-outline-teal" onClick={() => {
-              if (session) {
-                router.push('/student?tab=new-order');
-              } else {
-                setExpanded(true);
-                const grid = document.querySelector('.section-head');
-                if (grid) grid.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}>View all {SERVICES.length} services & pricing ↓</button>
-          ) : (
-            <button className="btn-outline-teal" onClick={() => setExpanded(false)}>Show Less ↑</button>
-          )}
-        </div>
-        <ServiceModal service={selectedService} onClose={() => setSelectedService(null)} />
-      </div>
-    </section>);
-}
-
-/* ─── HOW IT WORKS ─── */
-function HowItWorks() {
-  return (
-    <section className="section" style={{ background: 'linear-gradient(180deg,transparent,rgba(13,148,136,0.04),transparent)' }} id="how">
-      <div className="container">
-        <div className="section-head">
-          <div className="eyebrow" style={{ justifyContent: 'center' }}>Process</div>
-          <h2 className="h2" style={{ marginBottom: 14 }}>From brief to delivery in <span className="gradient-text">four clean steps</span></h2>
-          <p className="lead">No back-and-forth emails, no opaque pricing, no surprises. Every step happens inside your dashboard.</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16, position: 'relative' }}>
-          {STEPS.map((s, i) => (<div key={i} className="card" style={{ padding: '24px 22px', position: 'relative' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-dim)', marginBottom: 12 }}>STEP {s.n}</div>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{s.icon}</div>
-            <h3 className="h3" style={{ fontSize: 17, marginBottom: 8 }}>{s.t}</h3>
-            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.6 }}>{s.d}</p>
-          </div>))}
-        </div>
-      </div>
-    </section>);
-}
-
-/* ─── WRITERS MARKETPLACE ─── */
 function WritersMarketplace() {
   return (
     <section className="section" id="writers">
@@ -273,7 +442,7 @@ function WritersMarketplace() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{w.n}</span>
-                  <span style={{ fontSize: 11, color: '#fbbf24' }}>✓</span>
+                  <span style={{ fontSize: 11, color: '#fbbf24' }}>âœ“</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--teal-light)', fontWeight: 500 }}>{w.spec}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{w.exp}</div>
@@ -289,19 +458,19 @@ function WritersMarketplace() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{w.price}</div>
-                <Link href="/login" style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'none' }}>Hire →</Link>
+                <Link href="/login" style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'none' }}>Hire â†’</Link>
               </div>
             </div>
           </div>))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 36 }}>
-          <Link className="btn-outline-teal" href="/login">Browse 1,200+ writers →</Link>
+          <Link className="btn-outline-teal" href="/login">Browse 1,200+ writers â†’</Link>
         </div>
       </div>
     </section>);
 }
 
-/* ─── FEATURES (Why us) ─── */
+/* â”€â”€â”€ FEATURES (Why us) â”€â”€â”€ */
 function Features() {
   return (
     <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
@@ -324,7 +493,7 @@ function Features() {
     </section>);
 }
 
-/* ─── LIVE DASHBOARD PREVIEW ─── */
+/* â”€â”€â”€ LIVE DASHBOARD PREVIEW â”€â”€â”€ */
 function DashboardPreview() {
   return (
     <section className="section">
@@ -332,11 +501,11 @@ function DashboardPreview() {
         <div>
           <div className="eyebrow">Your Command Center</div>
           <h2 className="h2" style={{ marginBottom: 18 }}>A real dashboard. <span className="gradient-text">Not an inbox.</span></h2>
-          <p className="lead" style={{ marginBottom: 24 }}>Track every order, message every writer, download every invoice, manage every revision — all in one place. Live notifications, real-time status, transparent everything.</p>
+          <p className="lead" style={{ marginBottom: 24 }}>Track every order, message every writer, download every invoice, manage every revision â€” all in one place. Live notifications, real-time status, transparent everything.</p>
           <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 28 }}>
-            {['Live order tracking with milestones', 'Direct chat with your writer (1-on-1, no agents)', 'Invoices & receipts ready for tax filing', 'Notification center · Mobile-first design'].map((x, i) => (<li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--text)' }}><span style={{ color: 'var(--teal-light)', fontWeight: 700, flexShrink: 0 }}>✓</span>{x}</li>))}
+            {['Live order tracking with milestones', 'Direct chat with your writer (1-on-1, no agents)', 'Invoices & receipts ready for tax filing', 'Notification center · Mobile-first design'].map((x, i) => (<li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--text)' }}><span style={{ color: 'var(--teal-light)', fontWeight: 700, flexShrink: 0 }}>âœ“</span>{x}</li>))}
           </ul>
-          <Link className="btn-teal" href="/login">See live demo →</Link>
+          <Link className="btn-teal" href="/login">See live demo â†’</Link>
         </div>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,0.4)' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
@@ -358,7 +527,7 @@ function DashboardPreview() {
           <div style={{ padding: '14px 16px', background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 8, marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>SOP — Stanford GSB</div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>SOP â€” Stanford GSB</div>
                 <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>INV-2024-0184 · Dr. Amara Singh</div>
               </div>
               <span style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(13,148,136,0.2)', color: 'var(--teal-light)', fontSize: 10, fontWeight: 600 }}>In Progress</span>
@@ -369,7 +538,7 @@ function DashboardPreview() {
           {/* Notification row */}
           <div style={{ padding: '10px 14px', background: 'var(--bg)', border: '1px solid var(--border2)', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
             <div style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--teal-light)', animation: 'pulse 2s ease infinite', flexShrink: 0 }} />
-            <div style={{ fontSize: 11.5, flex: 1 }}><strong style={{ fontWeight: 600 }}>Marcus Webb</strong> <span style={{ color: 'var(--text-muted)' }}>sent you a new draft — Blog Post</span></div>
+            <div style={{ fontSize: 11.5, flex: 1 }}><strong style={{ fontWeight: 600 }}>Marcus Webb</strong> <span style={{ color: 'var(--text-muted)' }}>sent you a new draft â€” Blog Post</span></div>
             <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>2m</span>
           </div>
         </div>
@@ -377,7 +546,7 @@ function DashboardPreview() {
     </section>);
 }
 
-/* ─── TESTIMONIALS ─── */
+/* â”€â”€â”€ TESTIMONIALS â”€â”€â”€ */
 function Testimonials() {
   const [active, setActive] = useState(0);
   useEffect(() => { const t = setInterval(() => setActive(a => (a + 1) % TESTIMONIALS.length), 6000); return () => clearInterval(t); }, []);
@@ -408,7 +577,7 @@ function Testimonials() {
     </section>);
 }
 
-/* ─── BECOME A WRITER CTA ─── */
+/* â”€â”€â”€ BECOME A WRITER CTA â”€â”€â”€ */
 function WriterCTA() {
   return (
     <section className="section">
@@ -419,7 +588,7 @@ function WriterCTA() {
             <h2 className="h2" style={{ marginBottom: 14 }}>Write for clients who <span className="gradient-text">actually pay on time</span></h2>
             <p className="lead" style={{ marginBottom: 22 }}>Join 1,200+ writers earning ₹40,000-2,00,000/month. Set your own rates, work on what you love, get paid in 48 hours.</p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Link className="btn-teal" href="/login">Apply to write →</Link>
+              <Link className="btn-teal" href="/login">Apply to write â†’</Link>
               <Link className="btn-outline-teal" href="/login">See writer dashboard</Link>
             </div>
           </div>
@@ -439,7 +608,7 @@ function WriterCTA() {
     </section>);
 }
 
-/* ─── FAQ ─── */
+/* â”€â”€â”€ FAQ â”€â”€â”€ */
 function FAQSection() {
   const [open, setOpen] = useState(0);
   return (
@@ -462,7 +631,7 @@ function FAQSection() {
     </section>);
 }
 
-/* ─── FINAL CTA ─── */
+/* â”€â”€â”€ FINAL CTA â”€â”€â”€ */
 function FinalCTA() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -479,71 +648,98 @@ function FinalCTA() {
             } else {
               router.push('/login');
             }
-          }} className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }}>Browse Services →</button>
+          }} className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }}>Browse Services â†’</button>
           {!session && <Link className="btn-outline-teal" style={{ fontSize: 15, padding: '15px 30px' }} href="/login">Track an order</Link>}
         </div>
       </div>
     </section>);
 }
 
-/* ─── NAVBAR ─── */
-function Navbar() {
-  return (
-    <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', position: 'fixed', top: 0, left: 0, right: 0, background: 'rgba(13, 13, 26, 0.8)', backdropFilter: 'blur(10px)', zIndex: 100, borderBottom: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-        <Link href="/" style={{ fontWeight: 700, fontSize: 20, color: 'var(--text)', textDecoration: 'none' }}>Xpresswriters</Link>
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <Link href="/about" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>About</Link>
-          <Link href="/help" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Help</Link>
-          <Link href="/legal" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Legal</Link>
-          <Link href="/products" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Products</Link>
-          <Link href="/report" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Report</Link>
-          <Link href="/review" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Review</Link>
-          <Link href="/track" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Track</Link>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '16px' }}>
-        <Link href="/login" className="btn-outline-teal">Login</Link>
-        <Link href="/login" className="btn-teal">Get Started</Link>
-      </div>
-    </nav>
-  );
-}
-
-/* ─── FOOTER ─── */
-function Footer() {
-  return (
-    <>
-      {/* Trust band */}
-      <div style={{padding:'40px 32px',background:'linear-gradient(135deg,rgba(13,148,136,0.06),transparent)',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)'}}>
-        <div style={{maxWidth:1320,margin:'0 auto',display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:24,textAlign:'center'}}>
-          {[['🔒','100% Confidential','NDA-grade privacy on every order'],['🎓','PhD-level writers','340+ verified domain experts'],['↻','Unlimited revisions','2 free revisions on every plan'],['💰','Money-back guarantee','Full refund within 14 days']].map(([i,t,d])=>(<div key={t}><div style={{fontSize:28,marginBottom:7}}>{i}</div><div style={{fontSize:13,fontWeight:700,marginBottom:3}}>{t}</div><div style={{fontSize:11.5,color:'var(--text-muted)',fontWeight:300}}>{d}</div></div>))}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer style={{padding:'40px 32px',textAlign:'center',color:'var(--text-dim)',fontSize:11.5}}>
-        <div style={{marginBottom:6}}>© 2026 Xpresswriters Inc. · Made with care in Mumbai</div>
-        <div style={{display:'flex',gap:18,justifyContent:'center',marginTop:10}}>
-          <Link href="/dashboard" style={{color:'var(--text-muted)',textDecoration:'none'}}>Dashboard</Link>
-          <Link href="/invoices" style={{color:'var(--text-muted)',textDecoration:'none'}}>Invoices</Link>
-          <Link href="/notifications" style={{color:'var(--text-muted)',textDecoration:'none'}}>Notifications</Link>
-          <Link href="/writer-onboarding" style={{color:'var(--text-muted)',textDecoration:'none'}}>Become a Writer</Link>
-        </div>
-      </footer>
-    </>
-  );
-}
-
-/* ─── APP ─── */
+/* â”€â”€â”€ NAVBAR â”€â”€â”€ */
+/* ─── APP COMBINED ─── */
 export default function App() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  
+  const [activeCat, setActiveCat] = useState('all');
+  const [search, setSearch] = useState('');
+  const [openProd, setOpenProd] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('xw_cart');
+      if (stored) setCart(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('xw_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const filtered = useMemo(() => CATALOG.filter(p => {
+    if (activeCat !== 'all' && p.cat !== activeCat) return false;
+    if (search && !`${p.name} ${p.tagline} ${p.cat}`.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }), [activeCat, search]);
+
+  const addToCart = (item, buyNow) => {
+    setCart(c => [...c, item]);
+    setOpenProd(null);
+    if (buyNow) { 
+      if (session) {
+        localStorage.setItem('pendingOrder', JSON.stringify(item));
+        router.push('/student');
+      } else {
+        localStorage.setItem('pendingOrder', JSON.stringify(item));
+        router.push('/login?callbackUrl=/student');
+      }
+    } else { 
+      setCartOpen(true); 
+    }
+  };
+
+  const handleLogin = () => {
+    if (session) router.push(`/${session.user.role.toLowerCase()}`);
+    else router.push('/login');
+  };
+
   return (
     <div className="landing-page-container">
-      <Navbar />
+      <Navbar cart={cart} onCartClick={() => setCartOpen(true)} onLogin={handleLogin} />
       <Hero />
       <TrustBar />
-      <Services />
-      <HowItWorks />
+
+      {/* Category bar */}
+      <div id="services" style={{ position: 'sticky', top: 69, zIndex: 30, background: 'rgba(10,10,20,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
+        <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 5, padding: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 9, flexWrap: 'wrap' }}>
+            <button onClick={() => setActiveCat('all')} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === 'all' ? 'var(--teal)' : 'transparent', color: activeCat === 'all' ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>All</button>
+            {CATEGORIES.map(c => (
+              <button key={c.id} onClick={() => setActiveCat(c.label)} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === c.label ? 'var(--teal)' : 'transparent', color: activeCat === c.label ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>
+                <span>{c.icon}</span>{c.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search services..." style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 7, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12.5, outline: 'none', fontFamily: 'var(--font)' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Catalog grid */}
+      <div style={{ padding: '28px 32px 60px', maxWidth: 1320, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div><h2 className="h2" style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>{activeCat === 'all' ? 'All Services' : activeCat}</h2><div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>{filtered.length} {filtered.length === 1 ? 'service' : 'services'} · All prices in INR</div></div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
+          {filtered.map(p => <ProductCard key={p.id} prod={p} onOpen={setOpenProd} />)}
+        </div>
+      </div>
+
+            <Journey />
       <WritersMarketplace />
       <Features />
       <DashboardPreview />
@@ -551,6 +747,88 @@ export default function App() {
       <WriterCTA />
       <FAQSection />
       <FinalCTA />
-      <Footer />
-    </div>);
+
+      {/* Trust band */}
+      <div style={{ padding: '40px 32px', background: 'linear-gradient(135deg,rgba(13,148,136,0.06),transparent)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: 1320, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, textAlign: 'center' }}>
+          {[
+            ['🔒', '100% Confidential', 'NDA-grade privacy on every order'],
+            ['🎓', 'PhD-level writers', '340+ verified domain experts'],
+            ['↻', 'Unlimited revisions', '2 free revisions on every plan'],
+            ['💰', 'Money-back guarantee', 'Full refund within 14 days']
+          ].map(([i, t, d]) => (
+            <div key={t}><div style={{ fontSize: 28, marginBottom: 7 }}>{i}</div><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{t}</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 300 }}>{d}</div></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--bg)', paddingTop: 60, paddingBottom: 30 }}>
+        <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 32px', display: 'flex', flexWrap: 'wrap', gap: 60, justifyContent: 'space-between', marginBottom: 60 }}>
+          <div style={{ maxWidth: 300 }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)', marginBottom: 20 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff' }}>X</div>
+              <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
+            </Link>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24, fontWeight: 300 }}>Premium content writing services connecting freelance experts with customers worldwide. Confidential, plagiarism-free, on-time.</p>
+            <div style={{ display: 'flex', gap: 14, color: 'var(--text-dim)', fontSize: 14 }}>
+              <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>𝕏</a>
+              <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>in</a>
+              <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>📸</a>
+              <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>✉</a>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 80, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20 }}>PRODUCT</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <a href="/services" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>All Services</a>
+                <a href="/pricing" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Pricing</a>
+                <a href="/track" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Track Order</a>
+                <a href="/onboard/freelancer" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Become a Writer</a>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20 }}>COMPANY</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <a href="/about" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>About</a>
+                <a href="/contact" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Contact</a>
+                <a href="/faq" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Help Center</a>
+                <a href="/samples" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Samples</a>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20 }}>LEGAL</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <a href="/terms" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</a>
+                <a href="/privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</a>
+                <a href="/refund-policy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Refund Policy</a>
+                <a href="/privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Cookie Policy</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, padding: '24px 32px 0' }}>
+          <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 20, alignItems: 'center' }}>
+            <div style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>© 2024 Xpresswriters Pvt Ltd. All rights reserved. Made with care in India.</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>GSTIN: 27AABCX1234X125 - CIN: U72200MH2023PTC123456</div>
+          </div>
+        </div>
+      </footer>
+
+      <ProductDrawer prod={openProd} onClose={() => setOpenProd(null)} onAdd={addToCart} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setCart={setCart} onCheckout={() => { 
+        setCartOpen(false); 
+        if (cart.length > 0) {
+          localStorage.setItem('pendingOrder', JSON.stringify(cart[0]));
+        }
+        if (session) {
+          router.push('/student');
+        } else {
+          router.push('/login?callbackUrl=/student');
+        }
+      }} />
+    </div>
+  );
 }

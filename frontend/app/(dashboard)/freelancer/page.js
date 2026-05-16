@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useChat } from "@/hooks/useChat";
 import io from 'socket.io-client';
 import Notifications from "@/components/NotificationsView";
+import NotificationBell from "@/components/NotificationBell";
 import servicesData from '@/data/services_data.json';
 
 
@@ -15,16 +16,17 @@ import servicesData from '@/data/services_data.json';
 // Replaced with dynamic userProfile from App component
 
 const STATUS_META = {
-  'New Order': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
-  'In Progress': { color: '#0d9488', bg: 'rgba(13,148,136,.12)', dot: '#0d9488', rank: 1 },
-  'Under Review': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 2 },
-  'Revision': { color: '#f59e0b', bg: 'rgba(245,158,11,.12)', dot: '#f59e0b', rank: 3 },
+  'Finding Writer': { color: '#3b82f6', bg: 'rgba(59,130,246,.12)', dot: '#3b82f6', rank: 0 },
+  'Writer Assigned': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 1 },
+  'In Progress': { color: '#0d9488', bg: 'rgba(13,148,136,.12)', dot: '#0d9488', rank: 2 },
+  'Under Review': { color: '#8b5cf6', bg: 'rgba(139,92,246,.12)', dot: '#8b5cf6', rank: 3 },
   'Quality Check': { color: '#f59e0b', bg: 'rgba(245,158,11,.12)', dot: '#f59e0b', rank: 4 },
-  'Delivered': { color: '#22c55e', bg: 'rgba(34,197,94,.12)', dot: '#22c55e', rank: 5 },
-  'Closed': { color: '#334e4c', bg: 'rgba(51,78,76,.1)', dot: '#334e4c', rank: 6 }
+  'Revision Requested': { color: '#f43f5e', bg: 'rgba(244,63,94,.12)', dot: '#f43f5e', rank: 5 },
+  'Delivered': { color: '#22c55e', bg: 'rgba(34,197,94,.12)', dot: '#22c55e', rank: 6 },
+  'Closed': { color: '#334e4c', bg: 'rgba(51,78,76,.1)', dot: '#334e4c', rank: 7 }
 };
 
-const ALL_STATUSES = ['New Order', 'In Progress', 'Under Review', 'Revision', 'Quality Check', 'Delivered'];
+const ALL_STATUSES = ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested', 'Delivered'];
 
 // Replaced with dynamic projects from App component
 
@@ -64,7 +66,7 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
   const totalUnread = orders.reduce((a, o) => a + (o.unreadMsgs || 0), 0);
   const nav = [
     { id: 'overview', icon: '⊞', label: 'Overview' },
-    { id: 'orders', icon: '💬', label: 'Active Chat', badge: orders.filter((o) => ['New Order', 'In Progress', 'Revision', 'Quality Check'].includes(o.status)).length },
+    { id: 'orders', icon: '💬', label: 'Active Chat', badge: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Revision Requested', 'Quality Check'].includes(o.status)).length },
     { id: 'all-orders', icon: '📋', label: 'Orders List' },
     { id: 'earnings', icon: '💰', label: 'Earnings' },
     { id: 'profile', icon: '👤', label: 'My Profile' }
@@ -303,7 +305,7 @@ function ChatMessage({ msg, writerName = 'Writer' }) {
 /* ═══════════════════════════════════════════════
    ORDER DETAIL / CHAT PANEL
 ═══════════════════════════════════════════════ */
-function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket, userName }) {
+function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket, userName, loading }) {
   const [input, setInput] = useState('');
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -440,8 +442,8 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
         </div>
         {/* Status changer */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
-          {order.status === 'New Order' ? (
-            <button onClick={() => onStatusChange(order.id, 'In Progress')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
+          {order.status === 'Finding Writer' ? (
+            <button onClick={() => onStatusChange(order.id, 'Writer Assigned')} style={{ background: 'var(--teal)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Accept Assignment</button>
           ) : (
             <>
               <button onClick={() => setShowStatusMenu((s) => !s)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 6, background: 'var(--surface2)', border: `1px solid ${STATUS_META[order.status]?.color || 'var(--border)'}`, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500, transition: 'all .2s' }}>
@@ -489,6 +491,13 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
               <span style={{ fontSize: 14 }}>🔐</span>
               <span style={{ fontSize: 11, color: '#a78bfa', lineHeight: 1.4 }}>This conversation is end-to-end encrypted. Client identity is anonymized. All files are watermarked & tracked.</span>
             </div>
+            
+            {loading && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', gap: 10 }}>
+                <div style={{ width: 16, height: 16, border: '2px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Loading secure conversation history...</span>
+              </div>
+            )}
             {(order.thread || []).map((msg, i) => <ChatMessage key={msg.id || i} msg={msg} writerName={userName} />)}
             {typing &&
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeIn .3s ease' }}>
@@ -656,13 +665,13 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
 
 const mapDBStatusToUI = (status) => {
   switch (status) {
-    case 'CREATED': return 'New Order';
-    case 'ASSIGNED':
+    case 'CREATED': return 'Finding Writer';
+    case 'ASSIGNED': return 'Writer Assigned';
     case 'IN_PROGRESS': return 'In Progress';
     case 'REVIEW':
-    case 'QUALITY_CHECK': 
-    case 'UNDER_REVIEW': return 'Quality Check';
-    case 'REVISION': return 'Revision';
+    case 'UNDER_REVIEW': return 'Under Review';
+    case 'QUALITY_CHECK': return 'Quality Check';
+    case 'REVISION': return 'Revision Requested';
     case 'COMPLETED': return 'Delivered';
     case 'CLOSED': return 'Closed';
     default: return 'In Progress';
@@ -672,11 +681,26 @@ const mapDBStatusToUI = (status) => {
 // Build a flat lookup: serviceId -> service name, from the same JSON students use when ordering
 const SERVICE_LABELS = Object.values(servicesData.individualServices)
   .flat()
-  .reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {});
+  .reduce((acc, s) => { 
+    acc[s.id.toLowerCase()] = s.name; 
+    return acc; 
+  }, {});
+
+const getStandardServiceName = (p) => {
+  const type = (p.serviceType || '').toLowerCase();
+  if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+  
+  // Fallback: Use title but clean it up
+  let t = p.title || 'Writing Service';
+  // Remove " Order" suffix if present
+  t = t.replace(/ Order$/i, '');
+  // Capitalize first letter of each word
+  return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+};
 
 const mapProjectsToOrders = (rawProjects, userId) => {
   return (rawProjects || []).map(p => {
-    const serviceLabel = SERVICE_LABELS[p.serviceType] || SERVICE_LABELS[p.serviceType?.toLowerCase()] || p.serviceType || p.title || 'Writing Service';
+    const serviceLabel = getStandardServiceName(p);
     return {
       id: p.id,
       displayId: `XW-${p.id.slice(-5).toUpperCase()}`,
@@ -775,28 +799,95 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
   }, [socket, userId]);
 
   const [activeOrder, setActiveOrder] = useState(null);
+  const [fetchingThread, setFetchingThread] = useState(false);
+  const [fetchingDetail, setFetchingDetail] = useState(false);
+
+  // Fetch full history and project details when an order is opened
+  useEffect(() => {
+    if (!activeOrder) return;
+    
+    const fetchFullData = async () => {
+      setFetchingThread(true);
+      setFetchingDetail(true);
+      
+      try {
+        // Fetch project detail and messages in parallel
+        const [msgRes, detailRes] = await Promise.all([
+          fetch(`/api/messages?projectId=${activeOrder}&type=CLIENT_CHAT`),
+          fetch(`/api/projects/${activeOrder}`)
+        ]);
+        
+        const [msgs, detail] = await Promise.all([msgRes.json(), detailRes.json()]);
+
+        if (Array.isArray(msgs)) {
+          // Normalise to UI shape
+          const fullThread = msgs.map(m => {
+            const isWriterMsg = m.sender?.role === 'FREELANCER' || m.senderId === userId;
+            const isAdminMsg = m.sender?.role === 'ADMIN';
+            const rawTs = m.createdAt ? new Date(m.createdAt) : new Date();
+            const time = isNaN(rawTs.getTime()) ? '' : rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return {
+              id: m.id,
+              type: m.isSystem ? 'system' : (m.type || 'text'),
+              from: isWriterMsg ? 'writer' : isAdminMsg ? 'admin' : 'client',
+              alias: isWriterMsg ? (userName || 'Writer') : isAdminMsg ? 'Master Admin' : 'Client',
+              text: m.content || '',
+              content: m.content || '',
+              time,
+              createdAt: m.createdAt || new Date().toISOString(),
+              attachments: Array.isArray(m.attachments) ? m.attachments : [],
+            };
+          });
+          
+          setOrders(prev => prev.map(o => {
+            if (o.id !== activeOrder) return o;
+            return { 
+              ...o, 
+              thread: fullThread, 
+              unreadMsgs: 0,
+              // Merge in heavy details fetched on-demand
+              brief: detail.description || o.brief,
+              files: (detail.attachments || []).filter(a => a && !a.type),
+              deliveredFiles: (detail.attachments || []).filter(a => a && a.type === 'DELIVERY')
+            };
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch full order data:", err);
+      } finally {
+        setFetchingThread(false);
+        setFetchingDetail(false);
+      }
+    };
+
+    fetchFullData();
+  }, [activeOrder, userId, userName]);
+
   const [filter, setFilter] = useState('All');
 
   const filterTabs = [
   { id: 'All', label: 'All', count: orders.length },
-  { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Quality Check'].includes(o.status)).length },
-  { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision').length },
+  { id: 'Active', label: 'Active', count: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status)).length },
+  { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision Requested').length },
   { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }];
 
   const filtered = orders.filter((o) => {
     if (filter === 'All') return true;
-    if (filter === 'Active') return ['New Order', 'In Progress', 'Quality Check', 'Under Review'].includes(o.status);
-    if (filter === 'Revision') return o.status === 'Revision';
+    if (filter === 'Active') return ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status);
+    if (filter === 'Revision') return o.status === 'Revision Requested';
     if (filter === 'Delivered') return o.status === 'Delivered';
     return true;
   });
 
   const handleStatusChange = async (id, newStatus) => {
     const dbStatus = 
+      newStatus === 'Finding Writer' ? 'CREATED' :
+      newStatus === 'Writer Assigned' ? 'ASSIGNED' :
       newStatus === 'In Progress' ? 'IN_PROGRESS' : 
       newStatus === 'Delivered' ? 'COMPLETED' : 
-      newStatus === 'Revision' ? 'REVISION' : 
-      (newStatus === 'Quality Check' || newStatus === 'Under Review') ? 'REVIEW' : 
+      newStatus === 'Revision Requested' ? 'REVISION' : 
+      newStatus === 'Under Review' ? 'REVIEW' : 
+      newStatus === 'Quality Check' ? 'QUALITY_CHECK' : 
       newStatus;
     try {
       const res = await fetch(`/api/projects/${id}`, {
@@ -805,7 +896,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
         body: JSON.stringify({ status: dbStatus })
       });
       if (res.ok) {
-        if (newStatus === 'In Progress') {
+        if (newStatus === 'Writer Assigned') {
           await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -878,7 +969,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
       {/* Chat / Detail panel */}
       {selectedOrder ?
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} userId={userId} socket={socket} userName={userName} />
+          <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} userId={userId} socket={socket} userName={userName} loading={fetchingThread} />
         </div> :
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
@@ -896,8 +987,8 @@ function AllOrdersList({ orders = [], isMobile }) {
   
   const filtered = orders.filter((o) => {
     if (filter === 'All') return true;
-    if (filter === 'Active') return ['New Order', 'In Progress', 'Under Review'].includes(o.status);
-    if (filter === 'Revision') return o.status === 'Revision';
+    if (filter === 'Active') return ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status);
+    if (filter === 'Revision') return o.status === 'Revision Requested';
     if (filter === 'Delivered') return o.status === 'Delivered';
     return o.status === filter;
   });
@@ -977,7 +1068,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
       })
       .catch(err => console.error("Failed to fetch notifications:", err));
   }, []);
-  const active = projects.filter((o) => o.status !== 'COMPLETED');
+  const active = projects.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested'].includes(mapDBStatusToUI(o.status)));
   const earnings = projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7;
   
   // Calculate unread from real projects
@@ -1021,6 +1112,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {active.length > 0 ? active.slice(0, 3).map((order) => {
+            const uiStatus = mapDBStatusToUI(order.status);
             return (
               <div key={order.id} onClick={() => setActive('orders')} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, transition: 'all .2s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.3)'; }}
@@ -1028,11 +1120,11 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
 
                 <div style={{ width: 4, height: 40, borderRadius: 2, background: 'var(--teal)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.serviceType || order.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{order.student?.name} · {order.id}</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getStandardServiceName(order)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{order.student?.name} · XW-{order.id.slice(-5).toUpperCase()}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <StatusPill status={order.status === 'CREATED' ? 'New Order' : 'In Progress'} small />
+                  <StatusPill status={uiStatus} small />
                 </div>
               </div>);
 
@@ -1371,6 +1463,14 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
@@ -1388,15 +1488,18 @@ export default function App() {
     };
     window.addEventListener('popstate', handlePopState);
 
-    const fetchProjects = async () => {
+    const fetchAll = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        setProjects(Array.isArray(data) ? data : []);
-      } catch (err) { console.error(err); } finally { setLoading(false); }
+        await Promise.all([fetchProjects(), fetchProfile()]);
+      } catch (err) {
+        console.error("Dashboard init error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchProjects();
-    fetchProfile();
+
+    fetchAll();
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
@@ -1478,11 +1581,40 @@ export default function App() {
   };
 
   const isVerified = userProfile?.freelancerProfile?.isVerified;
+  const status = userProfile?.freelancerProfile?.status;
 
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff' }}>
         <p style={{ fontSize: 14, fontWeight: 'bold', letterSpacing: '0.1em' }}>LOADING DASHBOARD...</p>
+      </div>
+    );
+  }
+
+  if (userProfile && status === 'Rejected') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff', padding: 20, textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+          <span style={{ fontSize: 40 }}>✗</span>
+        </div>
+        <h1 style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', marginBottom: 8, letterSpacing: '-0.02em', color: '#ef4444' }}>Application Rejected</h1>
+        <p style={{ color: '#8e8e93', fontSize: 14, maxWidth: 450, marginBottom: 20, lineHeight: 1.5 }}>
+          We appreciate your interest in Express Writer. After reviewing your profile, our team has decided not to proceed with your application at this time.
+        </p>
+        
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '20px 24px', maxWidth: 400, marginBottom: 32, textAlign: 'left' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Reason for Decision:</div>
+          <p style={{ color: '#cecece', fontSize: 13, lineHeight: 1.6, fontStyle: 'italic' }}>
+            "{userProfile.freelancerProfile.rejectionReason || 'Your application did not meet our current requirements.'}"
+          </p>
+        </div>
+
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{ padding: '12px 32px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.3s' }}
+        >
+          Return to Login
+        </button>
       </div>
     );
   }
@@ -1519,6 +1651,7 @@ export default function App() {
           {isMobile && <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 24, cursor: 'pointer' }}>☰</button>}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--teal-light)', background: 'rgba(13,148,136,0.08)', padding: '4px 10px', borderRadius: 100, border: '1px solid var(--border-teal)' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} /> Available for orders</div>
+            <NotificationBell />
             <Avatar initials={userName.split(' ').map(n => n[0]).join('').toUpperCase()} size={28} />
           </div>
         </div>

@@ -6,12 +6,15 @@ import { Pill, Btn, Card, CardHeader, SectionHeader, SubTabs, SaveBar, Toggle, S
 // ── SECTION 5: WRITER MANAGEMENT ──
 export function AdminWriters({ freelancers = [], isMobile }) {
   const [mainTab, setMainTab] = React.useState('Writers');
-  const [tab, setTab] = React.useState('All Writers');
-  const [selected, setSelected] = React.useState(null);
+  const [tab, setTab] = useState('All Writers');
+  const [selected, setSelected] = useState(null);
   const [localFreelancers, setLocalFreelancers] = useState(freelancers);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkAction, setBulkAction] = useState('');
   const [saved, setSaved] = useState(false);
+  const [loadingId, setLoadingId] = useState(null);
+  const [rejectionModal, setRejectionModal] = useState({ open: false, id: null });
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     setLocalFreelancers(freelancers);
@@ -20,6 +23,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
 
   const handleUpdate = async (id, data) => {
+    setLoadingId(id);
     try {
       const res = await fetch(`/api/admin/freelancers/${id}`, {
         method: 'PATCH',
@@ -28,16 +32,28 @@ export function AdminWriters({ freelancers = [], isMobile }) {
       });
       if (res.ok) {
         save();
-        setLocalFreelancers(prev => prev.map(f => f.id === id ? { 
-          ...f, 
-          freelancerProfile: { ...f.freelancerProfile, ...data } 
+        setLocalFreelancers(prev => prev.map(f => f.id === id ? {
+          ...f,
+          freelancerProfile: { ...f.freelancerProfile, ...data }
         } : f));
+        setLoadingId(null);
         return true;
       }
+      setLoadingId(null);
       return false;
     } catch (err) {
       console.error(err);
+      setLoadingId(null);
       return false;
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) return;
+    const ok = await handleUpdate(rejectionModal.id, { status: 'Rejected', rejectionReason });
+    if (ok) {
+      setRejectionModal({ open: false, id: null });
+      setRejectionReason('');
     }
   };
 
@@ -81,9 +97,6 @@ export function AdminWriters({ freelancers = [], isMobile }) {
     revenue: f.freelancerProfile?.totalEarnings || 0,
     status: f.freelancerProfile?.status || 'Active',
     verified: f.freelancerProfile?.isVerified || false,
-    education: f.freelancerProfile?.education || 'N/A',
-    experience: f.freelancerProfile?.experience || 0,
-    resumeUrl: f.freelancerProfile?.resumeUrl || null,
     kycDone: f.freelancerProfile?.kycDone || false,
     joined: new Date(f.freelancerProfile?.createdAt || Date.now()).toLocaleDateString(),
     badge: f.freelancerProfile?.badge || '—',
@@ -95,7 +108,12 @@ export function AdminWriters({ freelancers = [], isMobile }) {
     currency: f.freelancerProfile?.currency || 'USD',
     education: f.freelancerProfile?.education || 'N/A',
     experience: f.freelancerProfile?.experience || 0,
-    resumeUrl: f.freelancerProfile?.resumeUrl || ''
+    resumeUrl: f.freelancerProfile?.resumeUrl || '',
+    bio: f.freelancerProfile?.bio || '',
+    linkedinUrl: f.freelancerProfile?.linkedinUrl || '',
+    portfolioUrl: f.freelancerProfile?.portfolioUrl || '',
+    age: f.freelancerProfile?.age || 'N/A',
+    gender: f.freelancerProfile?.gender || 'N/A'
   }));
 
   const STATUS_COLOR = { Active: 'var(--green)', Inactive: 'var(--text-dim)', 'Pending Approval': 'var(--amber)', Suspended: 'var(--red)', Rejected: 'var(--red)' };
@@ -103,8 +121,8 @@ export function AdminWriters({ freelancers = [], isMobile }) {
 
   const filtered = tab === 'All Writers' ? WRITERS :
     tab === 'Active' ? WRITERS.filter(w => w.status === 'Active') :
-    tab === 'Pending' ? WRITERS.filter(w => w.status === 'Pending Approval') :
-    tab === 'Inactive' ? WRITERS.filter(w => w.status === 'Inactive') : WRITERS;
+      tab === 'Pending' ? WRITERS.filter(w => w.status === 'Pending Approval') :
+        tab === 'Inactive' ? WRITERS.filter(w => w.status === 'Inactive') : WRITERS;
 
   const selected_w = WRITERS.find(w => w.id === selected);
 
@@ -113,7 +131,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
       <SectionHeader
         title="Writer Management"
         subtitle="Onboard, verify, manage KPIs, monitor chats, and message writers."
-        action={<Btn onClick={() => {}}>+ Invite Writer</Btn>}
+        action={<Btn onClick={() => { }}>+ Invite Writer</Btn>}
       />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
@@ -136,36 +154,36 @@ export function AdminWriters({ freelancers = [], isMobile }) {
           <SubTabs tabs={['All Writers', 'Active', 'Pending', 'Inactive']} active={tab} onChange={t => { setTab(t); setSelected(null); }} />
 
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, height: isMobile ? 'auto' : 'calc(100vh - 340px)', minHeight: 400 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={toggleSelectAll} style={{ cursor: 'pointer' }} />
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Select All ({filtered.length})</span>
-            </div>
-            {selectedIds.length > 0 && (
-              <div style={{ display: 'flex', gap: 8, animation: 'fadeIn .2s ease' }}>
-                <select value={bulkAction} onChange={e => setBulkAction(e.target.value)} style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text)', padding: '4px 8px', borderRadius: 6, fontSize: 12 }}>
-                  <option value="">Bulk Action...</option>
-                  <option value="Approve">Approve & Verify</option>
-                  <option value="Suspend">Suspend Accounts</option>
-                  <option value="Deactivate">Deactivate</option>
-                </select>
-                <Btn small onClick={handleBulkAction} disabled={!bulkAction}>Apply</Btn>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={toggleSelectAll} style={{ cursor: 'pointer' }} />
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Select All ({filtered.length})</span>
               </div>
-            )}
-          </div>
-          <div style={{ width: isMobile ? (selected ? '0%' : '100%') : (selected ? 340 : '100%'), display: isMobile && selected ? 'none' : 'flex', maxWidth: selected ? 'none' : 1200, flexShrink: 0, flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
-            {filtered.map(w => (
-              <div key={w.id} onClick={() => setSelected(w.id === selected ? null : w.id)} style={{
-                background: selected === w.id ? 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(15,118,110,0.05))' : 'var(--surface2)',
-                border: `1px solid ${selected === w.id ? 'var(--teal)' : 'var(--border)'}`,
-                boxShadow: selected === w.id ? '0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px var(--teal)' : 'none',
-                borderRadius: 12, padding: '16px', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                position: 'relative',
-                marginBottom: '8px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <input type="checkbox" checked={selectedIds.includes(w.id)} onChange={(e) => toggleSelect(e, w.id)} style={{ cursor: 'pointer', accentColor: 'var(--teal)' }} />
-                  <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{w.avatar}</div>
+              {selectedIds.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, animation: 'fadeIn .2s ease' }}>
+                  <select value={bulkAction} onChange={e => setBulkAction(e.target.value)} style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text)', padding: '4px 8px', borderRadius: 6, fontSize: 12 }}>
+                    <option value="">Bulk Action...</option>
+                    <option value="Approve">Approve & Verify</option>
+                    <option value="Suspend">Suspend Accounts</option>
+                    <option value="Deactivate">Deactivate</option>
+                  </select>
+                  <Btn small onClick={handleBulkAction} disabled={!bulkAction}>Apply</Btn>
+                </div>
+              )}
+            </div>
+            <div style={{ width: isMobile ? (selected ? '0%' : '100%') : (selected ? 340 : '100%'), display: isMobile && selected ? 'none' : 'flex', maxWidth: selected ? 'none' : 1200, flexShrink: 0, flexDirection: 'column', gap: 8, overflowY: 'auto', transition: 'width .3s' }}>
+              {filtered.map(w => (
+                <div key={w.id} onClick={() => setSelected(w.id === selected ? null : w.id)} style={{
+                  background: selected === w.id ? 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(15,118,110,0.05))' : 'var(--surface2)',
+                  border: `1px solid ${selected === w.id ? 'var(--teal)' : 'var(--border)'}`,
+                  boxShadow: selected === w.id ? '0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px var(--teal)' : 'none',
+                  borderRadius: 12, padding: '16px', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <input type="checkbox" checked={selectedIds.includes(w.id)} onChange={(e) => toggleSelect(e, w.id)} style={{ cursor: 'pointer', accentColor: 'var(--teal)' }} />
+                    <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{w.avatar}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{w.name}</span>
@@ -206,15 +224,19 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{selected_w.email} · {selected_w.country} · Joined {selected_w.joined}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, justifyContent: isMobile ? 'flex-start' : 'flex-end', marginTop: isMobile ? 8 : 0 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, justifyContent: isMobile ? 'flex-start' : 'flex-end', marginTop: isMobile ? '8px' : '0' }}>
                     {selected_w.status === 'Pending Approval' && (
                       <>
-                        <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active', isVerified: true })}>✓ Approve</Btn>
-                        <Btn small variant="danger" onClick={() => handleUpdate(selected_w.id, { status: 'Rejected' })}>✗ Reject</Btn>
+                        <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active', isVerified: true })} loading={loadingId === selected_w.id}>
+                          {loadingId === selected_w.id ? '...' : '✓ Approve'}
+                        </Btn>
+                        <Btn small variant="danger" onClick={() => setRejectionModal({ open: true, id: selected_w.id })} disabled={loadingId === selected_w.id}>
+                          ✗ Reject
+                        </Btn>
                       </>
                     )}
-                    {selected_w.status === 'Active' && <Btn small variant="danger" onClick={() => handleUpdate(selected_w.id, { status: 'Inactive' })}>Deactivate</Btn>}
-                    {selected_w.status === 'Inactive' && <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active' })}>Activate</Btn>}
+                    {selected_w.status === 'Active' && <Btn small variant="danger" onClick={() => handleUpdate(selected_w.id, { status: 'Inactive' })} loading={loadingId === selected_w.id}>Deactivate</Btn>}
+                    {selected_w.status === 'Inactive' && <Btn small onClick={() => handleUpdate(selected_w.id, { status: 'Active' })} loading={loadingId === selected_w.id}>Activate</Btn>}
                     <Btn small variant="outline" onClick={() => setMainTab('Direct Chat')}>Message</Btn>
                     <button onClick={() => setSelected(null)} style={{ background: 'var(--surface3)', border: '1px solid var(--border)', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', marginLeft: 4 }} aria-label="Close details">
                       ✕
@@ -250,7 +272,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                       {/* Application Details */}
                       <div style={{ marginBottom: 16, padding: '12px', background: 'var(--surface3)', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <div style={{ fontSize: 11, color: 'var(--teal-light)', marginBottom: 8, fontWeight: 700, letterSpacing: '0.05em' }}>APPLICATION DETAILS</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                           <div>
                             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Qualification</div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.education}</div>
@@ -259,15 +281,33 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Experience</div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.experience} years</div>
                           </div>
-                        </div>
-                        {selected_w.resumeUrl && (
-                          <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Resume</div>
-                            <a href={selected_w.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal-light)', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
-                              View Resume <span style={{ fontSize: 10 }}>↗</span>
-                            </a>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Age / Gender</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.age} / {selected_w.gender}</div>
                           </div>
-                        )}
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Bio</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>{selected_w.bio || 'No bio provided'}</div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                          {selected_w.resumeUrl && (
+                            <a href={selected_w.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal-light)', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, background: 'rgba(13,148,136,0.1)', padding: '4px 8px', borderRadius: 4 }}>
+                              📄 Resume ↗
+                            </a>
+                          )}
+                          {selected_w.linkedinUrl && (
+                            <a href={selected_w.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#0077b5', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, background: 'rgba(0,119,181,0.1)', padding: '4px 8px', borderRadius: 4 }}>
+                              🔗 LinkedIn ↗
+                            </a>
+                          )}
+                          {selected_w.portfolioUrl && (
+                            <a href={selected_w.portfolioUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, background: 'rgba(212,181,60,0.1)', padding: '4px 8px', borderRadius: 4 }}>
+                              🎨 Portfolio ↗
+                            </a>
+                          )}
+                        </div>
                       </div>
 
                       {[
@@ -276,7 +316,6 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                         { label: 'Writing Assessment Passed', done: selected_w.orders > 0 },
                         { label: 'NDA Signed', done: selected_w.verified },
                         { label: 'Tax Info Submitted', done: selected_w.kycDone },
-                        { label: 'Background Check', done: selected_w.verified },
                       ].map(v => (
                         <div key={v.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
                           <span style={{ color: v.done ? 'var(--green)' : 'var(--amber)', fontSize: 14 }}>{v.done ? '✓' : '○'}</span>
@@ -298,8 +337,8 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                           </div>
                         ))}
                       </div>
-                      <Toggle label="Immediate payout on delivery" value={false} onChange={() => {}} />
-                      <Toggle label="Auto-approve orders" value={selected_w.status === 'Active'} onChange={() => {}} />
+                      <Toggle label="Immediate payout on delivery" value={false} onChange={() => { }} />
+                      <Toggle label="Auto-approve orders" value={selected_w.status === 'Active'} onChange={() => { }} />
                     </div>
                   </Card>
 
@@ -309,15 +348,35 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                         {selected_w.skills.map(s => <Pill key={s} label={s} color="var(--teal)" />)}
                       </div>
-                      <Toggle label="Available for new orders" value={selected_w.status === 'Active'} onChange={() => {}} />
-                      <Toggle label="Featured in marketplace" value={selected_w.badge !== '—'} onChange={() => {}} />
-                      <Toggle label="Eligible for urgent orders" value={selected_w.rating >= 4.9} onChange={() => {}} />
+                      <Toggle label="Available for new orders" value={selected_w.status === 'Active'} onChange={() => { }} />
+                      <Toggle label="Featured in marketplace" value={selected_w.badge !== '—'} onChange={() => { }} />
+                      <Toggle label="Eligible for urgent orders" value={selected_w.rating >= 4.9} onChange={() => { }} />
                       <SaveBar onSave={save} saved={saved} />
                     </div>
                   </Card>
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {rejectionModal.open && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400, animation: 'fadeUp .2s ease' }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Reject Writer Application</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Please provide a reason for rejection. This will be shown to the writer.</p>
+            <textarea
+              value={rejectionReason}
+              onChange={e => setRejectionReason(e.target.value)}
+              placeholder="e.g. Insufficient experience in technical writing..."
+              style={{ width: '100%', height: 100, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, color: 'var(--text)', fontSize: 13, marginBottom: 20, outline: 'none', resize: 'none' }}
+            />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <Btn variant="outline" onClick={() => setRejectionModal({ open: false, id: null })}>Cancel</Btn>
+              <Btn variant="danger" onClick={handleReject} disabled={!rejectionReason.trim() || loadingId !== null}>
+                {loadingId !== null ? 'Rejecting...' : 'Reject Application'}
+              </Btn>
+            </div>
           </div>
         </div>
       )}

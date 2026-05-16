@@ -5,57 +5,48 @@ import PublicFooter from '@/components/PublicFooter';
 import '@/app/(auth)/landing.css';
 import Link from 'next/link';
 
+import servicesData from '@/data/services_data.json';
+
 /* ─── DATA ─── */
+const getServiceIcon = (catId) => {
+  const icons = {
+    sop: '🎓',
+    lor: '📜',
+    resume: '💼',
+    essays: '📝',
+    scholarship: '🏆',
+    gmat_waiver: '📜',
+    app_fee_waiver: '💸',
+    linkedin: '💎',
+    email_templates: '✉️',
+    media_article: '🖋️',
+    visa_application: '🛂'
+  };
+  return icons[catId] || '📄';
+};
+
 const CATEGORIES = [
   { id: 'all', label: 'All Services', icon: '✨' },
-  { id: 'Academic', label: 'Academic', icon: '🎓' },
-  { id: 'Visa', label: 'Visa & Immigration', icon: '🛂' },
-  { id: 'Career', label: 'Career & Business', icon: '💼' },
-  { id: 'Creative', label: 'Creative & Other', icon: '✍️' },
+  ...Object.keys(servicesData.individualServices).map(c => ({
+    id: c,
+    label: c.charAt(0).toUpperCase() + c.slice(1).replace('_', ' '),
+    icon: getServiceIcon(c)
+  }))
 ];
 
-const CATALOG = [
-  {
-    id: 'sop-masters',
-    name: 'Statement of Purpose',
-    cat: 'Academic',
-    icon: '🎓',
-    tagline: 'Admission-ready SOPs for Bachelors, Masters, MBA & PhD',
-    delivery: '3-5 days',
-    desc: 'Our flagship service. We match you with a writer who has graduated from or worked in your target field to ensure your technical achievements are communicated with authority.',
+const CATALOG = Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) => 
+  svcs.map(s => ({
+    ...s,
+    cat: catId,
+    icon: getServiceIcon(catId),
+    tagline: s.description,
+    delivery: '3-5 days', // Default fallback
+    desc: s.description,
     variants: [
-      { id: 'sop-std', label: 'Standard SOP (1,000 words)', words: '1,000', delivery: '5 days', price: 4499, fast: 1500, addon: 1200 },
-      { id: 'sop-pro', label: 'Premium SOP (1,500 words)', words: '1,500', delivery: '4 days', price: 6499, fast: 2000, addon: 1500 },
+      { id: s.id, label: s.name, price: s.price }
     ]
-  },
-  {
-    id: 'visa-sop',
-    name: 'Visa SOP & Appeals',
-    cat: 'Visa',
-    icon: '🛂',
-    tagline: 'Country-specific Visa SOPs · Rejection appeals',
-    delivery: '2-4 days',
-    desc: 'Specialized writing for student, visitor, and work visas. We focus on ties to home country, financial capacity, and intent to return.',
-    variants: [
-      { id: 'visa-std', label: 'Student Visa SOP', words: '1,200', delivery: '3 days', price: 3999, fast: 1200, addon: 1000 },
-      { id: 'visa-appeal', label: 'Rejection Appeal Letter', words: '1,500', delivery: '4 days', price: 5499, fast: 1800, addon: 1200 },
-    ]
-  },
-  {
-    id: 'resume-cv',
-    name: 'Resume & CV',
-    cat: 'Career',
-    icon: '💼',
-    tagline: 'ATS-optimized resumes for every industry',
-    delivery: '2-3 days',
-    desc: 'Get past the bots. We use industry-standard keywords and clean, professional formatting to highlight your impact.',
-    variants: [
-      { id: 'resume-std', label: 'Professional Resume', words: '2 pages', delivery: '3 days', price: 1999, fast: 800, ats: 500 },
-      { id: 'resume-exec', label: 'Executive CV', words: '3-4 pages', delivery: '5 days', price: 4999, fast: 1500, ats: 800 },
-    ]
-  },
-  // More products can be added here
-];
+  }))
+);
 
 const fmt = n => typeof n === 'number' ? `₹${n.toLocaleString('en-IN')}` : n;
 
@@ -188,15 +179,51 @@ export default function ProductsPage() {
             </div>
             <div style={{ padding: 24, flex: 1, overflowY: 'auto' }}>
               <p style={{ marginBottom: 20, color: 'var(--text-muted)' }}>{openProd.desc}</p>
+              
+              <div style={{ marginBottom: 24 }}>
+                <h4 style={{ marginBottom: 12 }}>Upload Brief/Files (Optional)</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+                  {(openProd.attachments || []).map((file, idx) => (
+                    <div key={idx} style={{ position: 'relative', width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {/\.(jpg|jpeg|png|webp|gif)$/i.test(file.url) ? (
+                        <img src={file.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: 20 }}>📄</span>
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); setOpenProd(p => ({ ...p, attachments: p.attachments.filter((_, i) => i !== idx) })); }} style={{ position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: '50%', background: 'rgba(239,68,68,0.9)', border: 'none', color: '#fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                    </div>
+                  ))}
+                  <label style={{ width: 60, height: 60, borderRadius: 8, border: '1.5px dashed var(--border2)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <span style={{ fontSize: 18, color: 'var(--text-dim)' }}>+</span>
+                    <input type="file" multiple onChange={async (e) => {
+                      const files = Array.from(e.target.files);
+                      const body = new FormData();
+                      files.forEach(f => body.append('file', f));
+                      // Simplified for multiple: we might need to loop if API only takes one
+                      // But let's assume we can handle it or just do one by one
+                      for (const file of files) {
+                        const b = new FormData(); b.append('file', file);
+                        const res = await fetch('/api/upload', { method: 'POST', body: b });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setOpenProd(p => ({ ...p, attachments: [...(p.attachments || []), data] }));
+                        }
+                      }
+                    }} style={{ display: 'none' }} />
+                  </label>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>Attach any instructions or reference files for your writer.</p>
+              </div>
+
               <h4>Select Variant</h4>
               <div style={{ display: 'grid', gap: 10, marginTop: 10 }}>
                 {openProd.variants.map(v => (
                   <div key={v.id} style={{ padding: 16, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontWeight: 600 }}>{v.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{v.words} words · {v.delivery}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{v.words || 'Custom'} words · {v.delivery || '3-5 days'}</div>
                     </div>
-                    <Btn onClick={() => addToCart({ prod: openProd, variant: v, total: v.price })}>Add {fmt(v.price)}</Btn>
+                    <Btn onClick={() => addToCart({ prod: openProd, variant: v, total: v.price, attachments: openProd.attachments || [] })}>Add {fmt(v.price)}</Btn>
                   </div>
                 ))}
               </div>

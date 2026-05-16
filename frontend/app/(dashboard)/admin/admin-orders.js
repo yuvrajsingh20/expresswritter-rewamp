@@ -4,9 +4,27 @@ import { Pill, Btn, SectionHeader, Table } from "./admin-shared";
 import { EagleEyePanel, DirectChatPanel } from "./admin-writers";
 import { useChat } from "@/hooks/useChat";
 import { useSession } from "next-auth/react";
+import servicesData from "@/data/services_data.json";
 
 export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
+  
+  const SERVICE_LABELS = React.useMemo(() => {
+    return Object.values(servicesData.individualServices)
+      .flat()
+      .reduce((acc, s) => {
+        acc[s.id.toLowerCase()] = s.name;
+        return acc;
+      }, {});
+  }, []);
+
+  const getStandardServiceName = (p) => {
+    const type = (p.serviceType || '').toLowerCase();
+    if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+    let t = p.title || 'Writing Service';
+    t = t.replace(/ Order$/i, '');
+    return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
   const [loading, setLoading] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -128,7 +146,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
               rows={unassignedProjects.map(p => [
                 <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />,
                 <span style={{ fontWeight: 600, color: 'var(--teal-light)' }}>XW-{p.id.slice(-5).toUpperCase()}</span>,
-                <span style={{ fontSize: 13 }}>{p.title}</span>,
+                <span style={{ fontSize: 13 }}>{getStandardServiceName(p)}</span>,
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.deadline ? new Date(p.deadline).toLocaleDateString() : 'N/A'}</span>,
                 <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -167,7 +185,7 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
                     cols={['Order ID', 'Service', 'Status', 'Writer', 'Client', 'Action']}
                     rows={projects.filter(p => p.status !== 'CREATED' && p.status !== 'UNASSIGNED' && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').map(p => [
                       <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>XW-{p.id.slice(-5).toUpperCase()}</span>,
-                      <span style={{ fontSize: 13 }}>{p.title}</span>,
+                      <span style={{ fontSize: 13 }}>{getStandardServiceName(p)}</span>,
                       <Pill label={p.status} color="var(--teal)" />,
                       <span style={{ fontSize: 13 }}>{p.freelancer?.name || 'Unassigned'}</span>,
                       <span style={{ fontSize: 13 }}>{p.student?.name || 'Unknown'}</span>,
@@ -189,6 +207,23 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
 function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile }) {
   const [collabId, setCollabId] = useState('');
   const [adding, setAdding] = useState(false);
+
+  const SERVICE_LABELS = React.useMemo(() => {
+    return Object.values(servicesData.individualServices)
+      .flat()
+      .reduce((acc, s) => {
+        acc[s.id.toLowerCase()] = s.name;
+        return acc;
+      }, {});
+  }, []);
+
+  const getStandardServiceName = (p) => {
+    const type = (p.serviceType || '').toLowerCase();
+    if (SERVICE_LABELS[type]) return SERVICE_LABELS[type];
+    let t = p.title || 'Writing Service';
+    t = t.replace(/ Order$/i, '');
+    return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
 
   const { messages, loading, errorAlert, sendMessage } = useChat({
     projectId: project.id,
@@ -254,7 +289,11 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Project XW-{project.id.slice(-5).toUpperCase()} Chat Feed</div>
+            <div style={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+              XW-{project.id.slice(-5).toUpperCase()} 
+              <span style={{ fontWeight: 400, fontSize: 13, color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: 'var(--teal-light)' }}>{getStandardServiceName(project)}</span>
+            </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Student: {project.student?.name} | Writer: {project.freelancer?.name}</div>
           </div>
         </div>

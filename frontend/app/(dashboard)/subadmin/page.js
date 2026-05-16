@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import ProjectTable from '@/components/dashboard/ProjectTable';
 import { 
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 
 export default function SubAdminDashboard() {
+  const { data: session } = useSession();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 

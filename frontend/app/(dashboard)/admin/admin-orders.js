@@ -9,6 +9,16 @@ import servicesData from "@/data/services_data.json";
 export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
   
+  // Initialize activeProject from URL query params for deep linking
+  const [activeProject, setActiveProject] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('orderId');
+      if (orderId) return orderId;
+    }
+    return null;
+  });
+  
   const SERVICE_LABELS = React.useMemo(() => {
     return Object.values(servicesData.individualServices)
       .flat()
@@ -26,7 +36,6 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
     return t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   };
   const [loading, setLoading] = useState(false);
-  const [activeProject, setActiveProject] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkWriterId, setBulkWriterId] = useState('');
   const { data: session } = useSession();

@@ -358,6 +358,10 @@ export default function App() {
     if (params.get('tab') === 'notifications') {
       setSection('notifications');
       window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('orderId')) {
+      setSection('projects');
+      // Clean up orderId from URL after reading
+      window.history.replaceState({}, '', `${window.location.pathname}?tab=projects`);
     } else {
       const savedSection = localStorage.getItem('xw_admin_section');
       if (savedSection) setSection(savedSection);

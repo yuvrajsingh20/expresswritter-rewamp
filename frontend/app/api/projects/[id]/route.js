@@ -84,11 +84,33 @@ export async function PATCH(req, { params }) {
         'IN_PROGRESS': `Your writer has started working on "${oldProject.title}"`,
         'REVIEW': `Your order is ready for review: "${oldProject.title}"`,
         'REVISION': `Revision requested on "${oldProject.title}"`,
-        'COMPLETED': `🎉 Your order "${oldProject.title}" is complete!`
+        'COMPLETED': `🎉 Your order "${oldProject.title}" is complete!`,
+        'CANCELLED': `Your order "${oldProject.title}" has been cancelled`
       };
 
       const statusMsg = statusMap[body.status];
       if (statusMsg) {
+        // Notify Student
+        await createNotification(prisma, {
+          userId: oldProject.studentId,
+          type: body.status === 'CANCELLED' ? 'order_cancelled' : 'status',
+          title: body.status === 'CANCELLED' ? 'Order Cancelled' : 'Status Updated',
+          msg: statusMsg,
+          icon: body.status === 'CANCELLED' ? '❌' : '📋',
+          link: body.status === 'CANCELLED' ? `/student/orders` : `/student/orders/${id}`
+        });
+
+        // Notify Freelancer if assigned
+        if (updatedProject.freelancerId && body.status !== 'CANCELLED') {
+          await createNotification(prisma, {
+            userId: updatedProject.freelancerId,
+            type: 'status',
+            title: 'Status Updated',
+            msg: `Order "${oldProject.title}" status changed to ${body.status}`,
+            icon: '📋',
+            link: `/freelancer/orders/${id}`
+          });
+        }
         // Notify Student
         await createNotification(prisma, {
           userId: oldProject.studentId,

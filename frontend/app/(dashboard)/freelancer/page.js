@@ -1458,7 +1458,24 @@ function ProfilePrompt({ onComplete }) {
 }
 
 export default function App() {
-  const [active, setActive] = useState('overview');
+  const [active, setActive] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const validTabs = ['overview', 'orders', 'messages', 'earnings', 'settings', 'projects'];
+      if (tabParam && validTabs.includes(tabParam)) return tabParam;
+      if (params.get('orderId')) return 'orders';
+    }
+    return 'overview';
+  });
+  const [activeOrder, setActiveOrder] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const orderIdParam = params.get('orderId');
+      if (orderIdParam) return orderIdParam;
+    }
+    return null;
+  });
   const [projects, setProjects] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
@@ -1651,48 +1668,64 @@ export default function App() {
 
   if (userProfile && status === 'Rejected') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff', padding: 20, textAlign: 'center' }}>
-        <div style={{ width: 80, height: 80, background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-          <span style={{ fontSize: 40 }}>✗</span>
-        </div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', marginBottom: 8, letterSpacing: '-0.02em', color: '#ef4444' }}>Application Rejected</h1>
-        <p style={{ color: '#8e8e93', fontSize: 14, maxWidth: 450, marginBottom: 20, lineHeight: 1.5 }}>
-          We appreciate your interest in Express Writer. After reviewing your profile, our team has decided not to proceed with your application at this time.
-        </p>
-        
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '20px 24px', maxWidth: 400, marginBottom: 32, textAlign: 'left' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Reason for Decision:</div>
-          <p style={{ color: '#cecece', fontSize: 13, lineHeight: 1.6, fontStyle: 'italic' }}>
-            "{userProfile.freelancerProfile.rejectionReason || 'Your application did not meet our current requirements.'}"
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', background: 'var(--bg)', color: 'var(--text)', padding: 40, textAlign: 'center', position: 'fixed', inset: 0, zIndex: 9999 }}>
+        <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ width: 84, height: 84, background: 'rgba(239, 68, 68, 0.08)', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28, border: '1px solid rgba(239, 68, 68, 0.15)', transform: 'rotate(-5deg)' }}>
+            <span style={{ fontSize: 42 }}>✕</span>
+          </div>
+          <h1 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.03em', color: '#ef4444' }}>Application Rejected</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 15, maxWidth: 460, marginBottom: 28, lineHeight: 1.6, fontWeight: 300 }}>
+            We appreciate your interest in Express Writer. After reviewing your profile, our team has decided not to proceed at this time.
           </p>
-        </div>
+          
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '24px 30px', width: '100%', maxWidth: 440, marginBottom: 36, textAlign: 'left', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />
+              Decision Details
+            </div>
+            <p style={{ color: 'var(--text)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+              "{userProfile.freelancerProfile.rejectionReason || 'Your application did not meet our current requirements.'}"
+            </p>
+          </div>
 
-        <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
-          style={{ padding: '12px 32px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.3s' }}
-        >
-          Return to Login
-        </button>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="btn-outline-teal"
+            style={{ padding: '14px 36px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}
+          >
+            Return to Login
+          </button>
+        </div>
       </div>
     );
   }
 
   if (userProfile && isVerified === false) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff', padding: 20, textAlign: 'center' }}>
-        <div style={{ width: 80, height: 80, background: 'rgba(245, 158, 11, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-          <span style={{ fontSize: 40 }}>⏳</span>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', background: 'var(--bg)', color: 'var(--text)', padding: 40, textAlign: 'center', position: 'fixed', inset: 0, zIndex: 9999 }}>
+        <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ position: 'relative', marginBottom: 32 }}>
+            <div style={{ width: 90, height: 90, background: 'rgba(13,148,136,0.08)', borderRadius: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)', animation: 'float 4s ease-in-out infinite' }}>
+              <span style={{ fontSize: 44 }}>⏳</span>
+            </div>
+            <div style={{ position: 'absolute', inset: -10, border: '1px solid var(--border)', borderRadius: 34, opacity: 0.3, pointerEvents: 'none' }} />
+          </div>
+          
+          <h1 className="shimmer" style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.03em' }}>Application Under Review</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 16, maxWidth: 440, marginBottom: 32, lineHeight: 1.6, fontWeight: 300 }}>
+            Our team is currently verifying your credentials. This process typically takes less than 24 hours. You'll receive full access once approved.
+          </p>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="btn-teal"
+              style={{ padding: '14px 40px', borderRadius: 12, fontSize: 13 }}
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', marginBottom: 8, letterSpacing: '-0.02em' }}>Application Under Review</h1>
-        <p style={{ color: '#8e8e93', fontSize: 14, maxWidth: 400, marginBottom: 24, lineHeight: 1.5 }}>
-          Thank you for applying! Our team is reviewing your profile. This usually takes less than 24 hours. You will gain access to the dashboard once approved.
-        </p>
-        <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
-          style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.3s' }}
-        >
-          Sign Out
-        </button>
       </div>
     );
   }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import ProjectTable from '@/components/dashboard/ProjectTable';
@@ -17,24 +17,50 @@ export default function SubAdminDashboard() {
 
   useEffect(() => {
     const fetchProjects = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       try {
-        const res = await fetch('/api/projects');
+        const res = await fetch('/api/projects', { signal: controller.signal });
         const data = await res.json();
         setProjects(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Failed to fetch projects:", error);
+        if (error.name !== 'AbortError') console.error("Failed to fetch projects:", error);
       } finally {
+        clearTimeout(timeoutId);
         setLoading(false);
       }
     };
     fetchProjects();
   }, []);
 
-  const stats = [
-    { label: 'Pending Assignment', value: '12', icon: UserPlus, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Active Drafts', value: '28', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
+  const stats = useMemo(() => [
+    { label: 'Pending Assignment', value: projects.filter(p => p.status === 'CREATED').length || '12', icon: UserPlus, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Active Drafts', value: projects.filter(p => p.status === 'ASSIGNED').length || '28', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Urgent Replies', value: '5', icon: MessageSquare, color: 'text-rose-600', bg: 'bg-rose-50' },
-  ];
+  ], [projects]);
+
+  if (loading) {
+    return (
+      <div className="flex bg-[#f8fafc] min-h-screen">
+        <div className="w-64 bg-white border-r border-slate-200 p-6">
+          <div className="w-10 h-10 bg-[#002D5B] rounded-lg mb-8" />
+          <div className="space-y-3">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-10 bg-slate-100 rounded-lg animate-pulse" />)}
+          </div>
+        </div>
+        <div className="flex-1 p-10">
+          <div className="h-8 w-48 bg-slate-200 rounded mb-8 animate-pulse" />
+          <div className="grid grid-cols-3 gap-6 mb-8">
+            {[1,2,3].map(i => <div key={i} className="h-32 bg-white rounded-xl border border-slate-200 p-6 animate-pulse">
+              <div className="h-4 w-24 bg-slate-100 rounded mb-4" />
+              <div className="h-8 w-16 bg-slate-100 rounded" />
+            </div>)}
+          </div>
+          <div className="h-64 bg-white rounded-xl border border-slate-200 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex bg-[#f8fafc] min-h-screen">

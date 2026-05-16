@@ -195,21 +195,33 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
 function Overview({ setActive, setSelectedOrder, projects = [], writers = [], userName = "Student", isMobile }) {
   const [recentNotifications, setRecentNotifications] = useState([]);
   useEffect(() => {
-    fetch('/api/notifications')
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    fetch('/api/notifications', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setRecentNotifications(data.slice(0, 5));
       })
-      .catch(err => console.error("Failed to fetch notifications:", err));
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error("Failed to fetch notifications:", err);
+      })
+      .finally(() => clearTimeout(timeoutId));
+    
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, []);
-  const stats = [
+  
+  const stats = useMemo(() => [
     { label: 'Active Orders', val: projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').length, icon: '⚡', color: 'var(--teal)', sub: 'In progress' },
     { label: 'Completed', val: projects.filter(o => o.status === 'COMPLETED').length, icon: '✓', color: 'var(--green)', sub: 'All time' },
     { label: 'Wallet Balance', val: `₹0`, icon: '💳', color: 'var(--gold)', sub: 'Available credits' },
     { label: 'Saved Writers', val: writers.length, icon: '✍️', color: '#f472b6', sub: 'Favorites' },
-  ];
+  ], [projects, writers.length]);
 
-  const activeOrders = projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').map(o => {
+  const activeOrders = useMemo(() => projects.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').map(o => {
     let displayStatus = 'In Progress';
     let progress = 50;
     if (o.status === 'CREATED') { displayStatus = 'Finding Writer'; progress = 10; }
@@ -226,7 +238,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
       progress,
       due: o.deadline ? new Date(o.deadline).toLocaleDateString() : 'N/A'
     };
-  });
+  }), [projects]);
 
   // Logs replaced with notifications
 
@@ -462,7 +474,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     setSubmitting(false);
   };
 
-  const MAPPED_ORDERS = projects.map(p => {
+  const MAPPED_ORDERS = useMemo(() => projects.map(p => {
     let displayStatus = 'In Progress';
     let progress = 50;
     if (p.status === 'CREATED') { displayStatus = 'Finding Writer'; progress = 10; }
@@ -485,9 +497,9 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
       submitted: new Date(p.createdAt).toLocaleDateString(),
       progress
     };
-  });
+  }), [projects]);
 
-  const filtered = MAPPED_ORDERS.filter(o => {
+  const filtered = useMemo(() => MAPPED_ORDERS.filter(o => {
     const matchesFilter = filter === 'All' ? true :
       filter === 'Active' ? !['Delivered', 'Revision Requested'].includes(o.status) :
         filter === 'Delivered' ? o.status === 'Delivered' :
@@ -497,7 +509,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
       o.service.toLowerCase().includes(search.toLowerCase());
 
     return matchesFilter && matchesSearch;
-  });
+  }), [MAPPED_ORDERS, filter, search]);
 
   return (
     <div style={{ padding: isMobile ? '16px 20px' : '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
@@ -1818,35 +1830,50 @@ export default function App() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('/api/projects');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const res = await fetch('/api/projects', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       const data = await res.json();
       setProjects(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Fetch projects error:", err);
+      if (err.name !== 'AbortError') console.error("Fetch projects error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchProfile = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch('/api/user/profile');
+      const res = await fetch('/api/user/profile', { signal: controller.signal });
       const data = await res.json();
       setUserProfile(data);
       if (data && !data.profileCompleted) {
         setShowProfilePrompt(true);
       }
     } catch (err) {
-      console.error("Fetch profile error:", err);
+      if (err.name !== 'AbortError') console.error("Fetch profile error:", err);
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
-
   const fetchWriters = async () => {
     try {
-      const res = await fetch('/api/writers');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const res = await fetch('/api/writers', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       const data = await res.json();
       setWriters(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Fetch writers error:", err);
+      if (err.name !== 'AbortError') console.error("Fetch writers error:", err);
     }
   };
 
@@ -1917,7 +1944,7 @@ export default function App() {
     }
   }, [active]);
 
-  const userName = userProfile?.name || session?.user?.name || "Student";
+  const userName = useMemo(() => userProfile?.name || session?.user?.name || "Student", [userProfile, session]);
   const unreadCount = 0;
 
   const [orderForm, setOrderForm] = useState(() => {
@@ -1947,7 +1974,7 @@ export default function App() {
     return { category: '', turnaround: '72h', wordCount: 500, details: '', deadline: '', attachments: [], variant: null, fast: false, addon: false, custom: false, ats: false };
   });
 
-  const content = {
+  const content = useMemo(() => ({
     overview: <Overview setActive={setActive} setSelectedOrder={setSelectedOrder} projects={projects} writers={writers} userName={userName} isMobile={isMobile} />,
     'new-order': <NewOrder setActive={setActive} isMobile={isMobile} onOrderCreated={fetchProjects} form={orderForm} setForm={setOrderForm} />,
     services: <ServicesCatalog setActive={setActive} setOrderForm={setOrderForm} isMobile={isMobile} />,
@@ -1957,10 +1984,37 @@ export default function App() {
     notifications: <Notifications userName={userName} isMobile={isMobile} />,
     writers: <SavedWriters setActive={setActive} writers={writers} isMobile={isMobile} />,
     settings: <Settings isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
-  };
+  }), [projects, writers, userName, isMobile, userProfile, selectedOrder, socket]);
 
-  if (status === "loading") {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--text)' }}>Loading session...</div>;
+  if (status === "loading" || loading) {
+    return (
+      <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#0a0a0b' }}>
+        <div style={{ width: 220, background: '#121224', borderRight: '1px solid rgba(255,255,255,0.07)', padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 24 }}>
+            <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#0d9488,#0f766e)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff' }}>E</div>
+            <div>
+              <div style={{ width: 80, height: 12, background: 'rgba(255,255,255,0.1)', borderRadius: 4, marginBottom: 4 }} />
+              <div style={{ width: 50, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+            </div>
+          </div>
+          <div style={{ width: '100%', height: 40, background: 'rgba(13,148,136,0.14)', borderRadius: 7, marginBottom: 8 }} />
+          {[1,2,3,4,5,6].map(i => <div key={i} style={{ width: '100%', height: 40, background: 'rgba(255,255,255,0.03)', borderRadius: 7, marginBottom: 8 }} />)}
+        </div>
+        <div style={{ flex: 1, padding: 32 }}>
+          <div style={{ width: 200, height: 24, background: 'rgba(255,255,255,0.1)', borderRadius: 4, marginBottom: 24 }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
+            {[1,2,3,4].map(i => <div key={i} style={{ background: '#121224', borderRadius: 8, padding: 20 }}>
+              <div style={{ width: 60, height: 10, background: 'rgba(255,255,255,0.05)', borderRadius: 4, marginBottom: 10 }} />
+              <div style={{ width: 100, height: 28, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+            </div>)}
+          </div>
+          <div style={{ width: '60%', height: 16, background: 'rgba(255,255,255,0.1)', borderRadius: 4, marginBottom: 16 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[1,2,3,4].map(i => <div key={i} style={{ height: 70, background: '#121224', borderRadius: 8 }} />)}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!session || session.user.role !== "STUDENT") {

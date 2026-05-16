@@ -745,7 +745,7 @@ const mapProjectsToOrders = (rawProjects, userId) => {
   });
 };
 
-function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
+function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdate }) {
   const [orders, setOrders] = useState(() => mapProjectsToOrders(projects, userId));
 
   // When projects changes (e.g. socket adds a client message to App state),
@@ -865,6 +865,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
 
   const [filter, setFilter] = useState('All');
 
+<<<<<<< Updated upstream
   const filterTabs = [
   { id: 'All', label: 'All', count: orders.length },
   { id: 'Active', label: 'Active', count: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check'].includes(o.status)).length },
@@ -878,6 +879,23 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket }) {
     if (filter === 'Delivered') return o.status === 'Delivered';
     return true;
   });
+=======
+  const filterTabs = useMemo(() => [
+    { id: 'All', label: 'All', count: orders.length },
+    { id: 'Active', label: 'Active', count: orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status)).length },
+    { id: 'Revision', label: 'Revision', count: orders.filter((o) => o.status === 'Revision').length },
+    { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length }
+  ], [orders]);
+
+
+  const filtered = useMemo(() => {
+    if (filter === 'All') return orders;
+    if (filter === 'Active') return orders.filter((o) => ['New Order', 'In Progress', 'Under Review'].includes(o.status));
+    if (filter === 'Revision') return orders.filter((o) => o.status === 'Revision');
+    if (filter === 'Delivered') return orders.filter((o) => o.status === 'Delivered');
+    return orders;
+  }, [orders, filter]);
+>>>>>>> Stashed changes
 
   const handleStatusChange = async (id, newStatus) => {
     const dbStatus = 
@@ -1061,26 +1079,42 @@ function AllOrdersList({ orders = [], isMobile }) {
 function Overview({ setActive, projects = [], userName = "Writer", isMobile, session, userProfile }) {
   const [recentNotifications, setRecentNotifications] = useState([]);
   useEffect(() => {
-    fetch('/api/notifications')
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    fetch('/api/notifications', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setRecentNotifications(data.slice(0, 5));
       })
-      .catch(err => console.error("Failed to fetch notifications:", err));
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error("Failed to fetch notifications:", err);
+      })
+      .finally(() => clearTimeout(timeoutId));
+    
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, []);
+<<<<<<< Updated upstream
   const active = projects.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Under Review', 'Quality Check', 'Revision Requested'].includes(mapDBStatusToUI(o.status)));
   const earnings = projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7;
+=======
+  const active = useMemo(() => projects.filter((o) => o.status !== 'COMPLETED'), [projects]);
+  const earnings = useMemo(() => projects.filter(o => o.status === 'COMPLETED').reduce((acc, p) => acc + (p.amount || 0), 0) * 0.7, [projects]);
+>>>>>>> Stashed changes
   
-  // Calculate unread from real projects
-  const unreadCount = projects.reduce((acc, p) => {
+  const unreadCount = useMemo(() => projects.reduce((acc, p) => {
     return acc + (p.messages?.filter(m => !m.read && m.senderId !== session?.user?.id).length || 0);
-  }, 0);
+  }, 0), [projects, session?.user?.id]);
 
-  const stats = [
+  const stats = useMemo(() => [
     { label: 'Active Orders', val: active.length, icon: '⚡', color: 'var(--teal)', sub: 'Requires attention' },
     { label: 'Unread Messages', val: unreadCount, icon: '💬', color: 'var(--amber)', sub: 'From clients' },
     { label: 'Total Earnings', val: `$${earnings.toFixed(2)}`, icon: '💰', color: 'var(--green)', sub: 'All time' },
-    { label: 'Avg Rating', val: (userProfile?.freelancerProfile?.rating || 5.0).toFixed(1), icon: '★', color: 'var(--gold)', sub: 'Top Writer' }];
+    { label: 'Avg Rating', val: (userProfile?.freelancerProfile?.rating || 5.0).toFixed(1), icon: '★', color: 'var(--gold)', sub: 'Top Writer' }
+  ], [active.length, unreadCount, earnings, userProfile?.freelancerProfile?.rating]);
 
 
   return (
@@ -1177,18 +1211,27 @@ function Earnings({ isMobile }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/freelancer/earnings');
+        const res = await fetch('/api/freelancer/earnings', { signal: controller.signal });
         const json = await res.json();
         if (res.ok) setData(json);
       } catch (err) {
-        console.error("Failed to fetch earnings:", err);
+        if (err.name !== 'AbortError') console.error("Failed to fetch earnings:", err);
       } finally {
         setLoading(false);
+        clearTimeout(timeoutId);
       }
     };
     fetchData();
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // Derive chart data from projects or fallback to static
@@ -1455,12 +1498,18 @@ export default function App() {
   }, []);
 
   const fetchProfile = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch('/api/user/profile');
+      const res = await fetch('/api/user/profile', { signal: controller.signal });
       const data = await res.json();
       setUserProfile(data);
       if (data && !data.profileCompleted) setShowProfilePrompt(true);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      if (err.name !== 'AbortError') console.error(err); 
+    } finally {
+      clearTimeout(timeoutId);
+    }
   };
 
   const fetchProjects = async () => {
@@ -1491,11 +1540,26 @@ export default function App() {
     const fetchAll = async () => {
       setLoading(true);
       try {
+<<<<<<< Updated upstream
         await Promise.all([fetchProjects(), fetchProfile()]);
       } catch (err) {
         console.error("Dashboard init error:", err);
       } finally {
         setLoading(false);
+=======
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const res = await fetch('/api/projects', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        const data = await res.json();
+        setProjects(Array.isArray(data) ? data : []);
+      } catch (err) { 
+        if (err.name !== 'AbortError') console.error(err); 
+      } finally { 
+        setLoading(false); 
+>>>>>>> Stashed changes
       }
     };
 
@@ -1570,23 +1634,49 @@ export default function App() {
     }
   }, [session?.user?.id]);
 
-  const userName = userProfile?.name || session?.user?.name || "Writer";
-  const views = {
+  const userName = useMemo(() => userProfile?.name || session?.user?.name || "Writer", [userProfile, session]);
+  
+  const views = useMemo(() => ({
     overview: <Overview setActive={setActive} projects={projects} userName={userName} isMobile={isMobile} session={session} userProfile={userProfile} />,
     orders: <OrdersView projects={projects} userId={session?.user?.id} isMobile={isMobile} userName={userName} socket={socket} />,
     'all-orders': <AllOrdersList orders={mapProjectsToOrders(projects, session?.user?.id)} isMobile={isMobile} />,
     earnings: <Earnings isMobile={isMobile} />,
     profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />
-  };
+  }), [projects, userName, isMobile, session, userProfile, socket]);
 
   const isVerified = userProfile?.freelancerProfile?.isVerified;
   const status = userProfile?.freelancerProfile?.status;
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0b', color: '#fff' }}>
-        <p style={{ fontSize: 14, fontWeight: 'bold', letterSpacing: '0.1em' }}>LOADING DASHBOARD...</p>
+      <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#0a0a0b' }}>
+        <div style={{ width: 210, background: '#121224', borderRight: '1px solid rgba(255,255,255,0.07)', padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 20 }}>
+            <div style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#0d9488,#0f766e)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff' }}>X</div>
+            <div>
+              <div style={{ width: 80, height: 12, background: 'rgba(255,255,255,0.1)', borderRadius: 4, marginBottom: 4 }} />
+              <div style={{ width: 50, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+            </div>
+          </div>
+          <div style={{ width: '100%', height: 38, background: 'rgba(13,148,136,0.14)', borderRadius: 7, marginBottom: 8 }} />
+          {[1,2,3,4].map(i => <div key={i} style={{ width: '100%', height: 38, background: 'rgba(255,255,255,0.03)', borderRadius: 7, marginBottom: 8 }} />)}
+        </div>
+        <div style={{ flex: 1, padding: 32 }}>
+          <div style={{ width: 200, height: 24, background: 'rgba(255,255,255,0.1)', borderRadius: 4, marginBottom: 24 }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
+            {[1,2,3].map(i => <div key={i} style={{ background: '#121224', borderRadius: 8, padding: 20 }}>
+              <div style={{ width: 60, height: 10, background: 'rgba(255,255,255,0.05)', borderRadius: 4, marginBottom: 10 }} />
+              <div style={{ width: 100, height: 30, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+            </div>)}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            {[1,2,3,4].map(i => <div key={i} style={{ width: 60, height: 28, background: '#121224', borderRadius: 6 }} />)}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[1,2,3].map(i => <div key={i} style={{ height: 80, background: '#121224', borderRadius: 8 }} />)}
+          </div>
+        </div>
       </div>
     );
   }

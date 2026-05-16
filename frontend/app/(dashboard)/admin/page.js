@@ -50,22 +50,52 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
   const multiplier = (currentDisplayConfig.rate || 1) / (baseCurrencyConfig.rate || 1);
 
   const [recentNotifications, setRecentNotifications] = React.useState([]);
+  const [notificationsLoading, setNotificationsLoading] = React.useState(true);
+
   React.useEffect(() => {
-    fetch('/api/notifications')
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    setNotificationsLoading(true);
+    
+    fetch('/api/notifications', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setRecentNotifications(data.slice(0, 6));
       })
-      .catch(err => console.error("Failed to fetch notifications:", err));
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error("Failed to fetch notifications:", err);
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setNotificationsLoading(false);
+      });
+      
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, []);
-  const stats = [
+
+  const stats = React.useMemo(() => [
     { label: 'Total Orders', val: projects.length, sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
     { label: 'Active Projects', val: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length, sub: 'Requiring attention', color: 'var(--green)', icon: '⚡' },
     { label: 'Monthly Revenue', val: `${baseSymbol}${(projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) * multiplier).toLocaleString()}`, sub: 'Total volume', color: 'var(--gold)', icon: '💰' },
     { label: 'Total Writers', val: freelancers.length, sub: 'Approved partners', color: 'var(--amber)', icon: '✍️' },
     { label: 'Recent Logs', val: projects.reduce((acc, p) => acc + (p._count?.logs || 0), 0), sub: 'Actions tracked', color: 'var(--red)', icon: '📜' },
     { label: 'Avg Project Val', val: `${baseSymbol}${projects.length ? ((projects.reduce((acc, p) => acc + (p.basePrice || 0), 0) / projects.length) * multiplier).toFixed(0) : 0}`, sub: 'Platform-wide', color: '#f472b6', icon: '★' }
-  ];
+  ], [projects, freelancers, baseSymbol, multiplier]);
+
+  const loadingSkeletons = (
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
+      {[1,2,3,4,5,6].map(i => (
+        <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '18px 18px', animation: 'pulse 2s infinite' }}>
+          <div style={{ height: 10, width: '60%', background: 'var(--surface3)', borderRadius: 4, marginBottom: 10 }} />
+          <div style={{ height: 30, width: '80%', background: 'var(--surface3)', borderRadius: 4, marginBottom: 3 }} />
+          <div style={{ height: 11, width: '40%', background: 'var(--surface3)', borderRadius: 4 }} />
+        </div>
+      ))}
+    </div>
+  );
 
   const quickLinks = [
     { id: 'integrations', label: 'API Integrations', icon: '🔌', desc: 'Manage external services' },
@@ -79,6 +109,30 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
   ];
 
   // Logs replaced with notifications
+
+  if (dataLoading) {
+    return (
+      <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%' }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ height: 22, width: 200, background: 'var(--surface3)', borderRadius: 4, marginBottom: 4 }} />
+          <div style={{ height: 13, width: 300, background: 'var(--surface3)', borderRadius: 4 }} />
+        </div>
+        {loadingSkeletons}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
+          <div>
+            <div style={{ height: 15, width: 150, background: 'var(--surface3)', borderRadius: 4, marginBottom: 14 }} />
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+              {[1,2,3,4].map(i => <div key={i} style={{ height: 80, background: 'var(--surface2)', borderRadius: 8 }} />)}
+            </div>
+          </div>
+          <div>
+            <div style={{ height: 15, width: 150, background: 'var(--surface3)', borderRadius: 4, marginBottom: 14 }} />
+            <div style={{ height: 200, background: 'var(--surface2)', borderRadius: 8 }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
@@ -278,6 +332,7 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   const [freelancers, setFreelancers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [config, setConfig] = useState(null);
@@ -311,12 +366,19 @@ export default function App() {
     if (savedDark !== null) setDark(savedDark !== 'false');
 
     const fetchData = async () => {
+      setDataLoading(true);
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const [projRes, freeRes, confRes] = await Promise.all([
-          fetch('/api/projects'),
-          fetch('/api/admin/freelancers'),
-          fetch('/api/admin/config/currency')
+          fetch('/api/projects', { signal: controller.signal }),
+          fetch('/api/admin/freelancers', { signal: controller.signal }),
+          fetch('/api/admin/config/currency', { signal: controller.signal })
         ]);
+        
+        clearTimeout(timeoutId);
+        
         const [projData, freeData] = await Promise.all([projRes.json(), freeRes.json()]);
         setProjects(Array.isArray(projData) ? projData : []);
         setFreelancers(Array.isArray(freeData) ? freeData : []);
@@ -326,9 +388,12 @@ export default function App() {
           setDisplayCurrency(confData?.baseCurrency || 'USD');
         }
       } catch (err) {
-        console.error("Data fetch error:", err);
+        if (err.name !== 'AbortError') {
+          console.error("Data fetch error:", err);
+        }
       } finally {
         setLoading(false);
+        setDataLoading(false);
       }
     };
 
@@ -355,7 +420,7 @@ export default function App() {
     }
   }, [dark]);
 
-  const views = {
+  const views = useMemo(() => ({
     overview: <AdminOverview setSection={setSection} projects={projects} freelancers={freelancers} isMobile={isMobile} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} />,
     orders: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminOrders projects={projects} freelancers={freelancers} setProjects={setProjects} isMobile={isMobile} /></div>,
     integrations: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
@@ -372,7 +437,7 @@ export default function App() {
     workflow: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
     theme: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>,
     notifications: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><Notifications userName="Admin" isMobile={isMobile} /></div>
-  };
+  }), [section, projects, freelancers, isMobile, displayCurrency, setDisplayCurrency, config]);
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>

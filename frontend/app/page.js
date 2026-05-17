@@ -43,12 +43,12 @@ const WRITERS = [
 ];
 
 const FEATURES = [
-  { icon: '🛡️', t: 'Plagiarism-Free Guarantee', d: 'Turnitin-style report included on every delivery. 100% original or refund.' },
+  { icon: '🛡️', t: 'Plagiarism-Free Guarantee', d: 'Turnitin-style report included on every delivery. 100% original or full re-draft.' },
   { icon: '🔒', t: 'NDA-Protected', d: 'Every writer signs a confidentiality agreement. Your work is yours, forever.' },
-  { icon: '⚡', t: 'Express Delivery', d: '24-hour rush option available on most services. Late = full refund, no questions.' },
+  { icon: '⚡', t: 'Express Delivery', d: '24-hour rush option available on most services. Late = free service credits, no questions.' },
   { icon: '🔄', t: 'Unlimited Revisions', d: 'Revise until you\'re satisfied. We don\'t close orders until you say so.' },
   { icon: '💬', t: 'Direct Writer Chat', d: 'Talk to your writer 1-on-1 inside our messaging platform. No middlemen.' },
-  { icon: '💸', t: 'Money-Back Promise', d: 'Not happy after revisions? Full refund within 7 days, no fine print.' },
+  { icon: '🤝', t: 'Satisfaction Promise', d: 'Not happy after revisions? We will assign a new expert writer to re-draft it for free.' },
 ];
 
 
@@ -61,7 +61,7 @@ const TESTIMONIALS = [
 const FAQ = [
   { q: 'How is Xpresswriters different from other writing services?', a: "We’re a marketplace, not a content mill. You see the actual writer’s profile, ratings, and portfolio before you hire. Every order has a real human accountable to you — no anonymous teams, no rewrites by junior staff." },
   { q: 'Is the work AI-generated?', a: 'No. We\'re an AI-detection-friendly platform — every delivery passes GPTZero, Originality.ai, and Turnitin. Writers may use AI as a research tool, but the writing is human and original.' },
-  { q: "What if I’m not happy with the draft?", a: "Unlimited free revisions within scope. If that still doesn’t work, you can request a writer change or a full refund within 7 days of delivery — no questions, no fine print." },
+  { q: "What if I’m not happy with the draft?", a: "Unlimited free revisions within scope. If that still doesn’t work, you can request a writer change at no extra cost — we guarantee satisfaction before delivery." },
   { q: 'How fast can you deliver?', a: 'Most services have a 24-48 hour express option. A 1,500-word SOP can be turned around in 24 hours; complex thesis chapters need 5-10 days. Every product page shows exact timelines.' },
   { q: 'Do you guarantee admission / visa approval?', a: 'No ethical writing service can guarantee outcomes — those depend on your profile, target school, and a dozen other factors. What we guarantee is the highest-quality document we can produce for your case.' },
 ];
@@ -443,7 +443,7 @@ function WritersMarketplace() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{w.n}</span>
-                  <span style={{ fontSize: 11, color: '#fbbf24' }}>âœ“</span>
+                  <span style={{ fontSize: 11, color: '#fbbf24' }}>✓</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--teal-light)', fontWeight: 500 }}>{w.spec}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{w.exp}</div>
@@ -459,19 +459,19 @@ function WritersMarketplace() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{w.price}</div>
-                <Link href="/login" style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'none' }}>Hire â†’</Link>
+                <Link href="/login" style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'none' }}>Hire →</Link>
               </div>
             </div>
           </div>))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 36 }}>
-          <Link className="btn-outline-teal" href="/login">Browse 1,200+ writers â†’</Link>
+          <Link className="btn-outline-teal" href="/login">Browse 1,200+ writers →</Link>
         </div>
       </div>
     </section>);
 }
 
-/* â”€â”€â”€ FEATURES (Why us) â”€â”€â”€ */
+/* ─── FEATURES (Why us) ─── */
 function Features() {
   return (
     <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
@@ -494,7 +494,7 @@ function Features() {
     </section>);
 }
 
-/* â”€â”€â”€ LIVE DASHBOARD PREVIEW â”€â”€â”€ */
+/* ─── LIVE DASHBOARD PREVIEW ─── */
 function DashboardPreview() {
   return (
     <section className="section">
@@ -502,11 +502,11 @@ function DashboardPreview() {
         <div>
           <div className="eyebrow">Your Command Center</div>
           <h2 className="h2" style={{ marginBottom: 18 }}>A real dashboard. <span className="gradient-text">Not an inbox.</span></h2>
-          <p className="lead" style={{ marginBottom: 24 }}>Track every order, message every writer, download every invoice, manage every revision â€” all in one place. Live notifications, real-time status, transparent everything.</p>
+          <p className="lead" style={{ marginBottom: 24 }}>Track every order, message every writer, download every invoice, manage every revision — all in one place. Live notifications, real-time status, transparent everything.</p>
           <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 28 }}>
-            {['Live order tracking with milestones', 'Direct chat with your writer (1-on-1, no agents)', 'Invoices & receipts ready for tax filing', 'Notification center · Mobile-first design'].map((x, i) => (<li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--text)' }}><span style={{ color: 'var(--teal-light)', fontWeight: 700, flexShrink: 0 }}>âœ“</span>{x}</li>))}
+            {['Live order tracking with milestones', 'Direct chat with your writer (1-on-1, no agents)', 'Invoices & receipts ready for tax filing', 'Notification center · Mobile-first design'].map((x, i) => (<li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--text)' }}><span style={{ color: 'var(--teal-light)', fontWeight: 700, flexShrink: 0 }}>✓</span>{x}</li>))}
           </ul>
-          <Link className="btn-teal" href="/login">See live demo â†’</Link>
+          <Link className="btn-teal" href="/login">See live demo →</Link>
         </div>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,0.4)' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
@@ -528,7 +528,7 @@ function DashboardPreview() {
           <div style={{ padding: '14px 16px', background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 8, marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>SOP â€” Stanford GSB</div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>SOP — Stanford GSB</div>
                 <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>INV-2024-0184 · Dr. Amara Singh</div>
               </div>
               <span style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(13,148,136,0.2)', color: 'var(--teal-light)', fontSize: 10, fontWeight: 600 }}>In Progress</span>
@@ -539,7 +539,7 @@ function DashboardPreview() {
           {/* Notification row */}
           <div style={{ padding: '10px 14px', background: 'var(--bg)', border: '1px solid var(--border2)', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
             <div style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--teal-light)', animation: 'pulse 2s ease infinite', flexShrink: 0 }} />
-            <div style={{ fontSize: 11.5, flex: 1 }}><strong style={{ fontWeight: 600 }}>Marcus Webb</strong> <span style={{ color: 'var(--text-muted)' }}>sent you a new draft â€” Blog Post</span></div>
+            <div style={{ fontSize: 11.5, flex: 1 }}><strong style={{ fontWeight: 600 }}>Marcus Webb</strong> <span style={{ color: 'var(--text-muted)' }}>sent you a new draft — Blog Post</span></div>
             <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>2m</span>
           </div>
         </div>
@@ -547,7 +547,7 @@ function DashboardPreview() {
     </section>);
 }
 
-/* â”€â”€â”€ TESTIMONIALS â”€â”€â”€ */
+/* ─── TESTIMONIALS ─── */
 function Testimonials() {
   const [active, setActive] = useState(0);
   useEffect(() => { const t = setInterval(() => setActive(a => (a + 1) % TESTIMONIALS.length), 6000); return () => clearInterval(t); }, []);
@@ -578,7 +578,7 @@ function Testimonials() {
     </section>);
 }
 
-/* â”€â”€â”€ BECOME A WRITER CTA â”€â”€â”€ */
+/* ─── BECOME A WRITER CTA ─── */
 function WriterCTA() {
   return (
     <section className="section">
@@ -589,7 +589,7 @@ function WriterCTA() {
             <h2 className="h2" style={{ marginBottom: 14 }}>Write for clients who <span className="gradient-text">actually pay on time</span></h2>
             <p className="lead" style={{ marginBottom: 22 }}>Join 1,200+ writers earning ₹40,000-2,00,000/month. Set your own rates, work on what you love, get paid in 48 hours.</p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Link className="btn-teal" href="/login">Apply to write â†’</Link>
+              <Link className="btn-teal" href="/register?role=freelancer">Apply to write →</Link>
               <Link className="btn-outline-teal" href="/login">See writer dashboard</Link>
             </div>
           </div>
@@ -609,7 +609,7 @@ function WriterCTA() {
     </section>);
 }
 
-/* â”€â”€â”€ FAQ â”€â”€â”€ */
+/* ─── FAQ ─── */
 function FAQSection() {
   const [open, setOpen] = useState(0);
   return (
@@ -632,7 +632,7 @@ function FAQSection() {
     </section>);
 }
 
-/* â”€â”€â”€ FINAL CTA â”€â”€â”€ */
+/* ─── FINAL CTA ─── */
 function FinalCTA() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -649,14 +649,14 @@ function FinalCTA() {
             } else {
               router.push('/login');
             }
-          }} className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }}>Browse Services â†’</button>
+          }} className="btn-teal" style={{ fontSize: 15, padding: '16px 32px' }}>Browse Services →</button>
           {!session && <Link className="btn-outline-teal" style={{ fontSize: 15, padding: '15px 30px' }} href="/login">Track an order</Link>}
         </div>
       </div>
     </section>);
 }
 
-/* â”€â”€â”€ NAVBAR â”€â”€â”€ */
+/* ─── NAVBAR ─── */
 /* ─── APP COMBINED ─── */
 export default function App() {
   const { data: session } = useSession();
@@ -756,7 +756,7 @@ export default function App() {
             ['🔒', '100% Confidential', 'NDA-grade privacy on every order'],
             ['🎓', 'PhD-level writers', '340+ verified domain experts'],
             ['↻', 'Unlimited revisions', '2 free revisions on every plan'],
-            ['💰', 'Money-back guarantee', 'Full refund within 14 days']
+            ['🤝', 'No-Risk Revisions', 'Unlimited edits within 7 days']
           ].map(([i, t, d]) => (
             <div key={t}><div style={{ fontSize: 28, marginBottom: 7 }}>{i}</div><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{t}</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 300 }}>{d}</div></div>
           ))}
@@ -787,7 +787,7 @@ export default function App() {
                 <a href="/services" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>All Services</a>
                 <a href="/pricing" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Pricing</a>
                 <a href="/track" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Track Order</a>
-                <a href="/onboard/freelancer" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Become a Writer</a>
+                <a href="/register?role=freelancer" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Become a Writer</a>
               </div>
             </div>
             <div>
@@ -802,10 +802,10 @@ export default function App() {
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20 }}>LEGAL</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <a href="/terms" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</a>
-                <a href="/privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</a>
-                <a href="/refund-policy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Refund Policy</a>
-                <a href="/privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Cookie Policy</a>
+                <a href="/legal#terms" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</a>
+                <a href="/legal#privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</a>
+                <a href="/legal#refund" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Refund Policy</a>
+                <a href="/legal#cookie" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Cookie Policy</a>
               </div>
             </div>
           </div>

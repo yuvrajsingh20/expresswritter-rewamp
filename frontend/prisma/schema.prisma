@@ -378,3 +378,50 @@ model AuditLog {
   ipAddress     String?
   createdAt     DateTime @default(now())
 }
+
+// ─── REVIEW & SLA SYSTEM ──────────────────────────────────────────────
+
+// Student review submitted after project COMPLETED
+model Review {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId       String   @unique @db.ObjectId
+  freelancerId    String   @db.ObjectId
+  studentId       String   @db.ObjectId
+
+  // Core rubric (each 1-5)
+  qualityScore      Int   // Writing quality / accuracy
+  communicationScore Int  // Responsiveness & clarity
+  timelinessScore   Int   // Delivered on or before deadline
+  requirementScore  Int   // Followed instructions / requirements
+  overallScore      Int   // Overall satisfaction
+
+  comment         String?
+  createdAt       DateTime @default(now())
+}
+
+// SLA event log — one row per tracked milestone per project
+model SLAEvent {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId       String   @db.ObjectId
+  freelancerId    String   @db.ObjectId
+
+  // Which milestone
+  eventType       String
+  // ASSIGN_ACCEPT   – writer started working after assignment
+  // FIRST_REPLY     – first message sent by writer after assignment
+  // DELIVERY        – file uploaded / status → REVIEW
+  // REVISION_TURNAROUND – delivery after revision request
+
+  occurredAt      DateTime @default(now())
+
+  // Reference timestamps for calculation
+  deadlineAt      DateTime?
+  assignedAt      DateTime?
+  firstMessageAt  DateTime?
+
+  // Computed deltas (minutes)
+  responseMinutes   Int?   // Time to first reply (lower=better, target ≤60)
+  startMinutes      Int?   // Time to begin after assignment (target ≤120)
+  deliveryOnTime    Boolean? // Was delivery before deadline?
+  revisionMinutes   Int?   // Turnaround on revision (target ≤240)
+}

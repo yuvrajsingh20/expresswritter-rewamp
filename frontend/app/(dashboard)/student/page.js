@@ -377,6 +377,17 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const filters = ['All', 'Active', 'Delivered', 'Revision'];
+  const detailRef = useRef(null);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setTimeout(() => {
+        if (detailRef.current) {
+          detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+    }
+  }, [selectedOrder]);
 
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketSuccess, setTicketSuccess] = useState(false);
@@ -588,7 +599,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
 
       {/* Expanded detail */}
       {selectedOrder && o && (
-        <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
+        <div ref={detailRef} style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: 24, animation: 'fadeUp 0.25s ease' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{o.service}</h3>
@@ -675,7 +686,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
 
           {o.status !== 'Delivered' && (
             <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
-              <button onClick={() => { setTicketSubject(`Issue: ${o.displayId}`); setTicketMessage(`I am reporting an issue with order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Refund</button>
+              <button onClick={() => { setTicketSubject(`Issue: ${o.displayId}`); setTicketMessage(`I am reporting an issue with order ${o.displayId}. Specific details: `); setShowTicketModal(true); }} style={{ fontSize: 12, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}>Report Issue / Request Support</button>
             </div>
           )}
         </div>
@@ -700,7 +711,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Report Issue / Request Refund</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Report Issue / Request Support</h3>
                   <button
                     onClick={() => { setShowTicketModal(false); setTicketError(''); }}
                     style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 24, padding: '0 4px', lineHeight: 1 }}
@@ -1756,7 +1767,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
 
                 <div style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 32 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--teal-light)', marginBottom: 6 }}>🔄 Revision Policy</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>Unlimited revisions within 7 days of delivery. We guarantee satisfaction — or a full refund.</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>Unlimited revisions within 7 days of delivery. We guarantee satisfaction before final closure.</div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -2142,7 +2153,6 @@ const [orderForm, setOrderForm] = useState(() => {
           {content[active]}
         </div>
       </main>
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
     </div>
   );
 }

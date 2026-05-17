@@ -17,7 +17,7 @@ export default function HelpPage() {
   const categories = [
     { id: 'orders', label: '📋 Orders & Delivery', count: 14, icon: '📋' },
     { id: 'payments', label: '💳 Payments & Billing', count: 9, icon: '💳', color: 'var(--amber)' },
-    { id: 'refunds', label: '💸 Refunds & Revisions', count: 11, icon: '💸', color: 'var(--red)' },
+    { id: 'refunds', label: '💸 Revisions & Policies', count: 11, icon: '💸', color: 'var(--red)' },
     { id: 'account', label: '🔐 Account & Security', count: 12, icon: '🔐', color: 'var(--violet)' },
     { id: 'quality', label: '✓ Quality & Plagiarism', count: 8, icon: '✓', color: 'var(--green)' },
     { id: 'writers', label: '✍️ For Writers', count: 15, icon: '✍️', color: 'var(--blue)' },
@@ -40,10 +40,10 @@ export default function HelpPage() {
       { q: "Do you support multiple currencies?", a: "Pricing is shown in INR by default. We auto-detect your country and show converted prices in USD, EUR, GBP, AUD, or CAD. The final charge is processed in your local currency by Stripe." },
     ],
     refunds: [
-      { q: "What's your refund policy?", a: "Full refund if we can't match you with a writer, the deliverable is late, or it fails our plagiarism/AI standards. Partial refunds for cancellations after a writer is assigned. Full details in our Refund Policy." },
+      { q: "What's your refund policy?", a: "Monetary refunds are only possible if we cannot match you with a qualified writer for your project. Once work has been completed and delivered, all sales are final and we do not offer refunds. However, we guarantee your satisfaction via our No-Risk Revisions policy." },
       { q: "How many revisions are included?", a: "Up to 3 free revisions within 14 days of delivery. After that, additional revisions are billed at the per-100-word rate of your service tier. Substantial scope changes are quoted separately." },
-      { q: "How long do refunds take?", a: "Wallet credit: instant + 5% bonus. Original payment method: 5–7 business days depending on your bank. International cards may take up to 10 days." },
-      { q: "Can I cancel after the writer started?", a: "Yes, but cancellation refunds are pro-rated. 70% before the first draft, 30% after first draft, and case-by-case after a full draft is submitted. The writer is compensated for work completed." },
+      { q: "How long do pre-delivery cancellations/refunds take?", a: "Pre-delivery cancellations are credited to your platform wallet instantly. Bank/card reversals for unassigned orders take 5–7 business days depending on your bank." },
+      { q: "Can I cancel after the writer has started?", a: "Yes, but only before delivery. If a writer has already been assigned and started drafting, cancellations are eligible for a 70% pro-rated wallet credit to compensate the writer for their time. Once delivered, all sales are final." },
     ],
     account: [
       { q: "How do I reset my password?", a: "Go to Sign in → \"Forgot password\" — enter your email and we'll send a reset link. The link expires in 1 hour." },
@@ -141,7 +141,7 @@ export default function HelpPage() {
 
       <div className="help-shortcuts">
         <Link href="/track" className="help-shortcut"><div className="shortcut-icon-box" style={{background:'rgba(13,148,136,0.15)',color:'var(--teal-light)'}}>📦</div><h3>Track an Order</h3><p>Check status without logging in</p></Link>
-        <a onClick={() => setActiveCat('refunds')} className="help-shortcut" style={{cursor:'pointer'}}><div className="shortcut-icon-box" style={{background:'rgba(244,63,94,0.15)',color:'var(--red)'}}>💸</div><h3>Request a Refund</h3><p>Money-back guarantee details</p></a>
+        <a onClick={() => setActiveCat('refunds')} className="help-shortcut" style={{cursor:'pointer'}}><div className="shortcut-icon-box" style={{background:'rgba(244,63,94,0.15)',color:'var(--red)'}}>💸</div><h3>Revisions &amp; Policies</h3><p>No-risk edits guarantee</p></a>
         <a onClick={() => setActiveCat('account')} className="help-shortcut" style={{cursor:'pointer'}}><div className="shortcut-icon-box" style={{background:'rgba(167,139,250,0.15)',color:'var(--violet)'}}>🔐</div><h3>Account &amp; Login</h3><p>Password, MFA, devices</p></a>
         <Link href="/about#contact" className="help-shortcut"><div className="shortcut-icon-box" style={{background:'rgba(34,197,94,0.15)',color:'var(--green)'}}>💬</div><h3>Contact Support</h3><p>Email, WhatsApp, or call</p></Link>
       </div>

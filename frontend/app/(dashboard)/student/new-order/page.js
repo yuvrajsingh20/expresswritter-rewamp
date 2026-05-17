@@ -167,7 +167,6 @@ export default function NewOrderPage() {
   return (
     <div className="flex bg-[#FBFBFB] min-h-screen text-[#111111] font-sans">
       <Sidebar role="STUDENT" />
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
 
       <div className="flex-1 md:ml-64 flex flex-col">
         <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-8 sticky top-0 z-10 transition-all">

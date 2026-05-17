@@ -22,18 +22,41 @@ export async function POST(req) {
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-      // 1. Fetch project to get service type
+      // 1. Fetch project to get details
       const project = await prisma.project.findUnique({
         where: { id: projectId },
-        select: { serviceType: true, title: true, studentId: true }
+        select: { serviceType: true, title: true, studentId: true, amount: true }
       });
 
+      if (!project) {
+        console.error("Project not found during verification:", projectId);
+        return NextResponse.json({ message: "Project not found" }, { status: 404 });
+      }
+
       await prisma.$transaction(async (tx) => {
-        // 3. Update Order status
-        await tx.order.update({
-          where: { razorpayId: razorpay_order_id },
-          data: { paymentStatus: "PAID" },
+        // 2. Find if order already exists
+        const existingOrder = await tx.order.findFirst({
+          where: { razorpayId: razorpay_order_id }
         });
+
+        if (existingOrder) {
+          // 3. Update Order status
+          await tx.order.update({
+            where: { id: existingOrder.id },
+            data: { paymentStatus: "PAID" },
+          });
+        } else {
+          // 3b. Create Order status on the fly if missing
+          await tx.order.create({
+            data: {
+              amount: parseFloat(project.amount || 0),
+              paymentStatus: "PAID",
+              razorpayId: razorpay_order_id,
+              projectId: projectId,
+              studentId: project.studentId,
+            }
+          });
+        }
 
         // 4. Update Project status
         await tx.project.update({

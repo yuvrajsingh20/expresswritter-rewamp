@@ -40,6 +40,7 @@ export default function OrderDetailsPage() {
   // Edit States
   const searchParams = useSearchParams();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
@@ -293,6 +294,31 @@ export default function OrderDetailsPage() {
     } catch (error) {
       console.error("Payment error:", error);
       setPaymentLoading(false);
+    }
+  };
+
+  const handleVerifyPaymentStatus = async () => {
+    setVerifyLoading(true);
+    try {
+      const res = await fetch('/api/payments/verify-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'PAID') {
+        alert("Payment verified successfully! Thank you.");
+        setProject(prev => ({ ...prev, status: 'ASSIGNED' }));
+        setShowSuccessModal(true);
+        router.refresh();
+      } else {
+        alert(data.message || "Payment verification failed. If you have paid, please wait a minute and retry.");
+      }
+    } catch (error) {
+      console.error("Verification failed:", error);
+      alert("Error contacting the verification ledger. Please try again.");
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -626,6 +652,14 @@ export default function OrderDetailsPage() {
                         className="w-full h-12 bg-white text-[#002D5B] rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
                       >
                         {paymentLoading ? <Loader2 className="animate-spin" size={16} /> : <><CreditCard size={16} /> PAY SECURELY NOW</>}
+                      </button>
+
+                      <button
+                        onClick={handleVerifyPaymentStatus}
+                        disabled={verifyLoading || paymentLoading}
+                        className="w-full text-center text-[10px] font-black uppercase tracking-widest text-blue-200 hover:text-white transition-colors pt-2 flex items-center justify-center gap-1.5"
+                      >
+                        {verifyLoading ? <Loader2 className="animate-spin" size={10} /> : 'Already Paid? Verify Payment'}
                       </button>
                     </div>
                   </div>

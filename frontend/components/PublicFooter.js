@@ -12,7 +12,7 @@ export default function PublicFooter() {
             ['🔒', '100% Confidential', 'NDA-grade privacy on every order'],
             ['🎓', 'PhD-level writers', '340+ verified domain experts'],
             ['↻', 'Unlimited revisions', '2 free revisions on every plan'],
-            ['💰', 'Money-back guarantee', 'Full refund within 14 days']
+            ['🤝', 'No-Risk Revisions', 'Unlimited edits within 7 days']
           ].map(([i, t, d]) => (
             <div key={t}><div style={{ fontSize: 28, marginBottom: 7 }}>{i}</div><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{t}</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 300 }}>{d}</div></div>
           ))}
@@ -43,7 +43,7 @@ export default function PublicFooter() {
                 <Link href="/services" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>All Services</Link>
                 <Link href="/pricing" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Pricing</Link>
                 <Link href="/track" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Track Order</Link>
-                <Link href="/onboard/freelancer" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Become a Writer</Link>
+                <Link href="/register?role=freelancer" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Become a Writer</Link>
               </div>
             </div>
             <div>
@@ -58,10 +58,10 @@ export default function PublicFooter() {
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20 }}>LEGAL</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <Link href="/terms" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</Link>
-                <Link href="/privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</Link>
-                <Link href="/refund-policy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Refund Policy</Link>
-                <Link href="/privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Cookie Policy</Link>
+                <a href="/legal#terms" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</a>
+                <a href="/legal#privacy" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</a>
+                <a href="/legal#refund" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Refund Policy</a>
+                <a href="/legal#cookie" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>Cookie Policy</a>
               </div>
             </div>
           </div>

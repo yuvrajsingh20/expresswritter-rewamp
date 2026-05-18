@@ -1954,15 +1954,26 @@ export default function App() {
       s.emit('join_chat', { userId: session.user.id, role: session.user.role });
 
       s.on('project_status_changed', (data) => {
+        // Optimistic update
         setProjects(prev => prev.map(p => {
           if (p.id === data.projectId) {
-            if (data.status === 'COMPLETED' || data.status === 'REVIEW' || data.status === 'QUALITY_CHECK') {
-              setDeliveredProject({ ...p, status: data.status });
+            let updated = { ...p, status: data.status };
+            if (data.freelancer) {
+              updated.freelancer = data.freelancer;
+              updated.freelancerId = data.freelancer.id;
             }
-            return { ...p, status: data.status };
+            if (data.status === 'COMPLETED' || data.status === 'REVIEW' || data.status === 'QUALITY_CHECK') {
+              setDeliveredProject(updated);
+            }
+            return updated;
           }
           return p;
         }));
+        
+        // Background sync to fetch updated relations (e.g. freelancer details)
+        fetch('/api/projects').then(r => r.json()).then(d => {
+          if (Array.isArray(d)) setProjects(d);
+        }).catch(err => console.error("Sync failed:", err));
       });
 
       s.on('new_notification', (data) => {

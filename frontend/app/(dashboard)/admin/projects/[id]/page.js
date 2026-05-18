@@ -8,6 +8,7 @@ import {
   Users, UserPlus, UserMinus, ShieldAlert, 
   Activity, Clock, FileText, ChevronRight
 } from 'lucide-react';
+import { getSocket } from '@/lib/socket';
 
 const ProjectBridgeManagement = ({ params }) => {
   const [project, setProject] = useState(null);
@@ -53,6 +54,16 @@ const ProjectBridgeManagement = ({ params }) => {
       if (res.ok) {
         const updatedProject = await res.json();
         setProject(updatedProject);
+        
+        const freelancer = availableFreelancers.find(f => f.id === freelancerId);
+        const socket = getSocket();
+        if (socket) {
+          socket.emit('status_update', { 
+            projectId, 
+            status: 'ASSIGNED',
+            freelancer: freelancer ? { id: freelancer.id, name: freelancer.name, role: 'FREELANCER' } : null
+          });
+        }
       }
     } catch (error) {
       console.error("Assignment failed:", error);

@@ -3,6 +3,15 @@ import { getProjectById, updateProject } from '@/services/projectService';
 import { getAuthUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { createNotification } from '@/lib/notify';
+import {
+  safeSendEmail,
+  writerAssignedStudentHtml,
+  writerAssignedWriterHtml,
+  workStartedHtml,
+  draftReadyHtml,
+  revisionRequestedHtml,
+  orderCompletedHtml,
+} from '@/lib/emails';
 
 export async function GET(req, { params }) {
   try {
@@ -27,7 +36,6 @@ export async function GET(req, { params }) {
   }
 }
 
-
 export async function PATCH(req, { params }) {
   try {
     const authUser = await getAuthUser(req);
@@ -42,12 +50,21 @@ export async function PATCH(req, { params }) {
     const updated = await updateProject(id, body, authUser.id);
     const updatedProject = updated[0];
 
-    // Notification Logic
-    const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+    // Fetch related users for emails
+    const [student, admins] = await Promise.all([
+      prisma.user.findUnique({ where: { id: oldProject.studentId }, select: { id: true, name: true, email: true } }),
+      prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true, email: true } }),
+    ]);
 
-    // Writer Assigned
+    const freelancerId = body.freelancerId || updatedProject?.freelancerId || oldProject.freelancerId;
+    let writer = null;
+    if (freelancerId) {
+      writer = await prisma.user.findUnique({ where: { id: freelancerId }, select: { id: true, name: true, email: true } });
+    }
+
+    // ── WRITER ASSIGNED ──────────────────────────────────────────
     if (body.freelancerId && oldProject.freelancerId !== body.freelancerId) {
-      // Notify Student
+      // Notifications
       await createNotification(prisma, {
         userId: oldProject.studentId,
         type: 'assignment',
@@ -56,16 +73,14 @@ export async function PATCH(req, { params }) {
         icon: '✍️',
         link: `/student/orders/${id}`
       });
-      // Notify Freelancer
       await createNotification(prisma, {
         userId: body.freelancerId,
         type: 'new_job',
         title: 'New job assigned',
         msg: `You have been assigned to "${oldProject.title}". Please review and begin work.`,
         icon: '🎯',
-        link: `/freelancer/orders/${id}`
+        link: `/freelancer/projects/${id}`
       });
-      // Notify Admins
       for (const admin of admins) {
         await createNotification(prisma, {
           userId: admin.id,
@@ -73,75 +88,165 @@ export async function PATCH(req, { params }) {
           title: 'Writer assigned',
           msg: `Writer assigned to "${oldProject.title}"`,
           icon: '📋',
-          link: `/admin/orders/${id}`
+          link: `/admin/projects/${id}`
         });
+      }
+
+      console.log(`[API PATCH Project] Assignment triggered. New freelancerId: ${body.freelancerId}`);
+      // Emails — student + writer
+      const newWriter = await prisma.user.findUnique({
+        where: { id: body.freelancerId },
+        select: { name: true, email: true }
+      });
+      console.log(`[API PATCH Project] Retrieved newWriter:`, newWriter);
+      console.log(`[API PATCH Project] Retrieved student:`, student);
+
+      if (student?.email) {
+        console.log(`[API PATCH Project] Attempting to send email to student: ${student.email}`);
+        await safeSendEmail({
+          to: student.email,
+          subject: `✍️ Writer Assigned — ${oldProject.title}`,
+          html: writerAssignedStudentHtml({
+            studentName:  student.name || 'Student',
+            writerName:   newWriter?.name || 'Your Writer',
+            projectTitle: oldProject.title,
+            orderId:      id,
+            deadline:     oldProject.deadline,
+          }),
+        });
+      } else {
+        console.log(`[API PATCH Project] No student email found. Skipped student email.`);
+      }
+
+      if (newWriter?.email) {
+        console.log(`[API PATCH Project] Attempting to send email to writer: ${newWriter.email}`);
+        await safeSendEmail({
+          to: newWriter.email,
+          subject: `🎯 New Project Assigned — ${oldProject.title}`,
+          html: writerAssignedWriterHtml({
+            writerName:         newWriter.name || 'Writer',
+            projectTitle:       oldProject.title,
+            projectDescription: oldProject.description,
+            orderId:            id,
+            deadline:           oldProject.deadline,
+            studentName:        student?.name || 'Client',
+          }),
+        });
+      } else {
+        console.log(`[API PATCH Project] No writer email found. Skipped writer email.`);
       }
     }
 
-    // Status Change
+    // ── STATUS CHANGE ────────────────────────────────────────────
     if (body.status && oldProject.status !== body.status) {
       const statusMap = {
         'IN_PROGRESS': `Your writer has started working on "${oldProject.title}"`,
-        'REVIEW': `Your order is ready for review: "${oldProject.title}"`,
-        'REVISION': `Revision requested on "${oldProject.title}"`,
-        'COMPLETED': `🎉 Your order "${oldProject.title}" is complete!`,
-        'CANCELLED': `Your order "${oldProject.title}" has been cancelled`
+        'REVIEW':      `Your order is ready for review: "${oldProject.title}"`,
+        'REVISION':    `Revision requested on "${oldProject.title}"`,
+        'COMPLETED':   `🎉 Your order "${oldProject.title}" is complete!`,
+        'CANCELLED':   `Your order "${oldProject.title}" has been cancelled`,
       };
 
       const statusMsg = statusMap[body.status];
+
       if (statusMsg) {
-        // Notify Student
+        // ── DB Notifications (de-duped — only ONE for COMPLETED) ──
         await createNotification(prisma, {
           userId: oldProject.studentId,
-          type: body.status === 'CANCELLED' ? 'order_cancelled' : 'status',
-          title: body.status === 'CANCELLED' ? 'Order Cancelled' : 'Status Updated',
-          msg: statusMsg,
-          icon: body.status === 'CANCELLED' ? '❌' : '📋',
-          link: body.status === 'CANCELLED' ? `/student/orders` : `/student/orders/${id}`
+          type:   body.status === 'CANCELLED' ? 'order_cancelled' : 'status',
+          title:  body.status === 'COMPLETED' ? '🎉 Order Complete!' : 'Status Updated',
+          msg:    statusMsg,
+          icon:   body.status === 'CANCELLED' ? '❌' : body.status === 'COMPLETED' ? '🎉' : '📋',
+          link:   `/student/orders/${id}`,
         });
 
-        // Notify Freelancer if assigned
-        if (updatedProject.freelancerId && body.status !== 'CANCELLED') {
+        if (writer && body.status !== 'CANCELLED') {
           await createNotification(prisma, {
-            userId: updatedProject.freelancerId,
-            type: 'status',
-            title: 'Status Updated',
-            msg: `Order "${oldProject.title}" status changed to ${body.status}`,
-            icon: '📋',
-            link: `/freelancer/orders/${id}`
+            userId: writer.id,
+            type:   'status',
+            title:  'Status Updated',
+            msg:    `Order "${oldProject.title}" status changed to ${body.status}`,
+            icon:   '📋',
+            link:   `/freelancer/projects/${id}`,
           });
         }
-        // Notify Student
-        await createNotification(prisma, {
-          userId: oldProject.studentId,
-          type: 'status',
-          title: 'Status Updated',
-          msg: statusMsg,
-          icon: '📋',
-          link: `/student/orders/${id}`
-        });
 
-        // Notify Admins
+        if (body.status === 'REVISION' && writer) {
+          await createNotification(prisma, {
+            userId: writer.id,
+            type:   'revision',
+            title:  'Revision Requested',
+            msg:    `Revision requested on "${oldProject.title}"`,
+            icon:   '🔄',
+            link:   `/freelancer/projects/${id}`,
+          });
+        }
+
         for (const admin of admins) {
           await createNotification(prisma, {
             userId: admin.id,
-            type: 'status',
-            title: `Status: ${body.status}`,
-            msg: `Order "${oldProject.title}" is now ${body.status}`,
-            icon: '📋',
-            link: `/admin/orders/${id}`
+            type:   'status',
+            title:  `Status: ${body.status}`,
+            msg:    `Order "${oldProject.title}" is now ${body.status}`,
+            icon:   '📋',
+            link:   `/admin/projects/${id}`,
           });
         }
 
-        // Notify Freelancer if REVISION
-        if (body.status === 'REVISION' && updatedProject.freelancerId) {
-          await createNotification(prisma, {
-            userId: updatedProject.freelancerId,
-            type: 'revision',
-            title: 'Revision Requested',
-            msg: `Revision requested on "${oldProject.title}"`,
-            icon: '🔄',
-            link: `/freelancer/orders/${id}`
+        // ── EMAILS per status ─────────────────────────────────────
+
+        if (body.status === 'IN_PROGRESS' && student?.email) {
+          await safeSendEmail({
+            to:      student.email,
+            subject: `🚀 Work Started — ${oldProject.title}`,
+            html:    workStartedHtml({
+              studentName:  student.name || 'Student',
+              writerName:   writer?.name || 'Your Writer',
+              projectTitle: oldProject.title,
+              orderId:      id,
+              deadline:     oldProject.deadline,
+            }),
+          });
+        }
+
+        if (body.status === 'REVIEW' && student?.email) {
+          await safeSendEmail({
+            to:      student.email,
+            subject: `📄 Draft Ready for Review — ${oldProject.title}`,
+            html:    draftReadyHtml({
+              studentName:  student.name || 'Student',
+              writerName:   writer?.name || 'Your Writer',
+              projectTitle: oldProject.title,
+              orderId:      id,
+            }),
+          });
+        }
+
+        if (body.status === 'REVISION' && writer?.email) {
+          await safeSendEmail({
+            to:      writer.email,
+            subject: `🔄 Revision Requested — ${oldProject.title}`,
+            html:    revisionRequestedHtml({
+              writerName:   writer.name || 'Writer',
+              studentName:  student?.name || 'Client',
+              projectTitle: oldProject.title,
+              orderId:      id,
+              deadline:     oldProject.deadline,
+            }),
+          });
+        }
+
+        // COMPLETED — send ONE email to student only
+        if (body.status === 'COMPLETED' && student?.email) {
+          await safeSendEmail({
+            to:      student.email,
+            subject: `🎉 Order Complete — ${oldProject.title}`,
+            html:    orderCompletedHtml({
+              studentName:  student.name || 'Student',
+              writerName:   writer?.name || 'Your Writer',
+              projectTitle: oldProject.title,
+              orderId:      id,
+            }),
           });
         }
       }
@@ -153,4 +258,3 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
-

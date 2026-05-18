@@ -26,13 +26,14 @@ export async function PATCH(req, { params }) {
       update: {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.isVerified !== undefined && { isVerified: data.isVerified }),
-        ...(data.badge !== undefined && { badge: data.badge }),
+        ...(data.availability !== undefined && { availability: data.availability }),
         ...(data.rejectionReason !== undefined && { rejectionReason: data.rejectionReason }),
       },
       create: {
         userId: id,
         status: data.status || 'Pending Approval',
         isVerified: data.isVerified || false,
+        availability: data.availability !== undefined ? data.availability : true,
         rejectionReason: data.rejectionReason || null,
       }
     });

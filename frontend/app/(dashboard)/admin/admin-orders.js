@@ -5,6 +5,7 @@ import { EagleEyePanel, DirectChatPanel } from "./admin-writers";
 import { useChat } from "@/hooks/useChat";
 import { useSession } from "next-auth/react";
 import servicesData from "@/data/services_data.json";
+import { getSocket } from "@/lib/socket";
 
 export function AdminOrders({ projects = [], freelancers = [], setProjects, isMobile, activeOrderId, onOrderViewed }) {
   const [mainTab, setMainTab] = useState('Order Assignments');
@@ -69,6 +70,15 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
         // Update local state instead of reload for smoother experience
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, freelancerId: writerId, status: 'ASSIGNED', freelancer: freelancers.find(f => f.id === writerId) } : p));
         
+        const socket = getSocket();
+        if (socket) {
+          socket.emit('status_update', { 
+            projectId, 
+            status: 'ASSIGNED',
+            freelancer: writer ? { id: writer.id, name: writer.name, role: 'FREELANCER' } : null
+          });
+        }
+
         if (!silent) showToast(`${writerName} has been assigned to the order for ${clientName}.`);
         return true;
       } else {

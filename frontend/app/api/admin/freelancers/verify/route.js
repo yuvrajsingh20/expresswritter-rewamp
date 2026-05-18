@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
+import { createNotification } from '@/lib/notify';
+import { safeSendEmail, writerApprovedHtml } from '@/lib/emails';
 
 export async function POST(req) {
   try {
@@ -10,23 +12,45 @@ export async function POST(req) {
     }
 
     const { userId } = await req.json();
-
     if (!userId) {
       return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
     }
 
-    // Use upsert to handle the case where FreelancerProfile doesn't exist yet
     const updatedProfile = await prisma.freelancerProfile.upsert({
-      where: { userId },
+      where:  { userId },
       update: { isVerified: true, status: 'Approved' },
       create: { userId, isVerified: true, status: 'Approved' },
     });
 
-    // Also ensure the user's role is set to FREELANCER
     await prisma.user.update({
       where: { id: userId },
-      data: { role: 'FREELANCER' },
+      data:  { role: 'FREELANCER' },
     });
+
+    // Fetch writer details for email
+    const writer = await prisma.user.findUnique({
+      where:  { id: userId },
+      select: { name: true, email: true },
+    });
+
+    // ── Notification ──
+    await createNotification(prisma, {
+      userId,
+      type:  'account_approved',
+      title: '🎉 Account Approved!',
+      msg:   'Your writer account has been verified. You can now accept projects.',
+      icon:  '✅',
+      link:  '/freelancer',
+    });
+
+    // ── Email ──
+    if (writer?.email) {
+      await safeSendEmail({
+        to:      writer.email,
+        subject: '🎉 Your Express Writer Account is Approved!',
+        html:    writerApprovedHtml({ writerName: writer.name || 'Writer' }),
+      });
+    }
 
     return NextResponse.json(updatedProfile, { status: 200 });
   } catch (error) {

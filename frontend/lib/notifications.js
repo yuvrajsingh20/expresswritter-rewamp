@@ -3,38 +3,23 @@ import { sendEmail } from './mail';
 
 /**
  * SMART NOTIFICATION DISPATCHER
- * Automatically handles the difference between Production (Real Redis) 
- * and Development (Mock Redis).
+ * Handles both Production (Real Redis BullMQ) and Development (direct execution).
+ * Used for: verification, forgot-password, and any custom email type.
  */
 export async function dispatchNotification(type, data) {
-  // If there's no REDIS_URL, we MUST mock/bypass BullMQ to prevent 500 errors, even in production (e.g. Vercel)
   const isMock = !process.env.REDIS_URL;
 
   if (isMock) {
-    console.log(`💡 Mock Redis detected. Bypassing BullMQ and processing "${type}" notification immediately.`);
-    
-    // Direct Execution for Development
+    console.log(`💡 [Mock] Direct-dispatching "${type}" email...`);
     try {
-      if (type === 'verification') {
-         await sendEmail({
-           to: data.email,
-           subject: 'Verify Your Email - Express Writer',
-           html: data.html
-         });
-      } else if (type === 'forgot-password') {
-         await sendEmail({
-           to: data.email,
-           subject: 'Reset Your Password - Express Writer',
-           html: data.html
-         });
-      } else if (type === 'email') {
-         await sendEmail({
-           to: data.email,
-           subject: data.subject,
-           html: data.html
-         });
+      // All types that need email sending
+      if (['verification', 'forgot-password', 'email'].includes(type)) {
+        await sendEmail({
+          to:      data.email,
+          subject: data.subject || subjectFor(type),
+          html:    data.html,
+        });
       }
-      // Add other quick-dispatch handlers here
       return { id: 'mock-job-done' };
     } catch (error) {
       console.error('❌ Quick-dispatch failed:', error);
@@ -42,6 +27,14 @@ export async function dispatchNotification(type, data) {
     }
   }
 
-  // Real Queue Execution for Production
   return notificationQueue.add(type, data);
+}
+
+function subjectFor(type) {
+  const map = {
+    'verification':   'Verify Your Email — Express Writer',
+    'forgot-password':'Reset Your Password — Express Writer',
+    'email':          'Message from Express Writer',
+  };
+  return map[type] || 'Express Writer Notification';
 }

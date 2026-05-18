@@ -72,7 +72,11 @@ export function AdminOrders({ projects = [], freelancers = [], setProjects, isMo
         
         const socket = getSocket();
         if (socket) {
-          socket.emit('status_update', { projectId, status: 'ASSIGNED' });
+          socket.emit('status_update', { 
+            projectId, 
+            status: 'ASSIGNED',
+            freelancer: writer ? { id: writer.id, name: writer.name, role: 'FREELANCER' } : null
+          });
         }
 
         if (!silent) showToast(`${writerName} has been assigned to the order for ${clientName}.`);

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { safeSendEmail, payoutProcessedHtml } from "@/lib/emails";
+import { createNotification } from "@/lib/notify";
 
 export async function POST(req) {
   try {
@@ -16,20 +18,46 @@ export async function POST(req) {
       data: {
         projectId,
         freelancerId,
-        amount: parseFloat(amount),
+        amount:      parseFloat(amount),
         description,
-        status: 'PAID' // Assuming admin marks it as paid when creating
-      }
+        status:      'PAID',
+      },
     });
 
-    // Log the payout
     await prisma.projectLog.create({
       data: {
-        action: `Freelancer payout of ₹${amount} initiated/logged.`,
-        projectId: projectId,
-        userId: session.user.id
-      }
+        action:    `Freelancer payout of ₹${amount} initiated/logged.`,
+        projectId,
+        userId:    session.user.id,
+      },
     });
+
+    // ── Notify and email writer about payout ──
+    const writer = await prisma.user.findUnique({
+      where:  { id: freelancerId },
+      select: { name: true, email: true },
+    });
+
+    await createNotification(prisma, {
+      userId: freelancerId,
+      type:   'payout_processed',
+      title:  '💸 Payout Processed!',
+      msg:    `Your payout of ₹${amount} has been processed.`,
+      icon:   '💰',
+      link:   '/freelancer/earnings',
+    });
+
+    if (writer?.email) {
+      await safeSendEmail({
+        to:      writer.email,
+        subject: `💸 Payout of ₹${amount} Processed!`,
+        html:    payoutProcessedHtml({
+          writerName: writer.name || 'Writer',
+          amount,
+          status:     'COMPLETED',
+        }),
+      });
+    }
 
     return NextResponse.json(invoice);
   } catch (error) {
@@ -47,11 +75,10 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const projectId = searchParams.get('projectId');
-    
+
     const where = {};
     if (projectId) where.projectId = projectId;
-    
-    // If freelancer, only show their invoices
+
     if (session.user.role === 'FREELANCER') {
       where.freelancerId = session.user.id;
     } else if (session.user.role !== 'ADMIN') {
@@ -61,10 +88,10 @@ export async function GET(req) {
     const invoices = await prisma.freelancerInvoice.findMany({
       where,
       include: {
-        project: { select: { title: true } },
-        freelancer: { select: { name: true } }
+        project:    { select: { title: true } },
+        freelancer: { select: { name: true } },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json(invoices);

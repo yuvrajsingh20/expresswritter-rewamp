@@ -9,7 +9,7 @@ import {
   Upload, CheckCircle, CheckCircle2, AlertCircle, 
   ExternalLink, Zap, Paperclip, Loader2, DollarSign,
   LayoutGrid, Calendar, Target, ShieldCheck,
-  Search, ArrowRight, Download, Mic
+  Search, ArrowRight, Download, Mic, Terminal, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
@@ -17,6 +17,67 @@ import servicesData from '@/data/services_data.json';
 
 const SERVICES = Object.values(servicesData.individualServices).flat();
 const getServiceName = (id) => SERVICES.find(s => s.id === id)?.name || id;
+
+// ── CUSTOM DIGITAL MATRIX EFFECT ──
+function MatrixRain({ active }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!active) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    const resizeCanvas = () => {
+      canvas.width = canvas.parentElement?.clientWidth || 400;
+      canvas.height = canvas.parentElement?.clientHeight || 300;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const alphabet = katakana.split("");
+    const fontSize = 10;
+    const columns = canvas.width / fontSize;
+    const rainDrops = [];
+    for (let x = 0; x < columns; x++) {
+      rainDrops[x] = Math.random() * -100;
+    }
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(12, 16, 23, 0.15)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#0f8';
+      ctx.font = fontSize + 'px monospace';
+
+      for (let i = 0; i < rainDrops.length; i++) {
+        const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+        if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          rainDrops[i] = 0;
+        }
+        rainDrops[i]++;
+      }
+    };
+
+    const interval = setInterval(draw, 33);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, [active]);
+
+  if (!active) return null;
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="absolute inset-0 pointer-events-none opacity-[0.15] z-0" 
+      style={{ mixBlendMode: 'screen' }} 
+    />
+  );
+}
 
 export default function SpecialistConsole() {
   const params = useParams();
@@ -40,6 +101,233 @@ export default function SpecialistConsole() {
   const [documents, setDocuments] = useState([]);
   const scrollRef = useRef(null);
   const socketRef = useRef(null);
+
+  // ── SPECIALIST TERMINAL OPERATIONS ──
+  const [isTerminalMode, setIsTerminalMode] = useState(true);
+  const [terminalInput, setTerminalInput] = useState('');
+  const [terminalHistory, setTerminalHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [showMatrix, setShowMatrix] = useState(false);
+  const [terminalLogs, setTerminalLogs] = useState([
+    { type: 'system', text: '==================================================\n   SECURE TERMINAL NODE • CODENAME: XW-SPECIALIST\n==================================================' },
+    { type: 'output', text: 'Cryptographic sandbox stream initialized.\nSyncing PostgreSQL datastore: OK\nType "help" or click suggestion pills below to begin.' }
+  ]);
+  const terminalEndRef = useRef(null);
+
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
+    }
+  }, [terminalLogs]);
+
+  useEffect(() => {
+    if (!project) return;
+    const timer = setTimeout(() => {
+      setTerminalLogs(prev => [
+        ...prev,
+        { type: 'system', text: `\n[SYSTEM BOOT SUCCESSFUL]\n  Target Node ID: XW-${project.id.slice(-5).toUpperCase()}\n  Operational Mode: SECURE COMMAND SHELL ACTIVE\n  Type chat <msg> to transmit message from CLI.` }
+      ]);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [project]);
+
+  const handleSendMessageDirectly = async (msgText) => {
+    if (!msgText.trim()) return;
+    const userId = user?.id || session?.user?.id;
+    if (!userId) return;
+
+    const optimisticMsg = {
+      id: `tmp-${Date.now()}`,
+      content: msgText,
+      senderId: userId,
+      senderRole: 'FREELANCER',
+      chatType: 'CLIENT_CHAT',
+      projectId: id,
+      timestamp: new Date(),
+      createdAt: new Date()
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: msgText,
+          senderId: userId,
+          senderRole: 'FREELANCER',
+          chatType: 'CLIENT_CHAT',
+          projectId: id,
+          attachments: []
+        })
+      });
+      
+      const savedMessage = await res.json();
+
+      if (project?.status === 'ASSIGNED' || project?.status === 'IN_PROGRESS') {
+        const isFirstMsg = !messages.some(m => m.senderRole === 'FREELANCER' && m.id !== optimisticMsg.id);
+        if (isFirstMsg) fireSLA('FIRST_REPLY');
+      }
+
+      setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...savedMessage, timestamp: new Date(savedMessage.createdAt) } : m));
+
+      if (socketRef.current) {
+          socketRef.current.emit('send_message', {
+              id: savedMessage.id,
+              content: savedMessage.content,
+              attachments: savedMessage.attachments,
+              projectId: id,
+              senderId: userId,
+              senderRole: 'FREELANCER',
+              chatType: 'CLIENT_CHAT'
+          });
+      }
+    } catch (error) {
+      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+      console.error("Message delivery failed:", error);
+    }
+  };
+
+  const handleTerminalSubmit = (e) => {
+    e?.preventDefault();
+    const input = terminalInput.trim();
+    if (!input) return;
+
+    const newLogs = [...terminalLogs, { type: 'input', text: `specialist@XW-NODE:~$ ${input}` }];
+    const parts = input.split(' ');
+    const command = parts[0].toLowerCase();
+    const args = parts.slice(1).join(' ');
+
+    let reply = '';
+    let replyType = 'output';
+
+    switch (command) {
+      case 'help':
+      case '/help':
+        reply = `OPERATIONAL DEPLOYMENT COMMAND GUIDE:\n` +
+                `  help         - Print this command help matrix\n` +
+                `  brief        - Decode original client academic description\n` +
+                `  status       - Inspect project operational phase details\n` +
+                `  files        - List active workspace delivery & briefing assets\n` +
+                `  payouts      - Retrieve milestone financial ledger\n` +
+                `  deadline     - Run timeline count calculations\n` +
+                `  chat [msg]   - Transmit secure message broadcast to student\n` +
+                `  system       - Diagnose technical sandbox variables\n` +
+                `  matrix       - Toggle neural code cascade stream\n` +
+                `  clear        - Flush scrollback screen buffer`;
+        break;
+      case 'brief':
+      case '/brief':
+        reply = `[DECRYPTED BRIEFING TRANSCRIPT]\n"${project?.description || 'No detailed brief available.'}"`;
+        replyType = 'system';
+        break;
+      case 'status':
+      case '/status':
+        reply = `NODE INTEGRITY SUMMARY:\n` +
+                `  Node ID      : XW-${id.slice(-5).toUpperCase()}\n` +
+                `  Brief Title  : ${project?.title}\n  Service      : ${getServiceName(project?.serviceType)}\n` +
+                `  Active Phase : ${project?.status?.replace('_', ' ')}\n` +
+                `  Pipeline     : SECURE SOCKETS ESTABLISHED`;
+        replyType = 'system';
+        break;
+      case 'files':
+      case '/files':
+        const filesList = project?.attachments?.length > 0
+          ? project.attachments.map((f, i) => `  [${i+1}] ${f.name} (Tag: ${f.type || 'BRIEF_FILE'})`).join('\n')
+          : '  No registered assets detected in this case node.';
+        reply = `WORKSPACE ASSET REGISTRY:\n${filesList}`;
+        break;
+      case 'payouts':
+      case '/payouts':
+        const totalVal = invoices.reduce((acc, curr) => acc + curr.amount, 0);
+        reply = `FINANCIAL CLEARANCE LEDGER:\n` +
+                `  Milestone Transactions: ${invoices.length} mapped\n` +
+                `  Total Accrued Amount  : ₹${totalVal.toLocaleString()}\n` +
+                `  Ledger Verification   : AUTHENTICATED`;
+        break;
+      case 'deadline':
+      case '/deadline':
+        const timeRemaining = new Date(project?.deadline) - new Date();
+        if (timeRemaining < 0) {
+          reply = `TIMELINE ASSESSMENT:\n  Operational deadline elapsed. Case node in post-delivery buffer.`;
+        } else {
+          const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const mins = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+          
+          const totalDuration = new Date(project?.deadline) - new Date(project?.createdAt);
+          const elapsed = new Date() - new Date(project?.createdAt);
+          const pct = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+          const barChars = Math.round(pct / 5);
+          const progressStr = `[${'#'.repeat(barChars)}${'.'.repeat(20 - barChars)}] ${pct}% elapsed`;
+          
+          reply = `TIMELINE ASSESSMENT:\n` +
+                  `  Time Remaining  : ${days}d ${hours}h ${mins}m\n` +
+                  `  Case Timeline   : ${progressStr}\n` +
+                  `  Action Required : Ensure deliverable uploads prior to expiration.`;
+        }
+        break;
+      case 'chat':
+      case '/chat':
+        if (!args.trim()) {
+          reply = `ERROR: chat command requires a message. Example: chat Completed thesis revision.`;
+          replyType = 'error';
+        } else {
+          handleSendMessageDirectly(args);
+          reply = `[TRANSMITTING SECURE BROADCAST PACKET...]\n  Packet Content: "${args}"\n  Broadcast Status: SENT`;
+          replyType = 'system';
+        }
+        break;
+      case 'system':
+      case '/system':
+        reply = `SANDBOX DIAGNOSTICS:\n` +
+                `  Terminal core : Quantum CLI Client v1.0.4\n` +
+                `  Framework     : Next.js + React Virtual DOM\n` +
+                `  DB Link       : PostgreSQL via Prisma Client\n` +
+                `  Socket Status : Channel Online (Realtime Active)\n` +
+                `  Diagnostics   : ALL SYSTEMS NOMINAL`;
+        break;
+      case 'matrix':
+      case '/matrix':
+        setShowMatrix(!showMatrix);
+        reply = showMatrix ? `[Neural Rain Matrix: DE-ACTIVATED]` : `[Neural Rain Matrix: ACTIVATED]`;
+        break;
+      case 'clear':
+      case '/clear':
+        setTerminalLogs([]);
+        setTerminalInput('');
+        return;
+      default:
+        reply = `Command not recognized: '${command}'. Type 'help' for the guidelines matrix.`;
+        replyType = 'error';
+    }
+
+    setTerminalLogs([...newLogs, { type: replyType, text: reply }]);
+    setTerminalInput('');
+    setTerminalHistory([...terminalHistory, input]);
+    setHistoryIndex(-1);
+  };
+
+  const handleTerminalKeyDown = (e) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (terminalHistory.length === 0) return;
+      const nextIndex = historyIndex === -1 ? terminalHistory.length - 1 : Math.max(0, historyIndex - 1);
+      setHistoryIndex(nextIndex);
+      setTerminalInput(terminalHistory[nextIndex]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex === -1) return;
+      if (historyIndex === terminalHistory.length - 1) {
+        setHistoryIndex(-1);
+        setTerminalInput('');
+      } else {
+        const nextIndex = historyIndex + 1;
+        setHistoryIndex(nextIndex);
+        setTerminalInput(terminalHistory[nextIndex]);
+      }
+    }
+  };
 
   const startListening = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -292,20 +580,21 @@ export default function SpecialistConsole() {
 
       if (res.ok) {
         const uploadData = await res.json();
+        const deliveryAsset = { ...uploadData, type: 'DELIVERY' };
         
         await fetch(`/api/projects/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             status: 'REVIEW',
-            attachments: [...(project.attachments || []), uploadData]
+            attachments: [...(project.attachments || []), deliveryAsset]
           })
         });
 
         setProject(prev => ({
           ...prev,
           status: 'REVIEW',
-          attachments: [...(prev.attachments || []), uploadData]
+          attachments: [...(prev.attachments || []), deliveryAsset]
         }));
         
         if (socketRef.current) {
@@ -515,6 +804,17 @@ export default function SpecialistConsole() {
                              <PlayCircle size={20} /> INITIALIZE PRODUCTION
                           </button>
                         )}
+                        {(project.status === 'IN_PROGRESS' || project.status === 'REVISION') && (
+                          <button 
+                            onClick={() => {
+                              const fileInput = document.getElementById('freelancer-deliverable-upload');
+                              if (fileInput) fileInput.click();
+                            }}
+                            className="w-full h-16 bg-[#10B981] hover:bg-[#059669] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-2xl shadow-emerald-900/10 active:scale-95 animate-pulse"
+                          >
+                             <Upload size={20} /> UPLOAD COMPLETED WORK
+                          </button>
+                        )}
                         {project.status === 'REVIEW' && (
                           <div className="p-6 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-4">
                              <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
@@ -526,21 +826,146 @@ export default function SpecialistConsole() {
                              </div>
                           </div>
                         )}
+                        {project.status === 'COMPLETED' && (
+                          <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-4">
+                             <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                                <CheckCircle2 size={20} />
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Order Completed</p>
+                                <p className="text-xs font-medium text-emerald-600/80 mt-0.5">This project is fully archived and completed.</p>
+                             </div>
+                          </div>
+                        )}
                         <button className="w-full h-14 bg-white border border-[#E5E5E5] text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
                            <ShieldCheck size={16} className="text-[#0067B8]" /> PLATFORM SUPPORT
                         </button>
                       </div>
                   </div>
 
-                  <div className="bg-white p-8 border border-[#E5E5E5] rounded-3xl shadow-sm">
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Briefing Observation</h3>
-                        <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
-                           <Info size={16} />
+                  <div className="bg-white border border-[#E5E5E5] rounded-3xl shadow-sm overflow-hidden flex flex-col">
+                      <div className="flex items-center justify-between px-8 pt-8 pb-4 border-b border-[#E5E5E5]">
+                        <div className="flex items-center gap-3">
+                          <Terminal size={18} className="text-[#0067B8]" />
+                          <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Workspace Console Node</h3>
+                        </div>
+                        {/* Toggle Switches */}
+                        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100 shrink-0">
+                          <button
+                            onClick={() => setIsTerminalMode(false)}
+                            className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!isTerminalMode ? 'bg-[#002D5B] text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                          >
+                            Text Brief
+                          </button>
+                          <button
+                            onClick={() => setIsTerminalMode(true)}
+                            className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${isTerminalMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                          >
+                            Terminal CLI
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                          </button>
                         </div>
                       </div>
-                      <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs leading-[1.8] text-slate-600 font-medium italic whitespace-pre-wrap min-h-[120px]">
-                         "{project.description || 'No detailed briefing provided by the client.'}"
+
+                      <div className="p-8">
+                        {!isTerminalMode ? (
+                          <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs leading-[1.8] text-slate-600 font-medium italic whitespace-pre-wrap min-h-[300px]">
+                            "{project.description || 'No detailed briefing provided by the client.'}"
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-4">
+                            {/* CRT Screen Frame */}
+                            <div className="relative overflow-hidden min-h-[360px] bg-[#0c1017] rounded-2xl border border-emerald-500/20 p-6 flex flex-col font-mono text-xs text-emerald-400 shadow-2xl terminal-crt">
+                              <style dangerouslySetInnerHTML={{__html: `
+                                @keyframes crtGlow {
+                                  0% { opacity: 0.96; }
+                                  50% { opacity: 1; }
+                                  100% { opacity: 0.96; }
+                                }
+                                .terminal-crt {
+                                  animation: crtGlow 0.25s infinite;
+                                  position: relative;
+                                }
+                                .terminal-crt::before {
+                                  content: " ";
+                                  display: block;
+                                  position: absolute;
+                                  top: 0; left: 0; bottom: 0; right: 0;
+                                  background: linear-gradient(rgba(18, 25, 36, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+                                  background-size: 100% 4px;
+                                  z-index: 10;
+                                  pointer-events: none;
+                                }
+                              `}} />
+
+                              {/* Matrix Rain Canvas */}
+                              <MatrixRain active={showMatrix} />
+
+                              {/* Output Stream */}
+                              <div 
+                                ref={terminalEndRef}
+                                className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-emerald-950 max-h-[260px] relative z-10"
+                              >
+                                {terminalLogs.map((log, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    className={`whitespace-pre-wrap leading-relaxed ${
+                                      log.type === 'input' ? 'text-[#38bdf8] font-bold' :
+                                      log.type === 'system' ? 'text-amber-400 font-black' :
+                                      log.type === 'error' ? 'text-rose-400 font-bold' : 'text-emerald-400'
+                                    }`}
+                                  >
+                                    {log.text}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Interactive CLI Prompt */}
+                              <form 
+                                onSubmit={handleTerminalSubmit}
+                                className="flex items-center gap-2 mt-4 pt-4 border-t border-emerald-500/10 relative z-10"
+                              >
+                                <span className="text-[#38bdf8] font-bold">specialist@XW-NODE:~$</span>
+                                <input
+                                  type="text"
+                                  value={terminalInput}
+                                  onChange={(e) => setTerminalInput(e.target.value)}
+                                  onKeyDown={handleTerminalKeyDown}
+                                  placeholder="Type command (e.g. status, brief, payouts)..."
+                                  className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-emerald-400 font-mono focus:outline-none placeholder-emerald-900/60"
+                                  autoFocus
+                                />
+                                <button type="submit" className="text-emerald-500 hover:text-emerald-300 font-bold shrink-0 px-2">
+                                  ↵
+                                </button>
+                              </form>
+                            </div>
+
+                            {/* Quick Command suggestion badges */}
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Suggestions:</span>
+                              {[
+                                { c: 'help', label: 'Help matrix' },
+                                { c: 'brief', label: 'Case briefing' },
+                                { c: 'status', label: 'Operational phase' },
+                                { c: 'deadline', label: 'Countdown timer' },
+                                { c: 'payouts', label: 'Finance ledger' },
+                                { c: 'matrix', label: 'Toggle digital rain' }
+                              ].map(s => (
+                                <button
+                                  key={s.c}
+                                  onClick={() => {
+                                    setTerminalInput(s.c);
+                                    setTimeout(() => handleTerminalSubmit(), 50);
+                                  }}
+                                  className="px-3 py-1 bg-slate-50 border border-slate-100 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 rounded-lg text-[9px] font-bold text-slate-500 transition-all font-mono shadow-sm active:scale-95"
+                                >
+                                  /{s.c}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                   </div>
                </div>
@@ -619,7 +1044,7 @@ export default function SpecialistConsole() {
                           <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-tight">PDF, DOCX up to 10MB accepted</p>
                           <label className="mt-8 px-8 py-3 bg-[#002D5B] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all cursor-pointer shadow-xl shadow-blue-900/10 active:scale-95">
                              SELECT FILES
-                             <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx" />
+                             <input id="freelancer-deliverable-upload" type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx" />
                           </label>
                       </div>
                   </div>
@@ -642,7 +1067,7 @@ export default function SpecialistConsole() {
                               <button onClick={() => setPreviewUrl(file.url)} className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
                                  <Search size={16} />
                               </button>
-                              <a href={file.url} target="_blank" className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
+                              <a href={file.url} download={file.name || 'document'} className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
                                  <Download size={16} />
                               </a>
                            </div>

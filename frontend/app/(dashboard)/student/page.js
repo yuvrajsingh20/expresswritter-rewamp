@@ -1957,10 +1957,15 @@ export default function App() {
         // Optimistic update
         setProjects(prev => prev.map(p => {
           if (p.id === data.projectId) {
-            if (data.status === 'COMPLETED' || data.status === 'REVIEW' || data.status === 'QUALITY_CHECK') {
-              setDeliveredProject({ ...p, status: data.status });
+            let updated = { ...p, status: data.status };
+            if (data.freelancer) {
+              updated.freelancer = data.freelancer;
+              updated.freelancerId = data.freelancer.id;
             }
-            return { ...p, status: data.status };
+            if (data.status === 'COMPLETED' || data.status === 'REVIEW' || data.status === 'QUALITY_CHECK') {
+              setDeliveredProject(updated);
+            }
+            return updated;
           }
           return p;
         }));

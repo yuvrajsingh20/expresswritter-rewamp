@@ -335,11 +335,69 @@ export default function OrderDetailsPage() {
           socketRef.current.emit('status_update', { projectId: id, status: 'COMPLETED' });
         }
         setProject(prev => ({ ...prev, status: 'COMPLETED' }));
+        // Prompt review after short delay
+        setTimeout(() => setShowReviewModal(true), 800);
       }
     } catch (error) {
       console.error("Failed to approve project:", error);
     }
   };
+
+  // ─── Review State ─────────────────────────────────────────────────────
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewScores, setReviewScores] = useState({
+    qualityScore: 0, communicationScore: 0, timelinessScore: 0,
+    requirementScore: 0, overallScore: 0,
+  });
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  const handleSubmitReview = async () => {
+    const scores = Object.values(reviewScores);
+    if (scores.some(s => s === 0)) {
+      alert('Please rate all 5 dimensions before submitting.');
+      return;
+    }
+    setReviewLoading(true);
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: id, ...reviewScores, comment: reviewComment }),
+      });
+      if (res.ok) {
+        setReviewSubmitted(true);
+        setTimeout(() => setShowReviewModal(false), 2500);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to submit review.');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  // Check if review already submitted on load
+  useEffect(() => {
+    if (project?.status === 'COMPLETED') {
+      fetch(`/api/reviews?projectId=${id}`)
+        .then(r => r.json())
+        .then(data => { 
+          if (data?.length > 0) {
+            setReviewSubmitted(true); 
+          } else {
+            // Automatically prompt the review form if order is completed and not reviewed
+            if (!showReviewModal) {
+              setTimeout(() => setShowReviewModal(true), 1500);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [project?.status, id]);
 
   const handleRevisionRequest = async () => {
     try {
@@ -834,6 +892,35 @@ export default function OrderDetailsPage() {
               </motion.div>
             )}
 
+            {/* Completed Action Card */}
+            {project.status === 'COMPLETED' && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-emerald-500 rounded-2xl p-10 text-white flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl shadow-emerald-500/20 border border-emerald-400 shrink-0"
+              >
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 bg-white/20 text-white rounded-2xl flex items-center justify-center backdrop-blur-md shadow-xl border border-white/20">
+                    <CheckCircle2 size={36} />
+                  </div>
+                  <div className="space-y-2 text-center md:text-left">
+                    <h3 className="text-2xl font-black tracking-tight">Your order is completed!</h3>
+                    <p className="text-emerald-50/80 text-sm font-medium max-w-sm">The specialist has delivered your final project. You can access all files in the Registry Artifacts below.</p>
+                  </div>
+                </div>
+                <div className="flex w-full md:w-auto">
+                  {!reviewSubmitted && (
+                    <button 
+                      onClick={() => setShowReviewModal(true)}
+                      className="flex-1 md:flex-none h-14 px-10 bg-white text-emerald-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95"
+                    >
+                      RATE YOUR EXPERIENCE
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
             {/* Grid Layout for Requirements & Files */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 shrink-0">
                 {/* Requirements Card */}
@@ -1139,6 +1226,113 @@ export default function OrderDetailsPage() {
           </aside>
         </div>
       </div>
+
+      {/* ── REVIEW MODAL ─────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showReviewModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl p-10 max-w-xl w-full shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#002D5B] via-[#0067B8] to-emerald-500" />
+              <button onClick={() => setShowReviewModal(false)} className="absolute top-5 right-5 w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center text-slate-500 transition-all">
+                <X size={16} />
+              </button>
+
+              {reviewSubmitted ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center py-8 gap-4">
+                  <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center">
+                    <CheckCircle2 size={40} />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Thank You!</h3>
+                  <p className="text-sm text-slate-500 text-center font-medium">Your review has been recorded and will help improve our specialist performance.</p>
+                </motion.div>
+              ) : (
+                <>
+                  <div className="mb-8">
+                    <p className="text-[10px] font-black text-[#0067B8] uppercase tracking-widest mb-1">Project Completed</p>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Rate Your Experience</h3>
+                    <p className="text-sm text-slate-400 mt-1 font-medium">Rate the specialist on each dimension (1 = Poor, 5 = Excellent)</p>
+                  </div>
+
+                  {[
+                    { key: 'qualityScore', label: 'Writing Quality', desc: 'Accuracy, depth & polish of the work' },
+                    { key: 'requirementScore', label: 'Followed Requirements', desc: 'Adherence to your brief & specifications' },
+                    { key: 'communicationScore', label: 'Communication', desc: 'Clarity and responsiveness in chat' },
+                    { key: 'timelinessScore', label: 'Timeliness', desc: 'Was the draft ready within expected time?' },
+                    { key: 'overallScore', label: 'Overall Satisfaction', desc: 'Your overall impression of the work' },
+                  ].map(({ key, label, desc }) => (
+                    <div key={key} className="mb-5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div>
+                          <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest">{label}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{desc}</p>
+                        </div>
+                        <span className={`text-lg font-black ${reviewScores[key] === 0 ? 'text-slate-300' : 'text-[#002D5B]'}`}>
+                          {reviewScores[key] === 0 ? '–' : reviewScores[key]}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        {[1,2,3,4,5].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => setReviewScores(prev => ({ ...prev, [key]: n }))}
+                            className={`flex-1 h-10 rounded-xl border-2 font-black text-sm transition-all ${
+                              reviewScores[key] >= n
+                                ? 'bg-[#002D5B] border-[#002D5B] text-white shadow-lg'
+                                : 'border-slate-100 text-slate-300 hover:border-[#002D5B]/30 hover:text-[#002D5B]'
+                            }`}
+                          >
+                            {n === 1 ? '★' : n === 2 ? '★★' : n === 3 ? '★★★' : n === 4 ? '★★★★' : '★★★★★'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="mt-6 mb-6">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Additional Comments (Optional)</label>
+                    <textarea
+                      value={reviewComment}
+                      onChange={e => setReviewComment(e.target.value)}
+                      rows={3}
+                      placeholder="Share any specific feedback about the work or the specialist..."
+                      className="w-full bg-slate-50 border-2 border-transparent focus:border-[#0067B8]/20 focus:bg-white rounded-xl p-4 text-xs font-medium text-slate-600 outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={reviewLoading || Object.values(reviewScores).some(s => s === 0)}
+                    className="w-full h-14 bg-[#002D5B] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-black transition-all shadow-2xl shadow-blue-900/20 active:scale-95 disabled:opacity-50"
+                  >
+                    {reviewLoading ? <Loader2 className="animate-spin" size={18} /> : <><CheckCircle2 size={18} /> SUBMIT REVIEW</>}
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── COMPLETED: Leave Review Button (if not yet reviewed) ────── */}
+      {project?.status === 'COMPLETED' && !reviewSubmitted && !showReviewModal && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-8 right-8 z-40"
+        >
+          <button
+            onClick={() => setShowReviewModal(true)}
+            className="flex items-center gap-3 px-6 py-4 bg-[#002D5B] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl shadow-blue-900/30 hover:bg-black transition-all active:scale-95"
+          >
+            ★ LEAVE A REVIEW
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }

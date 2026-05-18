@@ -92,13 +92,17 @@ export async function PATCH(req, { params }) {
         });
       }
 
+      console.log(`[API PATCH Project] Assignment triggered. New freelancerId: ${body.freelancerId}`);
       // Emails — student + writer
       const newWriter = await prisma.user.findUnique({
         where: { id: body.freelancerId },
         select: { name: true, email: true }
       });
+      console.log(`[API PATCH Project] Retrieved newWriter:`, newWriter);
+      console.log(`[API PATCH Project] Retrieved student:`, student);
 
       if (student?.email) {
+        console.log(`[API PATCH Project] Attempting to send email to student: ${student.email}`);
         await safeSendEmail({
           to: student.email,
           subject: `✍️ Writer Assigned — ${oldProject.title}`,
@@ -110,9 +114,12 @@ export async function PATCH(req, { params }) {
             deadline:     oldProject.deadline,
           }),
         });
+      } else {
+        console.log(`[API PATCH Project] No student email found. Skipped student email.`);
       }
 
       if (newWriter?.email) {
+        console.log(`[API PATCH Project] Attempting to send email to writer: ${newWriter.email}`);
         await safeSendEmail({
           to: newWriter.email,
           subject: `🎯 New Project Assigned — ${oldProject.title}`,
@@ -125,6 +132,8 @@ export async function PATCH(req, { params }) {
             studentName:        student?.name || 'Client',
           }),
         });
+      } else {
+        console.log(`[API PATCH Project] No writer email found. Skipped writer email.`);
       }
     }
 

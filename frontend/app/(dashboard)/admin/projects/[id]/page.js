@@ -55,9 +55,14 @@ const ProjectBridgeManagement = ({ params }) => {
         const updatedProject = await res.json();
         setProject(updatedProject);
         
+        const freelancer = availableFreelancers.find(f => f.id === freelancerId);
         const socket = getSocket();
         if (socket) {
-          socket.emit('status_update', { projectId, status: 'ASSIGNED' });
+          socket.emit('status_update', { 
+            projectId, 
+            status: 'ASSIGNED',
+            freelancer: freelancer ? { id: freelancer.id, name: freelancer.name, role: 'FREELANCER' } : null
+          });
         }
       }
     } catch (error) {

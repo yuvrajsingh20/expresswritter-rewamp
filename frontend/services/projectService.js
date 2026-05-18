@@ -83,6 +83,8 @@ export const getProjectsByUser = async (userId, role) => {
       serviceType: true,
       studentId: true,
       freelancerId: true,
+      description: true,
+      attachments: true,
       // Only select what we need from relations
       student: { select: { id: true, name: true, role: true } },
       freelancer: { select: { id: true, name: true, role: true } },
@@ -107,7 +109,6 @@ export const getProjectsByUser = async (userId, role) => {
           sender: { select: { id: true, name: true, role: true } }
         }
       },
-      // Exclude heavy description and attachments from the list view
     },
   });
 };

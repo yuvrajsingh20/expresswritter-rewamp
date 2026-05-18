@@ -438,7 +438,12 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
       return;
     }
     deliveryFiles.forEach(f => {
-      window.open(f.url, '_blank');
+      const link = document.createElement('a');
+      link.href = f.url;
+      link.download = f.name || 'delivered-work';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     });
   };
 

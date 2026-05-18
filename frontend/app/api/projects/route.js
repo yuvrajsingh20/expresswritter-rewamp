@@ -51,6 +51,8 @@ export async function GET(req) {
           serviceType: true,
           studentId: true,
           freelancerId: true,
+          description: true,
+          attachments: true,
           student: { select: { id: true, name: true, role: true } },
           freelancer: { select: { id: true, name: true, role: true } },
           orders: { select: { paymentStatus: true } },

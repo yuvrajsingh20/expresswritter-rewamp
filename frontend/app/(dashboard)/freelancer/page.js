@@ -454,7 +454,12 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
                   {ALL_STATUSES.filter((s) => s !== order.status && s !== 'New Order').map((s) => {
                     const sm = STATUS_META[s];
                     return (
-                      <div key={s} onClick={() => { onStatusChange(order.id, s); setShowStatusMenu(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'background .15s', fontSize: 12, fontWeight: 500, color: sm.color }}
+                      <div key={s} 
+                        onClick={() => { 
+                          onStatusChange(order.id, s); 
+                          setShowStatusMenu(false); 
+                        }} 
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'background .15s', fontSize: 12, fontWeight: 500, color: sm.color }}
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface2)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
 
@@ -747,6 +752,60 @@ const mapProjectsToOrders = (rawProjects, userId) => {
 
 function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdate }) {
   const [orders, setOrders] = useState(() => mapProjectsToOrders(projects, userId));
+  const [deliveryModal, setDeliveryModal] = useState({
+    isOpen: false,
+    orderId: null,
+    orderDisplayId: '',
+    fileName: '',
+    status: 'idle',
+    errorMsg: '',
+  });
+
+  const handleModalUpload = async (file) => {
+    if (!file || !deliveryModal.orderId) return;
+    
+    setDeliveryModal(prev => ({ 
+      ...prev, 
+      status: 'uploading', 
+      fileName: file.name 
+    }));
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        const deliveryAsset = { ...uploadData, type: 'DELIVERY' };
+        
+        // Call handleStatusChange with the delivery asset!
+        await handleStatusChange(deliveryModal.orderId, 'Delivered', deliveryAsset);
+        
+        setDeliveryModal(prev => ({ 
+          ...prev, 
+          status: 'success' 
+        }));
+      } else {
+        setDeliveryModal(prev => ({ 
+          ...prev, 
+          status: 'error', 
+          errorMsg: 'Server returned an error during upload.' 
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      setDeliveryModal(prev => ({ 
+        ...prev, 
+        status: 'error', 
+        errorMsg: 'Network or file size error. Please try again.' 
+      }));
+    }
+  };
 
   // When projects changes (e.g. socket adds a client message to App state),
   // MERGE threads instead of replacing — preserving optimistically added writer messages
@@ -880,7 +939,20 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
     return orders;
   }, [orders, filter]);
 
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus, deliveryAsset = null) => {
+    if (newStatus === 'Delivered' && !deliveryAsset) {
+      const order = orders.find(o => o.id === id);
+      setDeliveryModal({
+        isOpen: true,
+        orderId: id,
+        orderDisplayId: order?.displayId || `XW-${id.slice(-5).toUpperCase()}`,
+        fileName: '',
+        status: 'idle',
+        errorMsg: ''
+      });
+      return;
+    }
+
     const dbStatus = 
       newStatus === 'Finding Writer' ? 'CREATED' :
       newStatus === 'Writer Assigned' ? 'ASSIGNED' :
@@ -891,10 +963,20 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
       newStatus === 'Quality Check' ? 'QUALITY_CHECK' : 
       newStatus;
     try {
+      const payload = { status: dbStatus };
+      if (deliveryAsset) {
+        // Fetch current project to get latest attachments list
+        const projRes = await fetch(`/api/projects/${id}`);
+        if (projRes.ok) {
+          const projData = await projRes.json();
+          payload.attachments = [...(projData.attachments || []), deliveryAsset];
+        }
+      }
+
       const res = await fetch(`/api/projects/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: dbStatus })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         if (newStatus === 'Writer Assigned') {
@@ -909,7 +991,11 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
           });
         }
         if (socket) socket.emit('status_update', { projectId: id, status: dbStatus });
-        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+        setOrders(prev => prev.map(o => o.id === id ? { 
+          ...o, 
+          status: newStatus,
+          deliveredFiles: deliveryAsset ? [...(o.deliveredFiles || []), deliveryAsset] : o.deliveredFiles
+        } : o));
       } else {
         console.error("Failed to update status");
       }
@@ -979,6 +1065,352 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
           <div style={{ fontSize: 12, opacity: .6 }}>All conversations are end-to-end encrypted</div>
         </div>
       }
+      {deliveryModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(5, 5, 10, 0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          animation: 'fadeIn 0.25s ease'
+        }}>
+          {/* Inject dynamic styles */}
+          <style>{`
+            @keyframes spinGradient {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            @keyframes pulseTeal {
+              0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.4); }
+              70% { box-shadow: 0 0 0 16px rgba(13, 148, 136, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
+            }
+            @keyframes modalBounce {
+              0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+              100% { transform: scale(1) translateY(0); opacity: 1; }
+            }
+            @keyframes progressPulse {
+              0% { opacity: 0.6; }
+              50% { opacity: 1; }
+              100% { opacity: 0.6; }
+            }
+            .glow-on-hover:hover {
+              border-color: var(--teal) !important;
+              box-shadow: 0 0 15px rgba(13, 148, 136, 0.15) !important;
+              background: rgba(13, 148, 136, 0.04) !important;
+            }
+          `}</style>
+          
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            width: '90%',
+            maxWidth: 480,
+            borderRadius: 24,
+            padding: 36,
+            boxShadow: '0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+            position: 'relative',
+            animation: 'modalBounce 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}>
+            {/* Close button - only when idle or complete */}
+            {(deliveryModal.status === 'idle' || deliveryModal.status === 'success' || deliveryModal.status === 'error') && (
+              <button 
+                onClick={() => setDeliveryModal(prev => ({ ...prev, isOpen: false }))}
+                style={{
+                  position: 'absolute',
+                  top: 20,
+                  right: 20,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+              >
+                ✕
+              </button>
+            )}
+
+            {deliveryModal.status === 'idle' && (
+              <>
+                <div style={{
+                  width: 64,
+                  height: 64,
+                  background: 'rgba(13, 148, 136, 0.08)',
+                  borderRadius: 18,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 24,
+                  border: '1px solid rgba(13, 148, 136, 0.15)',
+                  color: 'var(--teal-light)',
+                  fontSize: 28
+                }}>
+                  📤
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.02em' }}>Deliver Completed Work</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 28, maxWidth: 360 }}>
+                  Please upload the final deliverable file for <span style={{ color: 'var(--teal-light)', fontWeight: 600, fontFamily: 'var(--mono)' }}>{deliveryModal.orderDisplayId}</span>. The student will be instantly notified to review.
+                </p>
+
+                {/* Drag / Select container */}
+                <div 
+                  className="glow-on-hover"
+                  onClick={() => document.getElementById('modal-file-selector').click()}
+                  style={{
+                    width: '100%',
+                    border: '2px dashed var(--border)',
+                    borderRadius: 16,
+                    padding: '36px 20px',
+                    cursor: 'pointer',
+                    background: 'rgba(255, 255, 255, 0.01)',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12
+                  }}
+                >
+                  <span style={{ fontSize: 32 }}>📄</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Choose deliverable file</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>PDF, DOCX, ZIP or any project format</div>
+                  </div>
+                </div>
+
+                <input 
+                  type="file" 
+                  id="modal-file-selector"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleModalUpload(file);
+                  }}
+                />
+              </>
+            )}
+
+            {deliveryModal.status === 'uploading' && (
+              <>
+                <div style={{
+                  position: 'relative',
+                  width: 90,
+                  height: 90,
+                  marginBottom: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {/* Outer spinning ring */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    border: '3px solid rgba(13, 148, 136, 0.1)',
+                    borderTop: '3px solid var(--teal)',
+                    animation: 'spinGradient 1s linear infinite'
+                  }} />
+                  {/* Inner pulsating dot */}
+                  <div style={{
+                    width: 48,
+                    height: 48,
+                    background: 'rgba(13, 148, 136, 0.08)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 22,
+                    animation: 'pulseTeal 2s infinite'
+                  }}>
+                    ⏳
+                  </div>
+                </div>
+
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.02em' }}>Delivering Work...</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 20, maxWidth: 360 }}>
+                  Uploading & encryption watermarking the final draft:
+                </p>
+                <div style={{
+                  background: 'var(--surface2)',
+                  border: '1px solid var(--border)',
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontFamily: 'var(--mono)',
+                  fontSize: 12,
+                  color: 'var(--teal-light)',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  marginBottom: 10
+                }}>
+                  {deliveryModal.fileName}
+                </div>
+                <div style={{
+                  fontSize: 11,
+                  color: 'var(--text-dim)',
+                  animation: 'progressPulse 1.5s infinite',
+                  fontWeight: 500
+                }}>
+                  Securing document payload...
+                </div>
+              </>
+            )}
+
+            {deliveryModal.status === 'success' && (
+              <>
+                <div style={{
+                  width: 72,
+                  height: 72,
+                  background: 'rgba(34, 197, 94, 0.08)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 24,
+                  border: '1px solid rgba(34, 197, 94, 0.2)',
+                  color: '#22c55e',
+                  fontSize: 32,
+                  boxShadow: '0 0 20px rgba(34, 197, 94, 0.1)',
+                  transform: 'scale(1)',
+                  transition: 'transform 0.5s ease'
+                }}>
+                  ✓
+                </div>
+
+                <h3 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.02em' }}>Order Delivered!</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 32, maxWidth: 360 }}>
+                  The deliverable was successfully uploaded and registered. The student has been notified and can now review your work.
+                </p>
+
+                {/* Beautiful Action Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+                  <button 
+                    onClick={() => {
+                      setDeliveryModal(prev => ({ ...prev, isOpen: false }));
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--teal)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '12px 24px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 4px 12px rgba(13, 148, 136, 0.2)'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.15)'}
+                    onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+                  >
+                    Go to Chat (Continue Conversation)
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      setDeliveryModal(prev => ({ ...prev, isOpen: false }));
+                      setActiveOrder(null); // Back to dashboard overview/list
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-muted)',
+                      padding: '12px 24px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    Back to Project Hub (Dashboard)
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deliveryModal.status === 'error' && (
+              <>
+                <div style={{
+                  width: 64,
+                  height: 64,
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  borderRadius: 18,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 24,
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  color: '#ef4444',
+                  fontSize: 28
+                }}>
+                  ✕
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.02em' }}>Upload Failed</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 28, maxWidth: 360 }}>
+                  {deliveryModal.errorMsg || 'An error occurred during file upload.'}
+                </p>
+
+                <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+                  <button 
+                    onClick={() => setDeliveryModal(prev => ({ ...prev, status: 'idle' }))}
+                    style={{
+                      flex: 1,
+                      background: 'var(--teal)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '12px 20px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Try Again
+                  </button>
+                  <button 
+                    onClick={() => setDeliveryModal(prev => ({ ...prev, isOpen: false }))}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-muted)',
+                      padding: '12px 20px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>);
 
 }

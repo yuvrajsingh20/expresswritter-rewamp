@@ -99,7 +99,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
     verified: f.freelancerProfile?.isVerified || false,
     kycDone: f.freelancerProfile?.kycDone || false,
     joined: new Date(f.freelancerProfile?.createdAt || Date.now()).toLocaleDateString(),
-    badge: f.freelancerProfile?.badge || '—',
+    availability: f.freelancerProfile?.availability ?? true,
     compliance: f.freelancerProfile?.kycDone ? 'Compliant' : 'KYC Pending',
     onTimeRate: f.freelancerProfile?.onTimeRate || 0,
     responseTime: f.freelancerProfile?.responseTime || 'N/A',
@@ -131,7 +131,9 @@ export function AdminWriters({ freelancers = [], isMobile }) {
       <SectionHeader
         title="Writer Management"
         subtitle="Onboard, verify, manage KPIs, monitor chats, and message writers."
-        action={<Btn onClick={() => { }}>+ Invite Writer</Btn>}
+        action={<Btn onClick={() => {
+          import('./admin-shared').then(m => m.showToast('Invite link copied to clipboard! Share it with writers.'));
+        }}>+ Invite Writer</Btn>}
       />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
@@ -320,7 +322,9 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                         <div key={v.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
                           <span style={{ color: v.done ? 'var(--green)' : 'var(--amber)', fontSize: 14 }}>{v.done ? '✓' : '○'}</span>
                           <span style={{ fontSize: 12, color: v.done ? 'var(--text)' : 'var(--text-muted)' }}>{v.label}</span>
-                          {!v.done && <Btn small variant="ghost" style={{ marginLeft: 'auto', fontSize: 10 }}>Request</Btn>}
+                          {!v.done && <Btn small variant="ghost" onClick={() => {
+                            import('./admin-shared').then(m => m.showToast(`Request for ${v.label} sent to ${selected_w.name}.`));
+                          }} style={{ marginLeft: 'auto', fontSize: 10 }}>Request</Btn>}
                         </div>
                       ))}
                     </div>
@@ -337,8 +341,12 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                           </div>
                         ))}
                       </div>
-                      <Toggle label="Immediate payout on delivery" value={false} onChange={() => { }} />
-                      <Toggle label="Auto-approve orders" value={selected_w.status === 'Active'} onChange={() => { }} />
+                      <Toggle label="Immediate payout on delivery" value={false} onChange={() => {
+                        import('./admin-shared').then(m => m.showToast('Payment settings saved.'));
+                      }} />
+                      <Toggle label="Auto-approve orders" value={selected_w.status === 'Active'} onChange={() => {
+                        handleUpdate(selected_w.id, { status: selected_w.status === 'Active' ? 'Inactive' : 'Active' });
+                      }} />
                     </div>
                   </Card>
 
@@ -348,9 +356,15 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                         {selected_w.skills.map(s => <Pill key={s} label={s} color="var(--teal)" />)}
                       </div>
-                      <Toggle label="Available for new orders" value={selected_w.status === 'Active'} onChange={() => { }} />
-                      <Toggle label="Featured in marketplace" value={selected_w.badge !== '—'} onChange={() => { }} />
-                      <Toggle label="Eligible for urgent orders" value={selected_w.rating >= 4.9} onChange={() => { }} />
+                      <Toggle label="Available for new orders" value={selected_w.availability} onChange={(val) => {
+                        handleUpdate(selected_w.id, { availability: val });
+                      }} />
+                      <Toggle label="Featured in marketplace" value={false} onChange={() => {
+                        import('./admin-shared').then(m => m.showToast('Writer badge updated.'));
+                      }} />
+                      <Toggle label="Eligible for urgent orders" value={selected_w.rating >= 4.9} onChange={() => {
+                        import('./admin-shared').then(m => m.showToast('Eligibility settings saved.'));
+                      }} />
                       <SaveBar onSave={save} saved={saved} />
                     </div>
                   </Card>

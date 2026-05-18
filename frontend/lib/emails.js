@@ -19,6 +19,17 @@ const BRAND = {
   support: process.env.SMTP_USER    || 'support@expresswriter.in',
 };
 
+function safeFormatDate(date) {
+  if (!date) return 'N/A';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return 'N/A';
+  }
+}
+
 // ─── Layout wrapper ───────────────────────────────────────────────
 function layout(content, preheader = '') {
   return `
@@ -138,7 +149,7 @@ export function paymentConfirmedHtml({ name, orderId, projectTitle, amount, dead
       ${infoRow('Order ID',       `XW-${orderId.slice(-6).toUpperCase()}`)}
       ${infoRow('Project',        projectTitle)}
       ${infoRow('Amount Paid',    `₹${amount}`)}
-      ${infoRow('Deadline',       new Date(deadline).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }))}
+      ${infoRow('Deadline',       safeFormatDate(deadline))}
       ${infoRow('Status',         'Awaiting Writer Assignment')}
     `)}
     ${btn('Track Your Order', `${BRAND.url}/student/orders/${orderId}`)}
@@ -158,7 +169,7 @@ export function writerAssignedStudentHtml({ studentName, writerName, projectTitl
       ${infoRow('Writer',      writerName)}
       ${infoRow('Project',     projectTitle)}
       ${infoRow('Order ID',    `XW-${orderId.slice(-6).toUpperCase()}`)}
-      ${infoRow('Deadline',    new Date(deadline).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }))}
+      ${infoRow('Deadline',    safeFormatDate(deadline))}
     `)}
     ${body('You can now chat directly with your writer in the order dashboard. Feel free to share any additional details or files.')}
     ${btn('Open Order Chat', `${BRAND.url}/student/orders/${orderId}`)}
@@ -176,7 +187,7 @@ export function writerAssignedWriterHtml({ writerName, projectTitle, projectDesc
       ${infoRow('Project',     projectTitle)}
       ${infoRow('Order ID',    `XW-${orderId.slice(-6).toUpperCase()}`)}
       ${infoRow('Client',      studentName)}
-      ${infoRow('Deadline',    new Date(deadline).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }))}
+      ${infoRow('Deadline',    safeFormatDate(deadline))}
     `)}
     ${projectDescription ? `
     <div style="background:#F8FAFC;border-left:4px solid ${BRAND.accent};padding:16px;border-radius:6px;margin:16px 0;">
@@ -197,7 +208,7 @@ export function workStartedHtml({ studentName, writerName, projectTitle, orderId
     ${infoTable(`
       ${infoRow('Project',  projectTitle)}
       ${infoRow('Writer',   writerName)}
-      ${infoRow('Deadline', new Date(deadline).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }))}
+      ${infoRow('Deadline', safeFormatDate(deadline))}
     `)}
     ${body('You can monitor progress and communicate with your writer anytime through the order dashboard.')}
     ${btn('View Order', `${BRAND.url}/student/orders/${orderId}`)}
@@ -234,7 +245,7 @@ export function revisionRequestedHtml({ writerName, studentName, projectTitle, o
     ${infoTable(`
       ${infoRow('Project',  projectTitle)}
       ${infoRow('Client',   studentName)}
-      ${infoRow('Deadline', new Date(deadline).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }))}
+      ${infoRow('Deadline', safeFormatDate(deadline))}
     `)}
     ${body('<strong>SLA:</strong> Please deliver the revised draft within <strong>4 hours</strong> of this request.')}
     ${btn('View Project & Revise', `${BRAND.url}/freelancer/projects/${orderId}`)}

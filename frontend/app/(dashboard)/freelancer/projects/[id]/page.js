@@ -188,6 +188,12 @@ export default function SpecialistConsole() {
       
       const savedMessage = await res.json();
 
+      // Fire FIRST_REPLY SLA if this is the first freelancer message on an ASSIGNED project
+      if (project?.status === 'ASSIGNED' || project?.status === 'IN_PROGRESS') {
+        const isFirstMsg = !messages.some(m => m.senderRole === 'FREELANCER' && m.id !== optimisticMsg.id);
+        if (isFirstMsg) fireSLA('FIRST_REPLY');
+      }
+
       // Replace optimistic message with real saved one
       setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...savedMessage, timestamp: new Date(savedMessage.createdAt) } : m));
 
@@ -316,8 +322,20 @@ export default function SpecialistConsole() {
     }
   };
 
+  // ─── SLA trigger helper ──────────────────────────────────────────────
+  const fireSLA = async (eventType) => {
+    try {
+      await fetch('/api/sla', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: id, eventType }),
+      });
+    } catch (e) {
+      console.warn('SLA fire failed (non-blocking):', e);
+    }
+  };
+
    const updateStatus = async (newStatus) => {
-    // Map UI status to valid Prisma Enum values
     const dbStatus = 
       newStatus === 'In Progress' ? 'IN_PROGRESS' : 
       newStatus === 'Delivered' ? 'COMPLETED' : 
@@ -335,6 +353,12 @@ export default function SpecialistConsole() {
         setProject({ ...project, status: newStatus });
         if (socketRef.current) {
             socketRef.current.emit('status_update', { projectId: id, status: newStatus });
+        }
+        // Fire SLA events on key transitions
+        if (dbStatus === 'IN_PROGRESS') fireSLA('ASSIGN_ACCEPT');
+        if (dbStatus === 'REVIEW') {
+          const isRevisionDelivery = project.status === 'REVISION';
+          fireSLA(isRevisionDelivery ? 'REVISION_TURNAROUND' : 'DELIVERY');
         }
       }
     } catch (error) {

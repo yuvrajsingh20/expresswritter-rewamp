@@ -215,6 +215,14 @@ export default function OrderDetailsPage() {
     if (success) setIsEditingDescription(false);
   };
 
+  const getDeliveryFile = () => {
+    if (!project?.attachments || project.attachments.length === 0) return null;
+    const delivery = project.attachments.find(a => a.type === 'DELIVERY');
+    if (delivery) return delivery;
+    // Fallback: return the latest attachment
+    return project.attachments[project.attachments.length - 1];
+  };
+
   const handleChangePackage = async (service) => {
     const success = await handleUpdateProject({ 
       serviceType: service.id,
@@ -875,16 +883,25 @@ export default function OrderDetailsPage() {
                     <p className="text-emerald-50/80 text-sm font-medium max-w-sm">The specialist has submitted the final files. Please review them carefully before final approval.</p>
                   </div>
                 </div>
-                <div className="flex gap-4 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                  {getDeliveryFile() && (
+                    <a 
+                      href={getDeliveryFile().url} 
+                      download={getDeliveryFile().name || 'delivered-work'} 
+                      className="h-14 px-8 bg-white text-emerald-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <Download size={16} /> DOWNLOAD WORK
+                    </a>
+                  )}
                   <button 
                     onClick={handleRevisionRequest}
-                    className="flex-1 md:flex-none h-14 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all backdrop-blur-md"
+                    className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all backdrop-blur-md"
                   >
                     REVISION REQUEST
                   </button>
                   <button 
                     onClick={handleApprove}
-                    className="flex-1 md:flex-none h-14 px-10 bg-white text-emerald-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95"
+                    className="h-14 px-10 bg-emerald-700 text-white hover:bg-emerald-800 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95 border border-emerald-600"
                   >
                     APPROVE & ARCHIVE
                   </button>
@@ -908,11 +925,20 @@ export default function OrderDetailsPage() {
                     <p className="text-emerald-50/80 text-sm font-medium max-w-sm">The specialist has delivered your final project. You can access all files in the Registry Artifacts below.</p>
                   </div>
                 </div>
-                <div className="flex w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                  {getDeliveryFile() && (
+                    <a 
+                      href={getDeliveryFile().url} 
+                      download={getDeliveryFile().name || 'delivered-work-final'} 
+                      className="h-14 px-8 bg-white text-emerald-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <Download size={16} /> DOWNLOAD FINAL WORK
+                    </a>
+                  )}
                   {!reviewSubmitted && (
                     <button 
                       onClick={() => setShowReviewModal(true)}
-                      className="flex-1 md:flex-none h-14 px-10 bg-white text-emerald-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95"
+                      className="h-14 px-10 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-black text-[11px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95"
                     >
                       RATE YOUR EXPERIENCE
                     </button>
@@ -996,7 +1022,7 @@ export default function OrderDetailsPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
+                                    <a href={file.url} download={file.name || 'artifact'} className="p-2.5 text-slate-400 hover:text-[#0067B8] hover:bg-blue-50 rounded-lg transition-all">
                                         <Download size={16} />
                                     </a>
                                     {project.status !== 'COMPLETED' && (

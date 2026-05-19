@@ -18,7 +18,7 @@ export default function SubAdminDashboard() {
   useEffect(() => {
     const fetchProjects = async () => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       try {
         const res = await fetch('/api/projects', { signal: controller.signal });
         const data = await res.json();

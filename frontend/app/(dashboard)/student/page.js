@@ -1341,39 +1341,42 @@ function ProfilePrompt({ onComplete }) {
 
 function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
   const [tab, setTab] = useState('All');
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const getServiceIcon = (catId) => {
-    const icons = {
-      sop: '🎓',
-      lor: '📜',
-      resume: '💼',
-      essays: '📝',
-      scholarship: '🏆',
-      gmat_waiver: '📜',
-      app_fee_waiver: '💸',
-      linkedin: '💎',
-      email_templates: '✉️',
-      media_article: '🖋️',
-      visa_application: '🛂'
-    };
-    return icons[catId] || '📄';
-  };
-
-  const cats = ['All', ...Object.keys(servicesData.individualServices).map(c =>
-    c.charAt(0).toUpperCase() + c.slice(1).replace('_', ' ')
-  )];
-
-  const allServices = useMemo(() => {
-    return Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) =>
-      svcs.map(s => ({
-        ...s,
-        cat: catId.charAt(0).toUpperCase() + catId.slice(1).replace('_', ' '),
-        catId
-      }))
-    );
+  useEffect(() => {
+    fetch('/api/services?type=catalog')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setServices(data.map(s => ({
+            id: s.slug,
+            name: s.name,
+            description: s.description,
+            price: `₹${(s.priceMin || s.basePrice || 2499).toLocaleString('en-IN')}`,
+            priceMin: s.priceMin,
+            priceMax: s.priceMax,
+            cat: s.category,
+            catId: s.category.toLowerCase(),
+            icon: s.icon
+          })));
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  const filtered = tab === 'All' ? allServices : allServices.filter(s => s.cat === tab);
+  const cats = ['All', 'Academic', 'Visa', 'Career', 'Content', 'Business'];
+
+  const filtered = tab === 'All' ? services : services.filter(s => s.cat === tab);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-dim)', minHeight: 400 }}>
+        <div style={{ width: 32, height: 32, border: '3px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
@@ -1405,7 +1408,7 @@ function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{getServiceIcon(s.catId)}</div>
+            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{s.icon || '📄'}</div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--teal-light)', textTransform: 'uppercase' }}>{s.cat}</div>
             <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{s.name}</h3>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, flex: 1, margin: 0 }}>{s.description}</p>
@@ -1447,6 +1450,45 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   const [submitted, setSubmitted] = useState(false);
   const [tab, setTab] = useState('All');
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [servicesList, setServicesList] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/services?type=catalog')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const list = data.map(s => {
+            const basePrice = s.priceMin || s.basePrice || 2499;
+            
+            let variants = s.variants || [];
+            if (variants.length === 0) {
+              // Fallback to standard / premium if no specific variants in dynamic API
+              variants = [
+                { id: s.slug + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
+                { id: s.slug + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: s.category.toLowerCase() === 'resume' || s.category.toLowerCase() === 'career' ? 299 : undefined }
+              ];
+            }
+
+            return {
+              id: s.slug,
+              name: s.name,
+              label: s.name,
+              desc: s.description,
+              description: s.description,
+              cat: s.category,
+              catId: s.category.toLowerCase(),
+              icon: s.icon,
+              price: `₹${basePrice.toLocaleString('en-IN')}`,
+              variants: variants
+            };
+          });
+          setServicesList(list);
+        }
+        setLoadingServices(false);
+      })
+      .catch(() => setLoadingServices(false));
+  }, []);
 
   // Coupon state
   const [couponInput, setCouponInput] = useState('');
@@ -1471,28 +1513,9 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
     return icons[catId] || '📄';
   };
 
-  const allServices = useMemo(() => {
-    return Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) =>
-      svcs.map(s => {
-        const basePrice = typeof s.price === 'string' ? parseInt(s.price.replace(/[^\d]/g, '')) || 2499 : s.price || 2499;
-        return {
-          ...s,
-          cat: catId.charAt(0).toUpperCase() + catId.slice(1).replace('_', ' '),
-          catId,
-          label: s.name,
-          desc: s.description,
-          variants: [
-            { id: s.id + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
-            { id: s.id + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: catId === 'resume' ? 299 : undefined }
-          ]
-        };
-      })
-    );
-  }, []);
+  const allServices = servicesList;
 
-  const cats = ['All', ...Object.keys(servicesData.individualServices).map(c =>
-    c.charAt(0).toUpperCase() + c.slice(1).replace('_', ' ')
-  )];
+  const cats = ['All', 'Academic', 'Visa', 'Career', 'Content', 'Business'];
 
   const filteredServices = tab === 'All' ? allServices : allServices.filter(s => s.cat === tab);
 
@@ -1779,7 +1802,15 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
-                  {filteredServices.map((svc, i) => (
+                  {loadingServices ? (
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', color: 'var(--text-dim)' }}>
+                      <div style={{ width: 32, height: 32, border: '3px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    </div>
+                  ) : filteredServices.length === 0 ? (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0', color: 'var(--text-dim)', fontSize: 14 }}>
+                      No active services found in this category.
+                    </div>
+                  ) : filteredServices.map((svc, i) => (
                     <div key={i} onClick={() => { setForm(f => ({ ...f, category: svc.label })); setStep(2); }} style={{
                       padding: '24px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.25s', display: 'flex', flexDirection: 'column', gap: 12,
                       background: form.category === svc.label ? 'rgba(13,148,136,0.15)' : 'var(--surface)',
@@ -1788,7 +1819,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
                       onMouseEnter={e => { if (form.category !== svc.label) e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; }}
                       onMouseLeave={e => { if (form.category !== svc.label) e.currentTarget.style.borderColor = 'var(--border2)'; }}
                     >
-                      <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{getServiceIcon(svc.catId)}</div>
+                      <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{svc.icon || '📄'}</div>
                       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--teal-light)', textTransform: 'uppercase' }}>{svc.cat}</div>
                       <div style={{ fontSize: 16, fontWeight: 600, color: form.category === svc.label ? 'var(--teal-light)' : 'var(--text)', margin: 0 }}>{svc.label}</div>
                       <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, flex: 1, margin: 0 }}>{svc.desc}</div>

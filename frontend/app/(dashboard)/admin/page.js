@@ -13,6 +13,7 @@ import { AdminAnalytics } from "./admin-analytics";
 import { AdminRefunds } from "./admin-refunds";
 import { AdminPromos } from "./admin-promos";
 import { AdminPaymentLinks } from "./admin-payment-links";
+import { AdminServices } from "./admin-services";
 import Notifications from "@/components/NotificationsView";
 import NotificationBell from "@/components/NotificationBell";
 import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar, AdminToastProvider } from "./admin-shared";
@@ -34,6 +35,7 @@ const NAV = [
   { id: 'promos', label: 'Promo Engine', icon: '🏷️', group: 'Platform' },
   { id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
   { id: 'payment-links', label: 'Payment Links', icon: '🔗', group: 'Platform' },
+  { id: 'services', label: 'Service Catalog', icon: '🛠️', group: 'Platform' },
   { id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
   { id: 'users', label: 'User Management', icon: '👤', group: 'People' },
   { id: 'sla', label: 'SLA Performance', icon: '🏆', group: 'People' },
@@ -509,6 +511,7 @@ export default function App() {
     refunds: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
     promos: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
     'payment-links': <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPaymentLinks /></div>,
+    services: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminServices /></div>,
     analytics: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAnalytics projects={projects} freelancersCount={freelancers.length} /></div>,
     currency: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
     writers: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters freelancers={freelancers} isMobile={isMobile} /></div>,

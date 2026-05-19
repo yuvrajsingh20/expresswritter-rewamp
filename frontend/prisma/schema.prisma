@@ -105,6 +105,7 @@ model FreelancerProfile {
   availability  Boolean  @default(true)
   status        String   @default("Pending Approval")
   rejectionReason String?
+  writerLevel   String   @default("JUNIOR") // "JUNIOR" or "SENIOR"
   
   // Regional Settings
   country       String?
@@ -424,4 +425,40 @@ model SLAEvent {
   startMinutes      Int?   // Time to begin after assignment (target ≤120)
   deliveryOnTime    Boolean? // Was delivery before deadline?
   revisionMinutes   Int?   // Turnaround on revision (target ≤240)
+}
+
+type ServiceItem {
+  name     String
+  price    Float
+  quantity Int    @default(1)
+}
+
+model CheckoutSession {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  services   ServiceItem[]
+  totalPrice Float
+  status     String        @default("pending")
+  createdBy  String
+  userEmail  String?
+  createdAt  DateTime      @default(now())
+
+  payments   Payment[]     @relation("CheckoutSessionPayments")
+}
+
+model Payment {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   
+  razorpayOrderId   String   @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+  amount            Float
+  currency          String
+  status            String   @default("created")
+  planKey           String
+  planName          String
+  planDescription   String?
+  checkoutSessionId String?  @db.ObjectId
+  checkoutSession   CheckoutSession? @relation("CheckoutSessionPayments", fields: [checkoutSessionId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

@@ -21,7 +21,7 @@ export default function Notifications({ userName = "User", isMobile, onNavigate 
         setLoading(false);
       });
   }, []);
-
+//test 0
   const markAllRead = async () => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
     try {

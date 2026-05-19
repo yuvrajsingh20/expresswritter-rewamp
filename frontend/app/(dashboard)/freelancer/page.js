@@ -69,6 +69,7 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
     { id: 'orders', icon: '💬', label: 'Active Chat', badge: orders.filter((o) => ['Finding Writer', 'Writer Assigned', 'In Progress', 'Revision Requested', 'Quality Check'].includes(o.status)).length },
     { id: 'all-orders', icon: '📋', label: 'Orders List' },
     { id: 'earnings', icon: '💰', label: 'Earnings' },
+    { id: 'pricing', icon: '🏷️', label: 'Pricing Catalog' },
     { id: 'profile', icon: '👤', label: 'My Profile' }
   ];
 
@@ -1495,7 +1496,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
   const [recentNotifications, setRecentNotifications] = useState([]);
   useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     fetch('/api/notifications', { signal: controller.signal })
       .then(res => res.json())
@@ -1622,7 +1623,7 @@ function Earnings({ isMobile }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     const fetchData = async () => {
       try {
@@ -1889,12 +1890,354 @@ function ProfilePrompt({ onComplete }) {
   );
 }
 
+/* ═══════════════════════════════════════════════
+   PRICING CATALOG & ESTIMATOR
+   ═══════════════════════════════════════════════ */
+const JUNIOR_RATES = {
+  academic: { name: 'Academic & Essay Writing', inr: 1.50, usd: 0.018, unit: 'word', desc: 'Essays, research proposals, term papers, literature reviews' },
+  blog: { name: 'Blog & Content Writing', inr: 1.20, usd: 0.014, unit: 'word', desc: 'SEO blog posts, articles, web pages, social media content' },
+  technical: { name: 'Technical & SOP Writing', inr: 2.00, usd: 0.024, unit: 'word', desc: 'Statement of Purpose (SOP), resumes, technical reports, whitepapers' },
+  copywriting: { name: 'Premium Copywriting', inr: 2.50, usd: 0.030, unit: 'word', desc: 'Sales copy, email campaigns, landing pages, ad content' },
+  editing: { name: 'Editing & Proofreading', inr: 0.80, usd: 0.010, unit: 'word', desc: 'Grammar review, structure correction, copyediting, formatting' },
+  presentation: { name: 'Presentation Content', inr: 1.00, usd: 0.012, unit: 'word', desc: 'Slide decks, PPT outlines, pitch structures' },
+};
+
+const SENIOR_RATES = {
+  academic: { name: 'Academic & Essay Writing', inr: 3.50, usd: 0.042, unit: 'word', desc: 'Essays, research proposals, term papers, literature reviews' },
+  blog: { name: 'Blog & Content Writing', inr: 2.80, usd: 0.034, unit: 'word', desc: 'SEO blog posts, articles, web pages, social media content' },
+  technical: { name: 'Technical & SOP Writing', inr: 4.50, usd: 0.054, unit: 'word', desc: 'Statement of Purpose (SOP), resumes, technical reports, whitepapers' },
+  copywriting: { name: 'Premium Copywriting', inr: 5.50, usd: 0.066, unit: 'word', desc: 'Sales copy, email campaigns, landing pages, ad content' },
+  editing: { name: 'Editing & Proofreading', inr: 1.80, usd: 0.022, unit: 'word', desc: 'Grammar review, structure correction, copyediting, formatting' },
+  presentation: { name: 'Presentation Content', inr: 2.20, usd: 0.026, unit: 'word', desc: 'Slide decks, PPT outlines, pitch structures' },
+};
+
+function PricingCatalog({ userProfile, isMobile }) {
+  const level = userProfile?.freelancerProfile?.writerLevel || 'JUNIOR';
+  const isSenior = level === 'SENIOR';
+  const [currency, setCurrency] = useState('INR'); // INR or USD
+  
+  // Calculator state
+  const [service, setService] = useState('academic');
+  const [words, setWords] = useState(1000);
+  const [urgency, setUrgency] = useState('standard'); // standard, rush, critical
+  
+  const rates = isSenior ? SENIOR_RATES : JUNIOR_RATES;
+  const currentRateObj = rates[service] || rates.academic;
+  
+  const baseRate = currency === 'INR' ? currentRateObj.inr : currentRateObj.usd;
+  const unitSymbol = currency === 'INR' ? '₹' : '$';
+  
+  // Calculate pricing
+  const basePayout = words * baseRate;
+  const urgencyMultiplier = urgency === 'critical' ? 1.6 : urgency === 'rush' ? 1.3 : 1.0;
+  const finalPayout = basePayout * urgencyMultiplier;
+  
+  return (
+    <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease', fontFamily: 'var(--font)' }}>
+      {/* Level Banner */}
+      <div style={{
+        background: isSenior ? 'linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(13, 148, 136, 0.02))' : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(13, 148, 136, 0.02))',
+        border: `1px solid ${isSenior ? 'rgba(217, 119, 6, 0.25)' : 'rgba(37, 99, 235, 0.2)'}`,
+        borderRadius: 16,
+        padding: '20px 24px',
+        marginBottom: 28,
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, textAlign: isMobile ? 'center' : 'left', flexDirection: isMobile ? 'column' : 'row' }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: isSenior ? 'linear-gradient(135deg, #d97706, #b45309)' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 24,
+            boxShadow: isSenior ? '0 8px 24px rgba(217, 119, 6, 0.2)' : '0 8px 24px rgba(37, 99, 235, 0.15)'
+          }}>
+            {isSenior ? '👑' : '✍️'}
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>You are a {isSenior ? 'Senior' : 'Junior'} Expert</h2>
+              <span style={{
+                background: isSenior ? '#d97706' : '#2563eb',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: 100,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>{level} STATUS</span>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+              {isSenior 
+                ? 'Enjoy maximum pay-rates, direct access to premium briefs, and priority payout cycles.' 
+                : 'Complete more assignments with high client ratings to unlock Senior Writer status & +150% higher payouts!'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Currency Switcher */}
+        <div style={{ display: 'flex', background: 'var(--surface2)', border: '1px solid var(--border)', padding: 4, borderRadius: 10, gap: 4 }}>
+          {['INR', 'USD'].map(cur => (
+            <button
+              key={cur}
+              onClick={() => setCurrency(cur)}
+              style={{
+                background: currency === cur ? 'var(--teal)' : 'transparent',
+                color: currency === cur ? '#fff' : 'var(--text-dim)',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                transition: 'all 0.2s'
+              }}
+            >
+              {cur === 'INR' ? '₹ INR' : '$ USD'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Grid: Catalog Left, Calculator Right */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr', gap: 24, alignItems: 'start' }}>
+        
+        {/* Left Side: Services Rate List */}
+        <div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>My Personal Rate Card</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Object.entries(rates).map(([key, rateObj]) => {
+              const active = service === key;
+              return (
+                <div 
+                  key={key} 
+                  onClick={() => setService(key)}
+                  style={{
+                    background: active ? 'linear-gradient(135deg, rgba(13, 148, 136, 0.08), rgba(255, 255, 255, 0.01))' : 'var(--surface2)',
+                    border: `1px solid ${active ? 'var(--teal)' : 'var(--border)'}`,
+                    borderRadius: 12,
+                    padding: '16px 18px',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    boxShadow: active ? '0 8px 24px rgba(13, 148, 136, 0.08)' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 16
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = 'rgba(13, 148, 136, 0.3)'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = 'var(--border)'; }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: active ? 'var(--teal-light)' : 'var(--text)' }}>{rateObj.name}</span>
+                      {active && <span style={{ fontSize: 10, background: 'rgba(13, 148, 136, 0.15)', color: 'var(--teal-light)', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>SELECTED</span>}
+                    </div>
+                    <p style={{ fontSize: 11, color: 'var(--text-dim)', margin: '4px 0 0 0', lineHeight: 1.4 }}>{rateObj.desc}</p>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: isSenior ? 'var(--gold)' : 'var(--text)' }}>
+                      {unitSymbol}{(currency === 'INR' ? rateObj.inr : rateObj.usd).toFixed(currency === 'INR' ? 2 : 3)}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>per {rateObj.unit}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Side: Calculator & Level details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          
+          {/* Earnings Estimator */}
+          <div style={{
+            background: 'var(--surface2)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: 24,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Top Accent line */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--teal)' }} />
+            
+            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>🧮</span> Interactive Earnings Estimator
+            </h3>
+            
+            {/* Service dropdown */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)', display: 'block', marginBottom: 6 }}>SELECT SERVICE TYPE</label>
+              <select 
+                value={service} 
+                onChange={e => setService(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'var(--surface3)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                {Object.entries(rates).map(([key, val]) => (
+                  <option key={key} value={key}>{val.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Word Count selector */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)' }}>WORD COUNT</label>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal-light)', fontFamily: 'var(--mono)' }}>{words.toLocaleString()} words</span>
+              </div>
+              <input 
+                type="range" 
+                min="250" 
+                max="10000" 
+                step="250"
+                value={words} 
+                onChange={e => setWords(parseInt(e.target.value))}
+                style={{
+                  width: '100%',
+                  accentColor: 'var(--teal)',
+                  background: 'var(--surface3)',
+                  height: 6,
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>
+                <span>250w</span>
+                <span>5,000w</span>
+                <span>10,000w</span>
+              </div>
+            </div>
+
+            {/* Urgency selector */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)', display: 'block', marginBottom: 6 }}>PROJECT URGENCY</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {[
+                  { id: 'standard', label: 'Standard', rate: '1.0x' },
+                  { id: 'rush', label: 'Rush (24h)', rate: '1.3x' },
+                  { id: 'critical', label: 'Critical (12h)', rate: '1.6x' }
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setUrgency(item.id)}
+                    style={{
+                      background: urgency === item.id ? 'rgba(13, 148, 136, 0.15)' : 'var(--surface3)',
+                      border: `1px solid ${urgency === item.id ? 'var(--teal)' : 'var(--border)'}`,
+                      color: urgency === item.id ? 'var(--teal-light)' : 'var(--text)',
+                      borderRadius: 8,
+                      padding: '8px 4px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      fontFamily: 'var(--font)'
+                    }}
+                  >
+                    <div>{item.label}</div>
+                    <div style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>{item.rate}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Calculation Breakout */}
+            <div style={{ background: 'var(--surface3)', borderRadius: 10, padding: 16, border: '1px solid var(--border)', marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, color: 'var(--text-muted)' }}>
+                <span>Base Rate ({unitSymbol}/word):</span>
+                <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                  {unitSymbol}{baseRate.toFixed(currency === 'INR' ? 2 : 3)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, color: 'var(--text-muted)' }}>
+                <span>Base Earnings:</span>
+                <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                  {unitSymbol}{basePayout.toFixed(2)}
+                </span>
+              </div>
+              {urgency !== 'standard' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, color: 'var(--amber)' }}>
+                  <span>Urgency Premium ({urgencyMultiplier}x):</span>
+                  <span style={{ fontWeight: 600 }}>
+                    +{unitSymbol}{(finalPayout - basePayout).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div style={{ height: 1, background: 'var(--border)', margin: '10px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Estimated Payout:</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--teal-light)', fontFamily: 'var(--mono)' }}>
+                  {unitSymbol}{finalPayout.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.4 }}>
+              * Payout calculations represent estimated writer share after platforms commissions. Actual task rates are declared in brief details.
+            </div>
+          </div>
+
+          {/* Level Qualifications Card */}
+          <div style={{
+            background: 'var(--surface2)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: 20
+          }}>
+            <h4 style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🚀</span> Level Qualification & Benefits
+            </h4>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { title: 'Level Pay multiplier', val: isSenior ? '2.5x (Premium)' : '1.0x (Standard)' },
+                { title: 'Required Jobs Completed', val: isSenior ? '✓ Achieved' : '20 Projects' },
+                { title: 'Avg Platform Rating', val: isSenior ? '✓ Achieved' : '≥ 4.85 stars' },
+                { title: 'On-time delivery SLA', val: isSenior ? '✓ Achieved' : '≥ 98.0%' }
+              ].map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ color: 'var(--text-dim)' }}>{item.title}</span>
+                  <span style={{ fontWeight: 600, color: item.val.includes('✓') ? 'var(--green)' : 'var(--text)' }}>{item.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [active, setActive] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      const validTabs = ['overview', 'orders', 'messages', 'earnings', 'settings', 'projects'];
+      const validTabs = ['overview', 'orders', 'messages', 'earnings', 'settings', 'projects', 'pricing'];
       if (tabParam && validTabs.includes(tabParam)) return tabParam;
       if (params.get('orderId')) return 'orders';
     }
@@ -1926,7 +2269,7 @@ export default function App() {
 
   const fetchProfile = async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
       const res = await fetch('/api/user/profile', { signal: controller.signal });
       const data = await res.json();
@@ -1942,7 +2285,7 @@ export default function App() {
   const fetchProjects = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       const res = await fetch('/api/projects', { signal: controller.signal });
       clearTimeout(timeoutId);
       const data = await res.json();
@@ -2058,6 +2401,7 @@ export default function App() {
     orders: <OrdersView projects={projects} userId={session?.user?.id} isMobile={isMobile} userName={userName} socket={socket} />,
     'all-orders': <AllOrdersList orders={mapProjectsToOrders(projects, session?.user?.id)} isMobile={isMobile} />,
     earnings: <Earnings isMobile={isMobile} />,
+    pricing: <PricingCatalog userProfile={userProfile} isMobile={isMobile} />,
     profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />
   }), [projects, userName, isMobile, session, userProfile, socket]);

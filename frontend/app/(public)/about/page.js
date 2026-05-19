@@ -127,9 +127,9 @@ export default function AboutPage() {
         <div className="contact-grid-container">
           <div>
             <div className="contact-channels">
-              <a href="mailto:support@xpresswriters.com" className="contact-channel">
+              <a href="mailto:admin@expresswriter.in" className="contact-channel">
                 <div className="channel-icon" style={{background:'rgba(13,148,136,0.15)',color:'var(--teal-light)'}}>✉️</div>
-                <div className="channel-info"><h4>Email Support</h4><div className="channel-value">support@xpresswriters.com</div></div>
+                <div className="channel-info"><h4>Email Support</h4><div className="channel-value">admin@expresswriter.in</div></div>
                 <span className="channel-metadata">~1h reply</span>
               </a>
               <a href="#" className="contact-channel">
@@ -147,9 +147,9 @@ export default function AboutPage() {
                 <div className="channel-info"><h4>Phone (India)</h4><div className="channel-value">+91 88880 00111 · 9 AM – 9 PM IST</div></div>
                 <span className="channel-metadata">Mon-Sat</span>
               </a>
-              <a href="mailto:enterprise@xpresswriters.com" className="contact-channel">
+              <a href="mailto:admin@expresswriter.in" className="contact-channel">
                 <div className="channel-icon" style={{background:'rgba(59,130,246,0.15)',color:'var(--blue)'}}>🏢</div>
-                <div className="channel-info"><h4>Enterprise &amp; Bulk Orders</h4><div className="channel-value">enterprise@xpresswriters.com</div></div>
+                <div className="channel-info"><h4>Enterprise &amp; Bulk Orders</h4><div className="channel-value">admin@expresswriter.in</div></div>
                 <span className="channel-metadata">Custom</span>
               </a>
             </div>

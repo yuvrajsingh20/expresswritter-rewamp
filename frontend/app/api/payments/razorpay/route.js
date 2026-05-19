@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import razorpay from "@/lib/razorpay";
 import { getAuthUser } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { createPaymentSession, getSessionByIdempotencyKey } from "@/lib/paymentSession";
 import { z } from "zod";
 
 const paymentSchema = z.object({
   amount: z.number().positive("Amount must be a positive number"),
-  projectId: z.string().min(1, "Project ID is required"),
+  idempotencyKey: z.string().uuid("Invalid idempotency key"),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  deadline: z.string().optional(),
+  serviceType: z.string().optional(),
+  attachments: z.array(z.object({ url: z.string(), name: z.string() })).optional(),
 });
 
 export async function POST(req) {
@@ -22,27 +27,35 @@ export async function POST(req) {
       return NextResponse.json({ message: errorMessages }, { status: 400 });
     }
 
-    const { amount, projectId } = result.data;
+    const { amount, idempotencyKey, title, description, deadline, serviceType, attachments } = result.data;
 
-    // Amount in Razorpay is in paisa
+    const existingSession = await getSessionByIdempotencyKey(idempotencyKey);
+    if (existingSession) {
+      return NextResponse.json({
+        id: existingSession.razorpayOrderId,
+        amount: existingSession.amount * 100,
+        currency: "INR",
+        idempotent: true,
+      }, { status: 200 });
+    }
+
     const options = {
-      amount: amount * 100, 
+      amount: amount * 100,
       currency: "INR",
-      receipt: `receipt_project_${projectId}`,
+      receipt: `receipt_${idempotencyKey.slice(0, 8)}`,
     };
 
     const order = await razorpay.orders.create(options);
 
-    // Update order/project with Razorpay order ID if needed
-    // or create a PENDING order record
-    await prisma.order.create({
-      data: {
-        amount: parseFloat(amount),
-        paymentStatus: "PENDING",
-        razorpayId: order.id,
-        projectId: projectId,
-        studentId: authUser.id,
-      }
+    await createPaymentSession(order.id, {
+      idempotencyKey,
+      studentId: authUser.id,
+      amount,
+      title,
+      description: description || "",
+      deadline: deadline || null,
+      serviceType: serviceType || null,
+      attachments: attachments || [],
     });
 
     return NextResponse.json(order, { status: 200 });

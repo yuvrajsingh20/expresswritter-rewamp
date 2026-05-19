@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 export async function GET(request) {
   const user = await getAuthUser(request);
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !["ADMIN", "SUB_ADMIN"].includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -68,7 +68,7 @@ export async function GET(request) {
 
 export async function PATCH(request) {
   const user = await getAuthUser(request);
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !["ADMIN", "SUB_ADMIN"].includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

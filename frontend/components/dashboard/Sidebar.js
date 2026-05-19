@@ -29,8 +29,12 @@ const Sidebar = ({ role = 'ADMIN' }) => {
     ],
     SUB_ADMIN: [
       { name: 'Overview', icon: Home, path: '/subadmin' },
-      { name: 'Manage Team', icon: Users, path: '/subadmin' },
-      { name: 'Assignments', icon: Briefcase, path: '/subadmin' },
+      { name: 'Expert Workforce', icon: Users, path: '/subadmin/writers' },
+      { name: 'Order Logs', icon: Briefcase, path: '/subadmin/orders' },
+      { name: 'Revenue Reports', icon: TrendingUp, path: '/subadmin/revenue' },
+      { name: 'Payment Links', icon: CreditCard, path: '/subadmin/payment-links' },
+      { name: 'Promo Engine', icon: Shield, path: '/subadmin/promos' },
+      { name: 'Ticketing System', icon: Award, path: '/subadmin/tickets' },
     ],
     FREELANCER: [
       { name: 'Project Hub', icon: LayoutGrid, path: '/freelancer' },

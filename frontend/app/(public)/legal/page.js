@@ -56,7 +56,8 @@ export default function LegalPage() {
         .doc section h3{font-size:15px;font-weight:600;margin:22px 0 8px;color:var(--text)}
         .doc section p,.doc section li{font-size:14px;color:var(--text-muted);line-height:1.7;font-weight:300}
         .doc section p{margin-bottom:12px}
-        .doc section ul,.doc section ol{padding-left:22px;margin-bottom:14px}
+        .doc section ul{list-style-type:disc;padding-left:22px;margin-bottom:14px}
+        .doc section ol{list-style-type:decimal;padding-left:22px;margin-bottom:14px}
         .doc section li{margin-bottom:6px}
         .doc section strong{color:var(--text);font-weight:600}
         .callout{padding:16px 20px;border-radius:8px;background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);margin:18px 0;font-size:13px}
@@ -102,7 +103,7 @@ export default function LegalPage() {
               <div className="meta">Last updated April 28, 2026 · Effective May 1, 2026</div>
             </div>
             <h2>1. Agreement</h2>
-            <p>These Terms of Service ("Terms") govern your access to and use of Xpresswriters' platform, websites, and services (collectively, the "Service"), operated by <strong>Xpresswriters Private Limited</strong> ("we", "us", "our"). By creating an account or placing an order, you agree to be bound by these Terms.</p>
+            <p>These Terms of Service ("Terms") govern your access to and use of Xpresswriters' platform, websites, and services (collectively, the "Service"), operated by <strong>Xpresswriters</strong> ("we", "us", "our"). By creating an account or placing an order, you agree to be bound by these Terms.</p>
             <h2>2. Eligibility</h2>
             <p>You must be at least <strong>18 years old</strong> and capable of forming a binding contract under applicable law. By using the Service, you represent that any content you submit is your original work or properly licensed.</p>
             <h2>3. Services Provided</h2>
@@ -120,7 +121,7 @@ export default function LegalPage() {
             <h2>6. Intellectual Property</h2>
             <p>Upon full payment and release of funds, <strong>you receive a perpetual, worldwide license</strong> to use the deliverable for personal or commercial purposes. Xpresswriters retains the right to use anonymized excerpts for sample purposes only with explicit written consent.</p>
             <h2>7. Plagiarism &amp; AI Use</h2>
-            <p>Every deliverable is scanned with industry-standard tools (Turnitin or equivalent + GPTZero) before release. We guarantee a similarity score below 10% and AI-generation score below 15% unless otherwise pre-agreed in writing. Reports are included with every order.</p>
+            <p>Every deliverable is scanned with industry-standard tools (Turnitin or equivalent + GPTZero) before release. We guarantee a similarity score below 10% and AI-generation score below 15% unless otherwise pre-agreed in writing. Reports are included with every order on request.</p>
             <h2>8. Revisions</h2>
             <p>Each order includes up to <strong>3 free revisions</strong> within 14 days of delivery. Substantial scope changes may incur additional fees clearly communicated before work resumes.</p>
             <h2>9. Prohibited Conduct</h2>
@@ -129,17 +130,18 @@ export default function LegalPage() {
               <li>Using the Service to facilitate fraud, harassment, or discrimination</li>
               <li>Attempting to reverse-engineer, scrape, or overload our infrastructure</li>
               <li>Contacting writers off-platform to circumvent payment</li>
+              <li>Any false, defamatory, misleading, or reputation-damaging public content posted against the company without first attempting resolution through official communication channels may result in legal action under applicable Indian laws </li>
             </ul>
             <h2>10. Limitation of Liability</h2>
             <p>To the maximum extent permitted by law, our aggregate liability for any claim shall not exceed the amount paid by you for the specific order giving rise to the claim. We are not liable for indirect, consequential, or punitive damages.</p>
             <h2>11. Termination</h2>
             <p>We may suspend or terminate your account for material breach. You may close your account at any time from Settings → Account.</p>
             <h2>12. Governing Law &amp; Dispute Resolution</h2>
-            <p>These Terms are governed by the laws of India. Any disputes shall be resolved by arbitration seated in <strong>Mumbai, Maharashtra</strong>, in accordance with the Arbitration and Conciliation Act, 1996.</p>
+            <p>These Terms are governed by the laws of India. Any disputes shall be resolved by arbitration seated in <strong>Indore, Madhya Pradesh</strong>, in accordance with the Arbitration and Conciliation Act, 1996.</p>
             <h2>13. Changes</h2>
             <p>We may update these Terms from time to time. Material changes will be notified via email at least 14 days before they take effect.</p>
             <h2>14. Contact</h2>
-            <p>Legal inquiries: <a href="mailto:legal@xpresswriters.com">legal@xpresswriters.com</a> · Registered office: Xpresswriters Pvt Ltd, Floor 7, Phoenix Marketcity, Kurla West, Mumbai 400070, India.</p>
+            <p>Legal inquiries: <a href="mailto:admin@expresswriter.in">admin@expresswriter.in</a> · Registered office: Xpresswriters, Space Time plot 45, Second floor, Scheme 78 Part-2, Vijya Nagar, Indore, Madhya Pradesh, 452001, India.</p>
           </section>
 
           <section id="privacy" className={activeTab === 'privacy' ? 'active' : ''}>
@@ -149,7 +151,7 @@ export default function LegalPage() {
               <div className="meta">Last updated April 28, 2026 · GDPR + DPDP Act compliant</div>
             </div>
             <h2>1. Who We Are</h2>
-            <p>Xpresswriters Pvt Ltd is the <strong>data controller</strong> for personal data collected through our Service. Our Data Protection Officer can be reached at <a href="mailto:privacy@xpresswriters.com">privacy@xpresswriters.com</a>.</p>
+            <p>Xpresswriters is the <strong>data controller</strong> for personal data collected through our Service. Our Data Protection Officer can be reached at <a href="mailto:admin@expresswriter.in">admin@expresswriter.in</a>.</p>
             <h2>2. Information We Collect</h2>
             <table>
               <thead><tr><th>Category</th><th>Examples</th><th>Lawful basis</th></tr></thead>
@@ -170,7 +172,7 @@ export default function LegalPage() {
               <li>Comply with tax, accounting, and law-enforcement obligations</li>
             </ul>
             <h2>4. Sharing &amp; Sub-processors</h2>
-            <p>We share data only with vetted sub-processors: Supabase (hosting), Razorpay/Stripe (payments), Resend (transactional email), Cloudflare (CDN), AWS (storage). A current list is available at <a href="#">/subprocessors</a>.</p>
+            <p>We share data only with vetted sub-processors: Vercel(hosting), Razorpay/Stripe/cashfree/phonepay (payments), Nodemailer (transactional email), Supabase(storage). A current list is available at <a href="#">/subprocessors</a>.</p>
             <div className="callout warn"><strong>We never sell your data.</strong>We do not share order content with advertising networks. Writers see only the brief — not your full identity unless you choose to share it.</div>
             <h2>5. Your Rights</h2>
             <p>Under GDPR and India's DPDP Act, you may request:</p>
@@ -181,14 +183,13 @@ export default function LegalPage() {
               <li><strong>Portability</strong> — export in a machine-readable format</li>
               <li><strong>Objection</strong> — opt out of marketing or profiling</li>
             </ul>
-            <p>Submit requests via Settings → Privacy or email <a href="mailto:privacy@xpresswriters.com">privacy@xpresswriters.com</a>. We respond within 30 days.</p>
+            <p>Submit requests via Settings → Privacy or email <a href="mailto:admin@expresswriter.in">admin@expresswriter.in</a>. We respond within 30 days.</p>
             <h2>6. Retention</h2>
             <p>Account data is retained while your account is active and for 7 years after closure (Indian tax law). Order content is kept for 3 years for revision/dispute purposes. Marketing-only data is deleted within 12 months of last engagement.</p>
             <h2>7. Security</h2>
             <p>All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We run quarterly penetration tests and maintain ISO 27001 controls. In the event of a breach affecting your data, we will notify you within 72 hours.</p>
-            <h2>8. International Transfers</h2>
-            <p>Our primary servers are in <strong>Mumbai (ap-south-1)</strong>. EU data is processed under Standard Contractual Clauses approved by the European Commission.</p>
-            <h2>9. Children's Privacy</h2>
+             
+          <h2>8. Children's Privacy</h2>
             <p>Our Service is not directed to children under 16. If we discover we have collected such data we will delete it promptly.</p>
           </section>
 
@@ -256,7 +257,7 @@ export default function LegalPage() {
             <h2>Security Measures</h2>
             <p>SOC 2 Type II in progress · ISO 27001 controls · annual pen-tests · 24h breach notification SLA.</p>
             <p style={{ marginTop: '24px' }}>
-              <a href="mailto:legal@xpresswriters.com" style={{ display: 'inline-block', padding: '10px 18px', background: 'var(--teal)', color: '#fff', borderRadius: '7px', textDecoration: 'none', fontWeight: 600, fontSize: '13px' }}>📄 Request signed DPA</a>
+              <a href="mailto:admin@expresswriter.in" style={{ display: 'inline-block', padding: '10px 18px', background: 'var(--teal)', color: '#fff', borderRadius: '7px', textDecoration: 'none', fontWeight: 600, fontSize: '13px' }}>📄 Request signed DPA</a>
             </p>
           </section>
         </main>

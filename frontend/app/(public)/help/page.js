@@ -50,7 +50,7 @@ export default function HelpPage() {
       { q: "How do I enable two-factor authentication?", a: "In Settings → Security → Two-Factor Authentication. We support TOTP apps (Google Authenticator, Authy), SMS, and email codes. We strongly recommend an authenticator app over SMS." },
       { q: "How do I delete my account?", a: "Settings → Account → Delete account. We immediately suspend access and queue your data for deletion within 30 days (or longer where tax law requires retention). Active orders must be completed first." },
       { q: "Can I download all my data?", a: "Yes — Settings → Privacy → Export my data. You'll receive a ZIP with your profile, orders, messages, and invoices in JSON + DOCX formats within 24 hours." },
-      { q: "What if I see a sign-in I didn't make?", a: "Immediately: Settings → Security → Active Sessions → \"Sign out everywhere\", then change your password. Contact security@xpresswriters.com and we'll audit your account." },
+      { q: "What if I see a sign-in I didn't make?", a: "Immediately: Settings → Security → Active Sessions → \"Sign out everywhere\", then change your password. Contact admin@expresswriter.in and we'll audit your account." },
     ],
     quality: [
       { q: "Do you check for plagiarism?", a: "Yes — every order is scanned with Turnitin (or Copyscape for non-academic work). We guarantee under 10% similarity. The full report is attached to your delivery email." },

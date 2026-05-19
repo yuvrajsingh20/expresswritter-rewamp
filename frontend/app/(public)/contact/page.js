@@ -53,8 +53,8 @@ export default function ContactPage() {
             <div style={{ paddingTop: 10 }}>
               <div style={{ marginBottom: '48px' }}>
                 <h3 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--teal-light)', marginBottom: '16px', letterSpacing: '0.1em' }}>Email Support</h3>
-                <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>support@xpresswriters.com</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 300 }}>For billing and invoice related queries:<br/>billing@xpresswriters.com</p>
+                <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>admin@expresswriter.in</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 300 }}>For billing and invoice related queries:<br/>admin@expresswriter.in</p>
               </div>
 
               <div style={{ marginBottom: '48px' }}>

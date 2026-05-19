@@ -5,7 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 export async function GET(req) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== 'ADMIN') {
+    if (!authUser || !['ADMIN', 'SUB_ADMIN'].includes(authUser.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 

@@ -236,6 +236,19 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
   const [collabId, setCollabId] = useState('');
   const [adding, setAdding] = useState(false);
 
+  const [detailedProject, setDetailedProject] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  useEffect(() => {
+    if (project?.id) {
+      setLoadingDetails(true);
+      fetch(`/api/projects/${project.id}`)
+        .then(r => r.json())
+        .then(d => { setDetailedProject(d); setLoadingDetails(false); })
+        .catch(() => setLoadingDetails(false));
+    }
+  }, [project?.id]);
+
   const SERVICE_LABELS = React.useMemo(() => {
     return Object.values(servicesData.individualServices)
       .flat()
@@ -407,11 +420,11 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
       <div style={{ padding: 20, borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
         <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--teal-light)' }}>Project Brief & Initial Files</h4>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, background: 'var(--surface3)', padding: 16, borderRadius: 8, border: '1px solid var(--border)', marginBottom: 16 }}>
-          {project.description || 'No brief provided.'}
+          {loadingDetails ? 'Loading brief...' : (detailedProject?.description || project.description || 'No brief provided.')}
         </div>
         
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {(project.attachments || []).map((file, idx) => (
+          {(detailedProject?.attachments || project.attachments || []).map((file, idx) => (
             <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ 
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, 
               background: 'var(--surface3)', border: '1px solid var(--border)', textDecoration: 'none', color: 'inherit' 
@@ -423,7 +436,7 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
               </div>
             </a>
           ))}
-          {(project.attachments || []).length === 0 && (
+          {!loadingDetails && (detailedProject?.attachments || project.attachments || []).length === 0 && (
             <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>No initial files uploaded by student.</div>
           )}
         </div>

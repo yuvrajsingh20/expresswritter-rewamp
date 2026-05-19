@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { getAndDeletePaymentSession } from "@/lib/paymentSession";
 import { createNotification } from "@/lib/notify";
 import { safeSendEmail, paymentConfirmedHtml } from "@/lib/emails";
 
@@ -10,7 +11,6 @@ export async function POST(req) {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      projectId,
     } = await req.json();
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -26,96 +26,109 @@ export async function POST(req) {
       return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
     }
 
-    // Fetch project + student
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: { student: { select: { id: true, name: true, email: true } } },
-    });
+    const session = await getAndDeletePaymentSession(razorpay_order_id);
 
-    if (!project) {
-      return NextResponse.json({ message: "Project not found" }, { status: 404 });
-    }
-
-    await prisma.$transaction(async (tx) => {
-      const existingOrder = await tx.order.findFirst({
+    if (!session) {
+      const existingOrder = await prisma.order.findFirst({
         where: { razorpayId: razorpay_order_id },
       });
 
-      if (existingOrder) {
-        await tx.order.update({
-          where: { id: existingOrder.id },
-          data: { paymentStatus: "PAID" },
-        });
-      } else {
-        await tx.order.create({
-          data: {
-            amount:        parseFloat(project.amount || 0),
-            paymentStatus: "PAID",
-            razorpayId:    razorpay_order_id,
-            projectId,
-            studentId:     project.studentId,
-          },
-        });
+      if (existingOrder && existingOrder.paymentStatus === "PAID") {
+        return NextResponse.json({ 
+          message: "Payment already processed",
+          projectId: existingOrder.projectId,
+        }, { status: 200 });
       }
 
-      await tx.project.update({
-        where: { id: projectId },
-        data:  { status: "CREATED" },
+      return NextResponse.json({ 
+        message: "Payment session expired or not found" 
+      }, { status: 409 });
+    }
+
+    const { studentId, amount, title, description, deadline, serviceType, attachments } = session;
+
+    const project = await prisma.$transaction(async (tx) => {
+      const createdProject = await tx.project.create({
+        data: {
+          title,
+          description,
+          deadline: deadline ? new Date(deadline) : null,
+          studentId,
+          serviceType,
+          amount,
+          attachments: attachments || [],
+          status: "CREATED",
+        },
+      });
+
+      await tx.order.create({
+        data: {
+          amount: parseFloat(amount),
+          paymentStatus: "PAID",
+          razorpayId: razorpay_order_id,
+          projectId: createdProject.id,
+          studentId,
+        },
       });
 
       await tx.projectLog.create({
         data: {
-          action:    "Payment Completed - Awaiting Admin Assignment",
-          projectId,
-          userId:    project.studentId,
+          action: "Payment Completed - Awaiting Admin Assignment",
+          projectId: createdProject.id,
+          userId: studentId,
         },
       });
+
+      return createdProject;
     });
 
-    // ── Notifications ──
+    const student = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { id: true, name: true, email: true },
+    });
+
     const admins = await prisma.user.findMany({
-      where:  { role: 'ADMIN' },
+      where: { role: 'ADMIN' },
       select: { id: true, email: true },
     });
 
     for (const admin of admins) {
       await createNotification(prisma, {
         userId: admin.id,
-        type:   'payment_received',
-        title:  'Payment Received',
-        msg:    `Payment received for "${project.title}" — Ready for writer assignment`,
-        icon:   '💳',
-        link:   `/admin/projects/${projectId}`,
+        type: 'payment_received',
+        title: 'Payment Received',
+        msg: `Payment received for "${project.title}" — Ready for writer assignment`,
+        icon: '💳',
+        link: `/admin/projects/${project.id}`,
       });
     }
 
     await createNotification(prisma, {
-      userId: project.studentId,
-      type:   'payment_confirmed',
-      title:  'Payment Successful!',
-      msg:    `Your payment for "${project.title}" has been received. We'll assign a writer soon!`,
-      icon:   '✅',
-      link:   `/student/orders/${projectId}`,
+      userId: studentId,
+      type: 'payment_confirmed',
+      title: 'Payment Successful!',
+      msg: `Your payment for "${project.title}" has been received. We'll assign a writer soon!`,
+      icon: '✅',
+      link: `/student/orders/${project.id}`,
     });
 
-    // ── Payment Confirmation Email to Student ──
-    const student = project.student;
     if (student?.email) {
       await safeSendEmail({
-        to:      student.email,
+        to: student.email,
         subject: `✅ Payment Confirmed — ${project.title}`,
-        html:    paymentConfirmedHtml({
-          name:         student.name || 'Student',
-          orderId:      projectId,
+        html: paymentConfirmedHtml({
+          name: student.name || 'Student',
+          orderId: project.id,
           projectTitle: project.title,
-          amount:       project.amount || 0,
-          deadline:     project.deadline,
+          amount: amount || 0,
+          deadline: project.deadline,
         }),
       });
     }
 
     return NextResponse.json({
       message: "Payment verified and project initialized",
+      projectId: project.id,
     }, { status: 200 });
 
   } catch (error) {

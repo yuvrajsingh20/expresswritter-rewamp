@@ -336,6 +336,17 @@ model Service {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
+  // Custom catalog fields
+  tagline       String   @default("")
+  category      String   @default("Academic")
+  icon          String   @default("🎓")
+  priceMin      Float    @default(0)
+  priceMax      Float    @default(0)
+  variantsCount Int      @default(1)
+  addonsCount   Int      @default(0)
+  ordersCount   Int      @default(0)
+  revenue       String   @default("₹0")
 }
 
 model RefundRequest {

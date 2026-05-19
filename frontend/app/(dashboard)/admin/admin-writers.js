@@ -113,7 +113,11 @@ export function AdminWriters({ freelancers = [], isMobile }) {
     linkedinUrl: f.freelancerProfile?.linkedinUrl || '',
     portfolioUrl: f.freelancerProfile?.portfolioUrl || '',
     age: f.freelancerProfile?.age || 'N/A',
-    gender: f.freelancerProfile?.gender || 'N/A'
+    gender: f.freelancerProfile?.gender || 'N/A',
+    writerLevel: f.freelancerProfile?.writerLevel || 'JUNIOR',
+    slaScore: f.slaScore ?? 50,
+    slaBreakdown: f.slaBreakdown ?? {},
+    slaLabel: f.slaLabel ?? { label: 'New', color: '#6B7280' }
   }));
 
   const STATUS_COLOR = { Active: 'var(--green)', Inactive: 'var(--text-dim)', 'Pending Approval': 'var(--amber)', Suspended: 'var(--red)', Rejected: 'var(--red)' };
@@ -194,6 +198,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                         <Pill label={w.status} color={STATUS_COLOR[w.status]} />
                         <Pill label={w.compliance} color={COMPLIANCE_COLOR[w.compliance]} />
+                        <Pill label={`${w.slaLabel.label} SLA: ${w.slaScore}`} color={w.slaLabel.color} />
                         <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 4 }}>{w.country} · ★ {w.rating}</span>
                       </div>
                     </div>
@@ -221,9 +226,35 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                         <Pill label={selected_w.status} color={STATUS_COLOR[selected_w.status]} />
                         <Pill label={selected_w.compliance} color={COMPLIANCE_COLOR[selected_w.compliance]} />
+                        <Pill label={selected_w.writerLevel === 'SENIOR' ? '⭐ SENIOR WRITER' : '✍️ JUNIOR WRITER'} color={selected_w.writerLevel === 'SENIOR' ? '#d97706' : '#2563eb'} />
+                        <Pill label={`🏆 SLA Tier: ${selected_w.slaLabel.label} (${selected_w.slaScore}/100)`} color={selected_w.slaLabel.color} />
                         {selected_w.badge !== '—' && <Pill label={selected_w.badge} color="var(--gold)" />}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{selected_w.email} · {selected_w.country} · Joined {selected_w.joined}</div>
+                      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Assign Level:</span>
+                        <select 
+                          value={selected_w.writerLevel} 
+                          onChange={(e) => handleUpdate(selected_w.id, { writerLevel: e.target.value })}
+                          style={{
+                            background: 'var(--surface3)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text)',
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            outline: 'none',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--teal)'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                        >
+                          <option value="JUNIOR">Junior Writer</option>
+                          <option value="SENIOR">Senior Writer</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0, justifyContent: isMobile ? 'flex-start' : 'flex-end', marginTop: isMobile ? '8px' : '0' }}>
@@ -248,14 +279,63 @@ export function AdminWriters({ freelancers = [], isMobile }) {
 
                 <div style={{ padding: 16, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                   <Card>
-                    <CardHeader title="KPI / KRA" />
+                    <CardHeader title="SLA Milestone KPIs & KRAs" />
                     <div style={{ padding: 12 }}>
                       {[
-                        { label: 'On-Time Delivery', val: `${selected_w.onTimeRate}%`, target: '≥ 95%', ok: selected_w.onTimeRate >= 95 },
-                        { label: 'Avg Rating', val: selected_w.rating, target: '≥ 4.8', ok: selected_w.rating >= 4.8 },
-                        { label: 'Response Time', val: selected_w.responseTime, target: '< 4h', ok: true },
-                        { label: 'Revision Rate', val: '8%', target: '≤ 15%', ok: true },
-                        { label: 'Orders Completed', val: selected_w.orders, target: '—', ok: true },
+                        { 
+                          label: 'On-Time Delivery Rate', 
+                          val: selected_w.slaBreakdown?.sla?.onTimeDeliveryPct !== undefined 
+                            ? `${selected_w.slaBreakdown.sla.onTimeDeliveryPct}%` 
+                            : `${selected_w.onTimeRate}%`, 
+                          target: '≥ 95%', 
+                          ok: (selected_w.slaBreakdown?.sla?.onTimeDeliveryPct ?? selected_w.onTimeRate) >= 95 
+                        },
+                        { 
+                          label: 'First Reply Speed', 
+                          val: selected_w.slaBreakdown?.sla?.avgReplyMinutes !== undefined && selected_w.slaBreakdown.sla.avgReplyMinutes !== null
+                            ? `${selected_w.slaBreakdown.sla.avgReplyMinutes} min` 
+                            : selected_w.responseTime, 
+                          target: '≤ 60m', 
+                          ok: (selected_w.slaBreakdown?.sla?.avgReplyMinutes ?? 0) <= 60 
+                        },
+                        { 
+                          label: 'Assignment Acceptance', 
+                          val: selected_w.slaBreakdown?.sla?.avgStartMinutes !== undefined && selected_w.slaBreakdown.sla.avgStartMinutes !== null
+                            ? `${selected_w.slaBreakdown.sla.avgStartMinutes} min` 
+                            : 'N/A', 
+                          target: '≤ 120m', 
+                          ok: (selected_w.slaBreakdown?.sla?.avgStartMinutes ?? 0) <= 120 
+                        },
+                        { 
+                          label: 'Revision Turnaround', 
+                          val: selected_w.slaBreakdown?.sla?.avgRevisionMinutes !== undefined && selected_w.slaBreakdown.sla.avgRevisionMinutes !== null
+                            ? `${selected_w.slaBreakdown.sla.avgRevisionMinutes} min` 
+                            : 'N/A', 
+                          target: '≤ 240m', 
+                          ok: (selected_w.slaBreakdown?.sla?.avgRevisionMinutes ?? 0) <= 240 
+                        },
+                        { 
+                          label: 'SLA Score (40% Weight)', 
+                          val: selected_w.slaBreakdown?.sla?.total !== undefined 
+                            ? `${selected_w.slaBreakdown.sla.total} pts` 
+                            : 'N/A', 
+                          target: '≥ 32 pts', 
+                          ok: (selected_w.slaBreakdown?.sla?.total ?? 0) >= 32 
+                        },
+                        { 
+                          label: 'Reviews Score (60% Weight)', 
+                          val: selected_w.slaBreakdown?.review?.total !== undefined 
+                            ? `${selected_w.slaBreakdown.review.total} pts` 
+                            : 'N/A', 
+                          target: '≥ 48 pts', 
+                          ok: (selected_w.slaBreakdown?.review?.total ?? 0) >= 48 
+                        },
+                        { 
+                          label: 'Overall Performance', 
+                          val: `${selected_w.slaScore} / 100`, 
+                          target: '≥ 75', 
+                          ok: selected_w.slaScore >= 75 
+                        },
                       ].map(k => (
                         <div key={k.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
                           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{k.label}</span>

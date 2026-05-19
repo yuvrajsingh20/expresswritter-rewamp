@@ -14,7 +14,7 @@ interface Message {
   layer: 'client' | 'internal' | 'broadcast';
   createdAt: string;
 }
-
+//test 2
 export default function ChatWindow({ projectId }: { projectId: string }) {
   const { user } = useAuthStore();
   const [activeLayer, setActiveLayer] = useState<'client' | 'internal'>('client');

@@ -24,6 +24,45 @@ export async function POST(request) {
 
     const now = new Date();
     
+    // Dynamically calculate reference dates and deltas based on SLA eventType
+    let assignedAt = null;
+    let startMinutes = null;
+    let responseMinutes = null;
+    let deliveryOnTime = null;
+    let revisionMinutes = null;
+
+    if (eventType === 'ASSIGN_ACCEPT' || eventType === 'FIRST_REPLY') {
+      // Find the project log recording the assignment
+      const assignmentLog = await prisma.projectLog.findFirst({
+        where: {
+          projectId,
+          action: { startsWith: 'Project assigned to' }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      assignedAt = assignmentLog ? assignmentLog.createdAt : project.createdAt;
+      
+      const elapsedMinutes = Math.max(0, Math.round((now.getTime() - new Date(assignedAt).getTime()) / (1000 * 60)));
+      if (eventType === 'ASSIGN_ACCEPT') {
+        startMinutes = elapsedMinutes;
+      } else {
+        responseMinutes = elapsedMinutes;
+      }
+    } else if (eventType === 'DELIVERY') {
+      deliveryOnTime = project.deadline ? now <= new Date(project.deadline) : true;
+    } else if (eventType === 'REVISION_TURNAROUND') {
+      // Find latest status transition or status log to REVISION
+      const revisionLog = await prisma.projectLog.findFirst({
+        where: {
+          projectId,
+          action: { contains: 'status' }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      const revisionRequestedAt = revisionLog ? revisionLog.createdAt : project.updatedAt;
+      revisionMinutes = Math.max(0, Math.round((now.getTime() - new Date(revisionRequestedAt).getTime()) / (1000 * 60)));
+    }
+
     const sla = await prisma.sLAEvent.create({
       data: {
         projectId,
@@ -31,7 +70,11 @@ export async function POST(request) {
         eventType,
         occurredAt: now,
         deadlineAt: project.deadline,
-        // Optional deltas can be computed offline or if assignedAt exists in the future
+        assignedAt,
+        startMinutes,
+        responseMinutes,
+        deliveryOnTime,
+        revisionMinutes
       }
     });
 

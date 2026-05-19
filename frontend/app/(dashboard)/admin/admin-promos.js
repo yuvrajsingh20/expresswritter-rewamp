@@ -30,8 +30,25 @@ export function AdminPromos() {
       headers: { 'Content-Type': 'application/json' }
     }).then(() => {
       setShowCreate(false);
+      setNewPromo({ code: '', type: 'PERCENTAGE', value: '', minOrderValue: '', usageLimit: '', expiryDate: '' });
       fetchPromos();
     });
+  };
+
+  const handleToggle = (id, currentStatus) => {
+    fetch(`/api/admin/promos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive: !currentStatus }),
+      headers: { 'Content-Type': 'application/json' }
+    }).then(() => fetchPromos());
+  };
+
+  const handleDelete = (id) => {
+    if (confirm("Are you sure you want to delete this promo code?")) {
+      fetch(`/api/admin/promos/${id}`, {
+        method: 'DELETE'
+      }).then(() => fetchPromos());
+    }
   };
 
   return (
@@ -72,8 +89,22 @@ export function AdminPromos() {
             `${c.usageCount}/${c.usageLimit || '∞'}`,
             <Pill label={c.isActive ? 'Active' : 'Inactive'} color={c.isActive ? 'var(--green)' : 'var(--text-dim)'} />,
             <div style={{ display: 'flex', gap: 8 }}>
-              <Btn variant="outline" small>Edit</Btn>
-              <Btn variant="outline" small style={{ color: 'var(--red)' }}>Disable</Btn>
+              <Btn 
+                variant="outline" 
+                small 
+                style={{ color: c.isActive ? 'var(--red)' : 'var(--green)' }}
+                onClick={() => handleToggle(c.id, c.isActive)}
+              >
+                {c.isActive ? 'Disable' : 'Enable'}
+              </Btn>
+              <Btn 
+                variant="outline" 
+                small 
+                style={{ color: 'var(--red)' }}
+                onClick={() => handleDelete(c.id)}
+              >
+                Delete
+              </Btn>
             </div>
           ])}
         />

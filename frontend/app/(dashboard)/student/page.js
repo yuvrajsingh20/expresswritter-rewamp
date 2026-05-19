@@ -1421,6 +1421,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [tab, setTab] = useState('All');
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const getServiceIcon = (catId) => {
     const icons = {
@@ -1534,28 +1535,17 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
     try {
       if (!selectedService) throw new Error("Service not selected");
 
-      const projectRes = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `${selectedService.name} Order`,
-          description: form.details,
-          deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
-          serviceType: selectedService.id,
-          amount: amountToCharge,
-          attachments: form.attachments
-        }),
-      });
-
-      if (!projectRes.ok) throw new Error('Failed to create project');
-      const project = await projectRes.json();
-
       const paymentRes = await fetch('/api/payments/razorpay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: amountToCharge,
-          projectId: project.id
+          idempotencyKey,
+          title: `${selectedService.name} Order`,
+          description: form.details,
+          deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+          serviceType: selectedService.id,
+          attachments: form.attachments
         }),
       });
 
@@ -1577,11 +1567,11 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              projectId: project.id
             }),
           });
 
           if (verifyRes.ok) {
+            const { projectId } = await verifyRes.json();
             setSubmitted(true);
             if (onOrderCreated) onOrderCreated();
             setTimeout(() => {

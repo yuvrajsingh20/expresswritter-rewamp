@@ -26,6 +26,78 @@ export async function POST(req) {
       return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
     }
 
+    const directPayment = await prisma.payment.findUnique({
+      where: { razorpayOrderId: razorpay_order_id }
+    });
+
+    if (directPayment) {
+      if (directPayment.status === "captured") {
+         return NextResponse.json({ message: "Payment already processed", checkoutSessionId: directPayment.checkoutSessionId }, { status: 200 });
+      }
+
+      let createdProjectId = null;
+      await prisma.$transaction(async (tx) => {
+        await tx.payment.update({
+          where: { id: directPayment.id },
+          data: {
+            status: "captured",
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+          }
+        });
+
+        if (directPayment.checkoutSessionId) {
+          const session = await tx.checkoutSession.update({
+            where: { id: directPayment.checkoutSessionId },
+            data: { status: "paid" }
+          });
+
+          // Create the Project for the checkout session
+          const projectTitle = session.services?.length > 0 
+            ? session.services.map(s => s.name).join(' & ')
+            : "Custom Service Package";
+
+          const projectDesc = `Pre-configured checkout session package.\n\nServices:\n${session.services?.map(s => `- ${s.name} (x${s.quantity}) at ₹${s.price}`).join('\n')}`;
+
+          const createdProject = await tx.project.create({
+            data: {
+              title: projectTitle,
+              description: projectDesc,
+              studentId: directPayment.userId,
+              amount: directPayment.amount,
+              status: "CREATED",
+            }
+          });
+
+          createdProjectId = createdProject.id;
+
+          await tx.order.create({
+            data: {
+              amount: directPayment.amount,
+              paymentStatus: "PAID",
+              razorpayId: razorpay_order_id,
+              projectId: createdProject.id,
+              studentId: directPayment.userId,
+            }
+          });
+
+          await tx.projectLog.create({
+            data: {
+              action: "Payment Completed for Custom Package - Awaiting Admin Assignment",
+              projectId: createdProject.id,
+              userId: directPayment.userId,
+            }
+          });
+        }
+      });
+
+      return NextResponse.json({ 
+        message: "Payment verified and session updated", 
+        checkoutSessionId: directPayment.checkoutSessionId,
+        projectId: createdProjectId 
+      }, { status: 200 });
+    }
+
     const session = await getAndDeletePaymentSession(razorpay_order_id);
 
     if (!session) {
@@ -45,7 +117,7 @@ export async function POST(req) {
       }, { status: 409 });
     }
 
-    const { studentId, amount, title, description, deadline, serviceType, attachments } = session;
+    const { studentId, amount, title, description, deadline, serviceType, attachments, promoCodeId } = session;
 
     const project = await prisma.$transaction(async (tx) => {
       const createdProject = await tx.project.create({
@@ -78,6 +150,17 @@ export async function POST(req) {
           userId: studentId,
         },
       });
+
+      if (promoCodeId) {
+        await tx.promoCode.update({
+          where: { id: promoCodeId },
+          data: {
+            usageCount: {
+              increment: 1
+            }
+          }
+        });
+      }
 
       return createdProject;
     });

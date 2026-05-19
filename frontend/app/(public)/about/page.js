@@ -27,8 +27,7 @@ export default function AboutPage() {
         .story-container{display:grid;grid-template-columns:1.1fr 1fr;gap:60px;align-items:center}
         .story-container p{font-size:14.5px;color:var(--text-muted);line-height:1.8;margin-bottom:14px;font-weight:300}
         .story-container strong{color:var(--text);font-weight:600}
-        .story-image{aspect-ratio:4/5;background:linear-gradient(135deg,rgba(13,148,136,0.2),rgba(13,148,136,0.05));border-radius:14px;border:1px solid var(--border);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:80px;color:rgba(13,148,136,0.3)}
-        .story-image::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 14px,rgba(255,255,255,0.02) 14px,rgba(255,255,255,0.02) 28px)}
+        .story-image{aspect-ratio:4/5;border-radius:14px;border:1px solid var(--border);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
         .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
         .value-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px 24px;transition:all .15s}
         .value-card:hover{border-color:var(--teal);transform:translateY(-2px)}
@@ -44,8 +43,8 @@ export default function AboutPage() {
         .team-member p{font-size:11.5px;color:var(--text-muted);font-weight:300;line-height:1.6}
         .contact-section{background:linear-gradient(180deg,transparent,rgba(13,148,136,0.04));padding-top:60px}
         .contact-grid-container{display:grid;grid-template-columns:1.1fr 1fr;gap:48px}
-        .contact-channels{display:flex;flex-direction:column;gap:12px}
-        .contact-channel{display:flex;align-items:center;gap:16px;padding:18px 22px;background:var(--surface);border:1px solid var(--border);border-radius:11px;text-decoration:none;color:var(--text);transition:all .15s}
+        .contact-channels{display:flex;flex-direction:column;gap:12px;height:100%}
+        .contact-channel{display:flex;align-items:center;gap:16px;padding:18px 22px;background:var(--surface);border:1px solid var(--border);border-radius:11px;text-decoration:none;color:var(--text);transition:all .15s;flex:1}
         .contact-channel:hover{border-color:var(--teal);transform:translateX(2px)}
         .channel-icon{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
         .channel-info{flex:1;min-width:0}
@@ -77,7 +76,7 @@ export default function AboutPage() {
       <div className="hero-section">
         <span className="eyebrow-tag">Our Story</span>
         <h1>Words that change lives, written by <span className="accent-text">humans who care</span>.</h1>
-        <p>Xpresswriters started in a Mumbai college library in 2021, born from a simple frustration: students with brilliant ideas were being judged on writing alone. Today we're the network of 850+ vetted experts behind 47,000 admissions, careers, and businesses worldwide.</p>
+        <p>XpressWriters began in 2021 with a simple idea — making high-quality, innovative, and affordable content accessible with fast delivery. What started by helping self-applying students craft impactful SOPs soon expanded into providing SOP, LOR, and resume services to study abroad consultants struggling with reliable writing support and tight deadlines. Built on speed, creativity, and results, XpressWriters quickly became a first mover in this niche, earning the MSME National Award in 2024 while supporting thousands of students, professionals, and businesses worldwide.</p>
       </div>
 
       <div className="stats-grid">
@@ -91,12 +90,13 @@ export default function AboutPage() {
         <div className="section-header"><h2>Why we exist</h2><p>To level the playing field — so good ideas aren't lost to bad writing.</p></div>
         <div className="story-container">
           <div>
-            <p><strong>It started with a Statement of Purpose.</strong> Aarav, our founder, watched his roommate — a brilliant biotech student — get rejected from a dream PhD program because his SOP, in his second language, didn't communicate his research half as well as he could in person.</p>
-            <p>He started editing applications for friends. Friends told friends. Within a year, 200 students had come through. Then a writer in Bangalore offered to help. Then ten more.</p>
-            <p>Today, <strong>Xpresswriters</strong> is what happens when you put that small-team obsession with the brief, the deadline, and the human story at the centre of every order — and connect 850 of the world's best freelance writers around it.</p>
-            <p>We're not the cheapest. We're not the biggest. <strong>We're the ones who give a damn about your draft.</strong></p>
+            <p>Founded by <strong>Harshwardhan Singh</strong>, Founder & Director of <strong>Admivo Group Ventures LLP</strong>, <strong>XpressWriters</strong> was built with a startup mindset, an innovative approach, and a strong customer-centric vision. What began as identifying a critical gap in the study abroad industry soon transformed into a trusted content ecosystem serving students, consultants, professionals, and businesses globally.</p>
+            <p>Harshwardhan believed that content should not just be grammatically correct — it should <strong>communicate ambition, personality, clarity, and impact</strong>. With a sharp focus on innovation, fast execution, affordability, and premium quality, he built XpressWriters to solve real-world problems faced by applicants and consultants struggling with deadlines, inconsistent writers, and generic documentation.</p>
+            <p>Under his leadership, XpressWriters evolved into a recognized first mover in the admissions and professional writing industry, eventually earning the prestigious <strong>MSME National Award in 2024</strong>. Today, the company continues to grow on the foundation of creativity, reliability, strategic storytelling, and delivering meaningful results for every client.</p>
           </div>
-          <div className="story-image">📖</div>
+          <div className="story-image">
+            <img src="/aboutimage.jpg" alt="About XpressWriters" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
         </div>
       </div>
 
@@ -112,55 +112,36 @@ export default function AboutPage() {
         </div>
       </div>
 
-      <div className="page-section">
-        <div className="section-header"><h2>The team behind the network</h2><p>Tiny, full-stack, obsessed with craft.</p></div>
-        <div className="team-grid">
-          <div className="team-member"><div className="member-avatar" style={{background:'linear-gradient(135deg,#0d9488,#0f766e)'}}>AS</div><h4>Aarav Sharma</h4><div className="member-role">Founder &amp; CEO</div><p>Ex-IIT Bombay, helped 200+ apps before this was a company.</p></div>
-          <div className="team-member"><div className="member-avatar" style={{background:'linear-gradient(135deg,#a78bfa,#7c3aed)'}}>PM</div><h4>Priya Menon</h4><div className="member-role">Head of Writers</div><p>PhD English, formerly senior editor at HarperCollins India.</p></div>
-          <div className="team-member"><div className="member-avatar" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>RK</div><h4>Rohan Kapoor</h4><div className="member-role">CTO</div><p>Built CRM at Razorpay. Loves Postgres, hates clutter.</p></div>
-          <div className="team-member"><div className="member-avatar" style={{background:'linear-gradient(135deg,#22c55e,#15803d)'}}>SN</div><h4>Sara Nair</h4><div className="member-role">Head of Customer</div><p>15 years in EdTech ops. Answers your tickets at 3 AM if needed.</p></div>
-        </div>
-      </div>
-
       <div className="page-section contact-section" id="contact">
         <div className="section-header"><h2>Get in touch</h2><p>We reply to every message — usually within an hour during business hours, always within 24.</p></div>
         <div className="contact-grid-container">
-          <div>
-            <div className="contact-channels">
-              <a href="mailto:admin@expresswriter.in" className="contact-channel">
-                <div className="channel-icon" style={{background:'rgba(13,148,136,0.15)',color:'var(--teal-light)'}}>✉️</div>
-                <div className="channel-info"><h4>Email Support</h4><div className="channel-value">admin@expresswriter.in</div></div>
-                <span className="channel-metadata">~1h reply</span>
-              </a>
-              <a href="#" className="contact-channel">
-                <div className="channel-icon" style={{background:'rgba(34,197,94,0.15)',color:'var(--green)'}}>💬</div>
-                <div className="channel-info"><h4>WhatsApp</h4><div className="channel-value">+91 98765 43210</div></div>
-                <span className="channel-metadata">24/7</span>
-              </a>
-              <a href="#" className="contact-channel">
-                <div className="channel-icon" style={{background:'rgba(167,139,250,0.15)',color:'var(--violet)'}}>💭</div>
-                <div className="channel-info"><h4>Live Chat</h4><div className="channel-value">Click the bubble at bottom-right</div></div>
-                <span className="channel-metadata">live</span>
-              </a>
-              <a href="tel:+918888000111" className="contact-channel">
-                <div className="channel-icon" style={{background:'rgba(245,158,11,0.15)',color:'var(--amber)'}}>📞</div>
-                <div className="channel-info"><h4>Phone (India)</h4><div className="channel-value">+91 88880 00111 · 9 AM – 9 PM IST</div></div>
-                <span className="channel-metadata">Mon-Sat</span>
-              </a>
-              <a href="mailto:admin@expresswriter.in" className="contact-channel">
-                <div className="channel-icon" style={{background:'rgba(59,130,246,0.15)',color:'var(--blue)'}}>🏢</div>
-                <div className="channel-info"><h4>Enterprise &amp; Bulk Orders</h4><div className="channel-value">admin@expresswriter.in</div></div>
-                <span className="channel-metadata">Custom</span>
-              </a>
-            </div>
+          <div className="contact-channels">
+            <a href="mailto:admin@expresswriter.in" className="contact-channel">
+              <div className="channel-icon" style={{background:'rgba(13,148,136,0.15)',color:'var(--teal-light)'}}>✉️</div>
+              <div className="channel-info"><h4>Email Support</h4><div className="channel-value">admin@expresswriter.in</div></div>
+              <span className="channel-metadata">~1h reply</span>
+            </a>
+            <a href="https://wa.me/918823830076" target="_blank" rel="noopener noreferrer" className="contact-channel">
+              <div className="channel-icon" style={{background:'rgba(34,197,94,0.15)',color:'var(--green)'}}>💬</div>
+              <div className="channel-info"><h4>WhatsApp</h4><div className="channel-value">+91 88238 30076</div></div>
+              <span className="channel-metadata">24/7</span>
+            </a>
+            <a href="tel:+918888000111" className="contact-channel">
+              <div className="channel-icon" style={{background:'rgba(245,158,11,0.15)',color:'var(--amber)'}}>📞</div>
+              <div className="channel-info"><h4>Phone (India)</h4><div className="channel-value">+91 88880 00111 · 9 AM – 9 PM IST</div></div>
+              <span className="channel-metadata">Mon-Sat</span>
+            </a>
+            <a href="mailto:admin@expresswriter.in" className="contact-channel">
+              <div className="channel-icon" style={{background:'rgba(59,130,246,0.15)',color:'var(--blue)'}}>🏢</div>
+              <div className="channel-info"><h4>Enterprise &amp; Bulk Orders</h4><div className="channel-value">admin@expresswriter.in</div></div>
+              <span className="channel-metadata">Custom</span>
+            </a>
           </div>
           <form className="contact-form" onSubmit={(e) => { e.preventDefault(); alert('Message sent! We will reply within 1 hour.'); e.target.reset(); }}>
             <h3>Send us a note</h3>
             <p>Sales, partnerships, press, or just to say hi.</p>
-            <div className="form-row">
-              <div className="form-field"><label>Name</label><input required placeholder="Your full name"/></div>
-              <div className="form-field"><label>Email</label><input type="email" required placeholder="you@email.com"/></div>
-            </div>
+            <div className="form-field"><label>Name</label><input required placeholder="Your full name"/></div>
+            <div className="form-field"><label>Email</label><input type="email" required placeholder="you@email.com"/></div>
             <div className="form-field"><label>I'm asking about</label>
               <select>
                 <option>General question</option>
@@ -174,12 +155,6 @@ export default function AboutPage() {
             <div className="form-field"><label>Message</label><textarea required placeholder="Tell us a bit about what you need…"></textarea></div>
             <button className="submit-button" type="submit">Send message →</button>
           </form>
-        </div>
-
-        <div className="locations-grid">
-          <div className="location-card"><div className="flag-icon">🇮🇳</div><h4>Mumbai HQ</h4><p>Floor 7, Phoenix Marketcity<br/>Kurla West, Mumbai 400070</p></div>
-          <div className="location-card"><div className="flag-icon">🇬🇧</div><h4>London Office</h4><p>21 Soho Square<br/>London W1D 3QP, UK</p></div>
-          <div className="location-card"><div className="flag-icon">🇺🇸</div><h4>San Francisco</h4><p>548 Market St #38291<br/>San Francisco, CA 94104</p></div>
         </div>
       </div>
       <PublicFooter />

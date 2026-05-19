@@ -16,7 +16,7 @@ export default function CookieBanner() {
     localStorage.setItem('cookie-consent', 'accepted');
     setVisible(false);
   };
-
+  // test 1
   if (!visible) return null;
 
   return (

@@ -1079,6 +1079,106 @@
         "addonPrice": null,
         "customisation": ""
       }
+    ],
+    "ielts coachinh": [
+      {
+        "label": "For Bachelors",
+        "wordCount": "1000 words",
+        "price": 99999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 500,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "1000 words",
+        "price": 999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "1000 words",
+        "price": 2999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For PhD",
+        "wordCount": "1200 words",
+        "price": 2999,
+        "delivery": "7-10 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "New Variant 5",
+        "wordCount": "1000 words",
+        "price": 1999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": 499,
+        "customisation": "According to Requirements"
+      }
+    ],
+    "insta manage": [
+      {
+        "label": "For follower above 1000",
+        "wordCount": "1000 words",
+        "price": 17845,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Masters",
+        "wordCount": "1000 words",
+        "price": 999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For Elite MBA",
+        "wordCount": "1000 words",
+        "price": 2999,
+        "delivery": "5-7 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      },
+      {
+        "label": "For PhD",
+        "wordCount": "1200 words",
+        "price": 2999,
+        "delivery": "7-10 days",
+        "fastTrackPrice": 499,
+        "fastTrackDelivery": "24-48 hours",
+        "addonPrice": null,
+        "customisation": "According to Requirements"
+      }
     ]
+  },
+  "serviceAddons": {
+    "insta manage": {
+      "addonPrice": 457,
+      "customisationPrice": 799
+    }
   }
 }

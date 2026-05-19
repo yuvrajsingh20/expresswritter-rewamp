@@ -16,7 +16,7 @@ const BRAND = {
   accent:  '#0067B8',
   light:   '#F0F7FF',
   url:     process.env.NEXTAUTH_URL || 'https://expresswriter.in',
-  support: process.env.SMTP_USER    || 'support@expresswriter.in',
+  support: process.env.SMTP_USER    || 'admin@expresswriter.in',
 };
 
 function safeFormatDate(date) {

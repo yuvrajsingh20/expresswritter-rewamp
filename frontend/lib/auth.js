@@ -113,38 +113,52 @@ export const authOptions = {
 };
 
 export const getAuthUser = async (req) => {
-    // 1. Try NextAuth JWT
+    // 0. Try getServerSession (Robust for Next.js App Router API Routes)
+    try {
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            console.log("getAuthUser: Returning getServerSession user:", session.user.email);
+            return session.user;
+        }
+    } catch (e) {
+        console.error("getServerSession error:", e);
+    }
+
+    // 1. Try NextAuth JWT fallback
     console.log("getAuthUser: Checking token with req...");
-    const token = await getToken({ 
-        req, 
-        secret: JWT_SECRET 
-    });
-    console.log("getAuthUser: Token found:", token ? "YES" : "NO");
-    
-    if (token) {
-        console.log("getAuthUser: Returning token user:", token.email);
-        return {
-            id: token.id || token.sub,
-            role: token.role,
-            name: token.name,
-            email: token.email
-        };
+    try {
+        const token = await getToken({ 
+            req, 
+            secret: JWT_SECRET 
+        });
+        console.log("getAuthUser: Token found:", token ? "YES" : "NO");
+        
+        if (token) {
+            console.log("getAuthUser: Returning token user:", token.email);
+            return {
+                id: token.id || token.sub,
+                role: token.role,
+                name: token.name,
+                email: token.email
+            };
+        }
+    } catch (e) {
+        console.error("getToken execution error:", e);
     }
 
     // 2. Fallback to custom token in cookies (if any)
-    const cookieStore = await cookies();
-    const customToken = cookieStore.get('token')?.value;
-    console.log("getAuthUser: Custom token found:", customToken ? "YES" : "NO");
-    
-    if (customToken) {
-        try {
+    try {
+        const cookieStore = await cookies();
+        const customToken = cookieStore.get('token')?.value;
+        console.log("getAuthUser: Custom token found:", customToken ? "YES" : "NO");
+        
+        if (customToken) {
             const decoded = jwt.verify(customToken, JWT_SECRET);
             console.log("getAuthUser: Returning decoded custom token for:", decoded.email);
             return decoded;
-        } catch (e) {
-            console.log("getAuthUser: Custom token verification failed:", e.message);
-            return null;
         }
+    } catch (e) {
+        console.log("getAuthUser: Custom token verification failed:", e.message);
     }
 
     console.log("getAuthUser: No auth found");

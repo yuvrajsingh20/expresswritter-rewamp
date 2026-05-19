@@ -1,333 +1,467 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Xpresswriters — Admin Panel</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#09090f;--surface:#0d0d1c;--surface2:#121224;--surface3:#181830;--surface4:#1e1e3a;
-  --border:rgba(255,255,255,0.07);--border-teal:rgba(13,148,136,0.22);
-  --teal:#0d9488;--teal-light:#2dd4bf;--teal-dim:rgba(13,148,136,0.1);
-  --text:#eefcfb;--text-muted:#6b9e9a;--text-dim:#2e4d4a;
-  --green:#22c55e;--amber:#f59e0b;--red:#f43f5e;--blue:#3b82f6;--purple:#8b5cf6;--gold:#f5c842;
-  --font:'Google Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
-}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:var(--font)}
-#root{display:flex;width:100vw;height:100vh;overflow:hidden}
-::-webkit-scrollbar{width:3px;height:3px}
-::-webkit-scrollbar-thumb{background:var(--teal);border-radius:2px}
-input,textarea,select{font-family:var(--font)}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideLeft{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes statusSlide{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
-.scrollable{overflow-y:auto}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xpresswriters — Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+        integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+        integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+        integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+        crossorigin="anonymous"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #09090f;
+            --surface: #0d0d1c;
+            --surface2: #121224;
+            --surface3: #181830;
+            --surface4: #1e1e3a;
+            --border: rgba(255, 255, 255, 0.07);
+            --border-teal: rgba(13, 148, 136, 0.22);
+            --teal: #0d9488;
+            --teal-light: #2dd4bf;
+            --teal-dim: rgba(13, 148, 136, 0.1);
+            --text: #eefcfb;
+            --text-muted: #6b9e9a;
+            --text-dim: #2e4d4a;
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --red: #f43f5e;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --gold: #f5c842;
+            --font: 'Google Sans', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font)
+        }
+
+        #root {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden
+        }
+
+        ::-webkit-scrollbar {
+            width: 3px;
+            height: 3px
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--teal);
+            border-radius: 2px
+        }
+
+        input,
+        textarea,
+        select {
+            font-family: var(--font)
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        @keyframes slideLeft {
+            from {
+                opacity: 0;
+                transform: translateX(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(.85);
+                opacity: 0
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        @keyframes statusSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-5px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .scrollable {
+            overflow-y: auto
+        }
+    </style>
 </head>
+
 <body>
-<div id="root"></div>
+    <div id="root"></div>
 
-<!-- Shared components first -->
-<script type="text/babel" src="admin-shared.jsx"></script>
-<script type="text/babel" src="admin-integrations.jsx"></script>
-<script type="text/babel" src="admin-tickets.jsx"></script>
-<script type="text/babel" src="admin-payments.jsx"></script>
-<script type="text/babel" src="admin-writers.jsx"></script>
-<script type="text/babel" src="admin-settings.jsx"></script>
+    <!-- Shared components first -->
+    <script type="text/babel" src="admin-shared.jsx"></script>
+    <script type="text/babel" src="admin-integrations.jsx"></script>
+    <script type="text/babel" src="admin-tickets.jsx"></script>
+    <script type="text/babel" src="admin-payments.jsx"></script>
+    <script type="text/babel" src="admin-writers.jsx"></script>
+    <script type="text/babel" src="admin-services.jsx"></script>
+    <script type="text/babel" src="admin-settings.jsx"></script>
 
-<script type="text/babel">
+    <script type="text/babel">
 
-const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef } = React;
 
-/* ── NAV ITEMS ── */
-const NAV = [
-{ id: 'overview', label: 'Overview', icon: '⊞', group: 'Main' },
-{ id: 'integrations', label: 'API Integrations', icon: '🔌', group: 'Platform' },
-{ id: 'tickets', label: 'Ticketing', icon: '🎫', group: 'Platform' },
-{ id: 'payments', label: 'Payments & Revenue', icon: '💰', group: 'Platform' },
-{ id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
-{ id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
-{ id: 'users', label: 'User Management', icon: '👤', group: 'People' },
-{ id: 'workflow', label: 'Order Workflow', icon: '⟳', group: 'System' },
-{ id: 'theme', label: 'Theme & Appearance', icon: '🎨', group: 'System' }];
-
-
-/* ── OVERVIEW ── */
-function AdminOverview({ setSection }) {
-  const stats = [
-  { label: 'Total Orders', val: '1,284', sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
-  { label: 'Active Writers', val: '48', sub: 'Online now: 12', color: 'var(--green)', icon: '✍️' },
-  { label: 'Monthly Revenue', val: '$26.8k', sub: 'Apr 2026', color: 'var(--gold)', icon: '💰' },
-  { label: 'Open Tickets', val: '6', sub: '2 escalated', color: 'var(--amber)', icon: '🎫' },
-  { label: 'Pending Payouts', val: '$5.2k', sub: '4 writers', color: 'var(--red)', icon: '🏦' },
-  { label: 'Avg Rating', val: '4.95', sub: 'Platform-wide', color: '#f472b6', icon: '★' }];
+        /* ── NAV ITEMS ── */
+        const NAV = [
+            { id: 'overview', label: 'Overview', icon: '⊞', group: 'Main' },
+            { id: 'integrations', label: 'API Integrations', icon: '🔌', group: 'Platform' },
+            { id: 'tickets', label: 'Ticketing', icon: '🎫', group: 'Platform' },
+            { id: 'payments', label: 'Payments & Revenue', icon: '💰', group: 'Platform' },
+            { id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
+            { id: 'services', label: 'Service Management', icon: '📦', group: 'Catalog' },
+            { id: 'offers', label: 'Offers & Promos', icon: '🎟', group: 'Catalog' },
+            { id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
+            { id: 'users', label: 'User Management', icon: '👤', group: 'People' },
+            { id: 'workflow', label: 'Order Workflow', icon: '⟳', group: 'System' },
+            { id: 'theme', label: 'Theme & Appearance', icon: '🎨', group: 'System' }];
 
 
-  const quickLinks = [
-  { id: 'integrations', label: 'API Integrations', icon: '🔌', desc: '10 services, 7 connected' },
-  { id: 'tickets', label: 'Ticketing System', icon: '🎫', desc: '6 open, 2 escalated' },
-  { id: 'payments', label: 'Payments', icon: '💳', desc: '$26.8k total revenue' },
-  { id: 'writers', label: 'Writer Management', icon: '✍️', desc: '48 active, 1 pending' },
-  { id: 'workflow', label: 'Order Workflow', icon: '⟳', desc: '8 status stages, auto-assign on' },
-  { id: 'theme', label: 'Theme Settings', icon: '🎨', desc: 'Teal Dark active' },
-  { id: 'users', label: 'User Management', icon: '👤', desc: '5 admin accounts' },
-  { id: 'currency', label: 'Currency', icon: '💱', desc: '5 regions active' }];
+        /* ── OVERVIEW ── */
+        function AdminOverview({ setSection }) {
+            const stats = [
+                { label: 'Total Orders', val: '1,284', sub: 'All time', color: 'var(--teal-light)', icon: '📋' },
+                { label: 'Active Writers', val: '48', sub: 'Online now: 12', color: 'var(--green)', icon: '✍️' },
+                { label: 'Monthly Revenue', val: '$26.8k', sub: 'Apr 2026', color: 'var(--gold)', icon: '💰' },
+                { label: 'Open Tickets', val: '6', sub: '2 escalated', color: 'var(--amber)', icon: '🎫' },
+                { label: 'Pending Payouts', val: '$5.2k', sub: '4 writers', color: 'var(--red)', icon: '🏦' },
+                { label: 'Avg Rating', val: '4.95', sub: 'Platform-wide', color: '#f472b6', icon: '★' }];
 
 
-  const activity = [
-  { icon: '✓', text: 'Writer WR-006 approved — Rahul Desai', time: '1h ago', color: 'var(--green)' },
-  { icon: '💬', text: 'Ticket TKT-1042 escalated to Level 2', time: '2h ago', color: 'var(--red)' },
-  { icon: '💰', text: 'Payout run completed — 4 writers, $5,210', time: '4h ago', color: 'var(--teal)' },
-  { icon: '🔌', text: 'Stripe webhook reconnected successfully', time: '6h ago', color: 'var(--blue)' },
-  { icon: '🎫', text: 'TKT-1036 auto-resolved via AI WhatsApp agent', time: '1d ago', color: 'var(--purple)' },
-  { icon: '👤', text: 'New admin account created — Nadia Kowalski', time: '1d ago', color: 'var(--amber)' }];
+            const quickLinks = [
+                { id: 'integrations', label: 'API Integrations', icon: '🔌', desc: '10 services, 7 connected' },
+                { id: 'tickets', label: 'Ticketing System', icon: '🎫', desc: '6 open, 2 escalated' },
+                { id: 'payments', label: 'Payments', icon: '💳', desc: '$26.8k total revenue' },
+                { id: 'writers', label: 'Writer Management', icon: '✍️', desc: '48 active, 1 pending' },
+                { id: 'workflow', label: 'Order Workflow', icon: '⟳', desc: '8 status stages, auto-assign on' },
+                { id: 'theme', label: 'Theme Settings', icon: '🎨', desc: 'Teal Dark active' },
+                { id: 'users', label: 'User Management', icon: '👤', desc: '5 admin accounts' },
+                { id: 'currency', label: 'Currency', icon: '💱', desc: '5 regions active' }];
 
 
-  return (
-    <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Admin Overview</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Platform health at a glance. All systems operational.</p>
-      </div>
+            const activity = [
+                { icon: '✓', text: 'Writer WR-006 approved — Rahul Desai', time: '1h ago', color: 'var(--green)' },
+                { icon: '💬', text: 'Ticket TKT-1042 escalated to Level 2', time: '2h ago', color: 'var(--red)' },
+                { icon: '💰', text: 'Payout run completed — 4 writers, $5,210', time: '4h ago', color: 'var(--teal)' },
+                { icon: '🔌', text: 'Stripe webhook reconnected successfully', time: '6h ago', color: 'var(--blue)' },
+                { icon: '🎫', text: 'TKT-1036 auto-resolved via AI WhatsApp agent', time: '1d ago', color: 'var(--purple)' },
+                { icon: '👤', text: 'New admin account created — Nadia Kowalski', time: '1d ago', color: 'var(--amber)' }];
 
-      {/* Health bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, marginBottom: 24 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>All Systems Operational</span>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>Stripe ✓  Razorpay ✓  WhatsApp ✓  OpenAI ✓  Claude ✓  SendGrid ✓</span>
-        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--mono)' }}>Last checked: just now</span>
-      </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
-        {stats.map((s, i) =>
-        <div key={i} style={{ background: `linear-gradient(135deg, var(--surface2) 60%, ${s.color}0d 100%)`, border: `1px solid ${s.color}22`, borderRadius: 8, padding: '18px 18px', animation: `fadeUp .3s ease ${i * .06}s both`, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: '50%', background: `radial-gradient(circle, ${s.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{s.label}</span>
-              <span style={{ fontSize: 16 }}>{s.icon}</span>
-            </div>
-            <div style={{ fontSize: 30, fontWeight: 700, color: s.color, marginBottom: 3, letterSpacing: '-0.02em' }}>{s.val}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{s.sub}</div>
-          </div>
-        )}
-      </div>
+            return (
+                <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
+                    <div style={{ marginBottom: 24 }}>
+                        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Admin Overview</h1>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Platform health at a glance. All systems operational.</p>
+                    </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {/* Quick access */}
-        <div>
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Quick Access</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {quickLinks.map((ql) =>
-            <div key={ql.id} onClick={() => setSection(ql.id)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all .2s' }}
-            onMouseEnter={(e) => {e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)';e.currentTarget.style.background = 'var(--surface3)';}}
-            onMouseLeave={(e) => {e.currentTarget.style.borderColor = 'var(--border)';e.currentTarget.style.background = 'var(--surface2)';}}>
-              
-                <div style={{ fontSize: 18, marginBottom: 6 }}>{ql.icon}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{ql.label}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{ql.desc}</div>
-              </div>
-            )}
-          </div>
-        </div>
+                    {/* Health bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, marginBottom: 24 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>All Systems Operational</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>Stripe ✓  Razorpay ✓  WhatsApp ✓  OpenAI ✓  Claude ✓  SendGrid ✓</span>
+                        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--mono)' }}>Last checked: just now</span>
+                    </div>
 
-        {/* Activity feed */}
-        <div>
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Recent Activity</h2>
-          <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-            {activity.map((a, i) =>
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: i < activity.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 7, background: `${a.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{a.icon}</div>
-                <span style={{ flex: 1, fontSize: 12, color: 'var(--text)' }}>{a.text}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{a.time}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>);
+                    {/* Stats */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
+                        {stats.map((s, i) =>
+                            <div key={i} style={{ background: `linear-gradient(135deg, var(--surface2) 60%, ${s.color}0d 100%)`, border: `1px solid ${s.color}22`, borderRadius: 8, padding: '18px 18px', animation: `fadeUp .3s ease ${i * .06}s both`, position: 'relative', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: '50%', background: `radial-gradient(circle, ${s.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{s.label}</span>
+                                    <span style={{ fontSize: 16 }}>{s.icon}</span>
+                                </div>
+                                <div style={{ fontSize: 30, fontWeight: 700, color: s.color, marginBottom: 3, letterSpacing: '-0.02em' }}>{s.val}</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{s.sub}</div>
+                            </div>
+                        )}
+                    </div>
 
-}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                        {/* Quick access */}
+                        <div>
+                            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Quick Access</h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                {quickLinks.map((ql) =>
+                                    <div key={ql.id} onClick={() => setSection(ql.id)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all .2s' }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(13,148,136,0.4)'; e.currentTarget.style.background = 'var(--surface3)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface2)'; }}>
 
-/* ── SIDEBAR ── */
-function AdminSidebar({ active, setActive, dark }) {
-  const groups = [...new Set(NAV.map((n) => n.group))];
+                                        <div style={{ fontSize: 18, marginBottom: 6 }}>{ql.icon}</div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{ql.label}</div>
+                                        <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{ql.desc}</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-  return (
-    <div style={{ width: 224, flexShrink: 0, background: dark ? 'linear-gradient(180deg,#0d0d1c 0%,#0a1520 60%,#0d0d1c 100%)' : 'linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {/* Logo */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border)' }}>
-        <a href="index.html" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', marginBottom: 10 }}>
-          <div style={{ width: 30, height: 30, background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', borderRadius: "7px 0px 0px 7px" }}>X</div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', letterSpacing: '-0.01em' }}>Xpresswriters</div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Admin Panel</div>
-          </div>
-        </a>
-        {/* Admin badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 6 }}>
-          <div style={{ width: 24, height: 24, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', padding: "0px 0px 0.896362px", borderRadius: "6px 1.91333px 11.8633px 6px" }}>SA</div>
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: "14px" }}>Super Admin</div>
-            <div style={{ color: "rgb(255, 255, 255)", fontSize: "11px" }}>Full access</div>
-          </div>
-        </div>
-      </div>
+                        {/* Activity feed */}
+                        <div>
+                            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Recent Activity</h2>
+                            <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                                {activity.map((a, i) =>
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: i < activity.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: 7, background: `${a.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{a.icon}</div>
+                                        <span style={{ flex: 1, fontSize: 12, color: 'var(--text)' }}>{a.text}</span>
+                                        <span style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{a.time}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>);
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
-        {groups.map((group) =>
-        <div key={group} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', padding: '0 8px', marginBottom: 4 }}>{group}</div>
-            {NAV.filter((n) => n.group === group).map((item) =>
-          <button key={item.id} onClick={() => setActive(item.id)} style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 7,
-            border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13,
-            fontWeight: active === item.id ? 600 : 400, marginBottom: 1, transition: 'all .2s', position: 'relative',
-            background: active === item.id ? 'linear-gradient(90deg,rgba(13,148,136,0.18) 0%,rgba(13,148,136,0.05) 100%)' : 'transparent',
-            color: active === item.id ? 'var(--teal-light)' : 'var(--text-muted)'
-          }}>
-                {active === item.id && <div style={{ position: 'absolute', left: 0, top: '18%', bottom: '18%', width: 3, borderRadius: 2, background: 'var(--teal)' }} />}
-                <span style={{ fontSize: 15 }}>{item.icon}</span>
-                <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
-              </button>
-          )}
-          </div>
-        )}
-      </nav>
+        }
 
-      {/* Bottom links */}
-      <div style={{ padding: '10px 10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {[
-        { label: 'Customer Dashboard', href: 'dashboard.html' },
-        { label: 'Writer Studio', href: 'writer-dashboard.html' },
-        { label: 'Landing Site', href: 'index.html' }].
-        map((l) =>
-        <a key={l.label} href={l.href} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block' }}
-        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
-        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
-          ↗ {l.label}</a>
-        )}
-      </div>
-    </div>);
+        /* ── SIDEBAR ── */
+        function AdminSidebar({ active, setActive, dark }) {
+            const groups = [...new Set(NAV.map((n) => n.group))];
 
-}
+            return (
+                <div style={{ width: 224, flexShrink: 0, background: dark ? 'linear-gradient(180deg,#0d0d1c 0%,#0a1520 60%,#0d0d1c 100%)' : 'linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+                    {/* Logo */}
+                    <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border)' }}>
+                        <a href="index.html" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', marginBottom: 10 }}>
+                            <div style={{ width: 30, height: 30, background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', borderRadius: "0px" }}>X</div>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', letterSpacing: '-0.01em' }}>Xpresswriters</div>
+                                <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Admin Panel</div>
+                            </div>
+                        </a>
+                        {/* Admin badge */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 6 }}>
+                            <div style={{ width: 24, height: 24, display: 'flex', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', borderWidth: "0px", borderStyle: "solid", borderRadius: "12.2908px", padding: "0px", alignItems: "center", background: "linear-gradient(135deg, rgb(239, 68, 68), rgb(185, 28, 28)) center center", gap: "0px" }}>SA</div>
+                            <div>
+                                <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: "14px" }}>Super Admin</div>
+                                <div style={{ color: "rgb(255, 255, 255)", fontSize: "11px" }}>Full access</div>
+                            </div>
+                        </div>
+                    </div>
 
-/* ── TOPBAR ── */
-function AdminTopbar({ section, dark, setDark }) {
-  const item = NAV.find((n) => n.id === section) || { label: 'Overview', icon: '⊞' };
-  const [togHov, setTogHov] = useState(false);
-  return (
-    <div style={{ height: 52, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 28px', gap: 14, flexShrink: 0, background: dark ? 'linear-gradient(90deg,#0d0d1c 0%,#0f1a20 50%,#0d0d1c 100%)' : 'linear-gradient(90deg,#ffffff 0%,#f4f8ff 50%,#ffffff 100%)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-        <span style={{ fontSize: 16 }}>{item.icon}</span>
-        <span style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</span>
-        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>/ Admin</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>⌘</span>
-          <input placeholder="Search admin..." style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 12, width: 130 }} />
-        </div>
-        {/* Theme toggle */}
-        <button
-          onMouseEnter={() => setTogHov(true)}
-          onMouseLeave={() => setTogHov(false)}
-          onClick={() => setDark(d => !d)}
-          title={dark ? 'Switch to Light' : 'Switch to Dark'}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 100,
-            border: `1px solid ${togHov ? 'var(--teal)' : 'var(--border)'}`,
-            background: dark
-              ? (togHov ? 'rgba(13,148,136,0.12)' : 'rgba(255,255,255,0.04)')
-              : (togHov ? 'rgba(13,148,136,0.08)' : 'rgba(0,0,0,0.04)'),
-            cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .25s',
-          }}>
-          {/* Track */}
-          <div style={{ width: 36, height: 20, borderRadius: 10, position: 'relative', background: dark ? 'var(--teal)' : '#d1d5db', transition: 'background .3s', flexShrink: 0 }}>
-            <div style={{ position: 'absolute', top: 3, left: dark ? 19 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .3s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }} />
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>{dark ? '🌙 Dark' : '☀️ Light'}</span>
-        </button>
+                    {/* Nav */}
+                    <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
+                        {groups.map((group) =>
+                            <div key={group} style={{ marginBottom: 16 }}>
+                                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', padding: '0 8px', marginBottom: 4 }}>{group}</div>
+                                {NAV.filter((n) => n.group === group).map((item) =>
+                                    <button key={item.id} onClick={() => setActive(item.id)} style={{
+                                        width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 7,
+                                        border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13,
+                                        fontWeight: active === item.id ? 600 : 400, marginBottom: 1, transition: 'all .2s', position: 'relative',
+                                        background: active === item.id ? 'linear-gradient(90deg,rgba(13,148,136,0.18) 0%,rgba(13,148,136,0.05) 100%)' : 'transparent',
+                                        color: active === item.id ? 'var(--teal-light)' : 'var(--text-muted)'
+                                    }}>
+                                        {active === item.id && <div style={{ position: 'absolute', left: 0, top: '18%', bottom: '18%', width: 3, borderRadius: 2, background: 'var(--teal)' }} />}
+                                        <span style={{ fontSize: 15 }}>{item.icon}</span>
+                                        <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </nav>
 
-        {/* Notification bell */}
-        <div style={{ position: 'relative', cursor: 'pointer' }}>
-          <span style={{ fontSize: 16 }}>🔔</span>
-          <span style={{ position: 'absolute', top: -2, right: -2, width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', border: '2px solid var(--surface)' }} />
-        </div>
-        {/* Admin avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 10, color: '#fff' }}>SA</div>
-          <span style={{ fontSize: 12, fontWeight: 500 }}>Admin</span>
-        </div>
-      </div>
-    </div>);
+                    {/* Bottom links */}
+                    <div style={{ padding: '10px 10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {[
+                            { label: 'Customer Dashboard', href: 'dashboard.html' },
+                            { label: 'Writer Studio', href: 'writer-dashboard.html' },
+                            { label: 'Landing Site', href: 'index.html' }].
+                            map((l) =>
+                                <a key={l.label} href={l.href} style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', padding: '5px 8px', borderRadius: 5, transition: 'color .2s', display: 'block' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--teal-light)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}>
+                                    ↗ {l.label}</a>
+                            )}
+                    </div>
+                </div>);
 
-}
+        }
 
-/* ── APP ── */
-function App() {
-  const [section, setSection] = useState(() => localStorage.getItem('xw_admin_section') || 'overview');
-  const [dark, setDark] = useState(() => localStorage.getItem('xw_admin_dark') !== 'false');
+        /* ── TOPBAR ── */
+        function AdminTopbar({ section, dark, setDark }) {
+            const item = NAV.find((n) => n.id === section) || { label: 'Overview', icon: '⊞' };
+            const [togHov, setTogHov] = useState(false);
+            return (
+                <div style={{ height: 52, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 28px', gap: 14, flexShrink: 0, background: dark ? 'linear-gradient(90deg,#0d0d1c 0%,#0f1a20 50%,#0d0d1c 100%)' : 'linear-gradient(90deg,#ffffff 0%,#f4f8ff 50%,#ffffff 100%)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                        <span style={{ fontSize: 16 }}>{item.icon}</span>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>/ Admin</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        {/* Search */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px' }}>
+                            <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>⌘</span>
+                            <input placeholder="Search admin..." style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 12, width: 130 }} />
+                        </div>
+                        {/* Theme toggle */}
+                        <button
+                            onMouseEnter={() => setTogHov(true)}
+                            onMouseLeave={() => setTogHov(false)}
+                            onClick={() => setDark((d) => !d)}
+                            title={dark ? 'Switch to Light' : 'Switch to Dark'}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 100,
+                                border: `1px solid ${togHov ? 'var(--teal)' : 'var(--border)'}`,
+                                background: dark ?
+                                    togHov ? 'rgba(13,148,136,0.12)' : 'rgba(255,255,255,0.04)' :
+                                    togHov ? 'rgba(13,148,136,0.08)' : 'rgba(0,0,0,0.04)',
+                                cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .25s'
+                            }}>
+                            {/* Track */}
+                            <div style={{ width: 36, height: 20, borderRadius: 10, position: 'relative', background: dark ? 'var(--teal)' : '#d1d5db', transition: 'background .3s', flexShrink: 0 }}>
+                                <div style={{ position: 'absolute', top: 3, left: dark ? 19 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .3s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }} />
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>{dark ? '🌙 Dark' : '☀️ Light'}</span>
+                        </button>
 
-  useEffect(() => {localStorage.setItem('xw_admin_section', section);}, [section]);
+                        {/* Notification bell */}
+                        <div style={{ position: 'relative', cursor: 'pointer' }}>
+                            <span style={{ fontSize: 16 }}>🔔</span>
+                            <span style={{ position: 'absolute', top: -2, right: -2, width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', border: '2px solid var(--surface)' }} />
+                        </div>
+                        {/* Admin avatar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 10, color: '#fff' }}>SA</div>
+                            <span style={{ fontSize: 12, fontWeight: 500 }}>Admin</span>
+                        </div>
+                    </div>
+                </div>);
 
-  useEffect(() => {
-    localStorage.setItem('xw_admin_dark', dark);
-    const r = document.documentElement.style;
-    if (dark) {
-      r.setProperty('--bg','#09090f'); r.setProperty('--surface','#0d0d1c');
-      r.setProperty('--surface2','#121224'); r.setProperty('--surface3','#181830');
-      r.setProperty('--surface4','#1e1e3a'); r.setProperty('--border','rgba(255,255,255,0.07)');
-      r.setProperty('--text','#eefcfb'); r.setProperty('--text-muted','#6b9e9a');
-      r.setProperty('--text-dim','#2e4d4a');
-    } else {
-      r.setProperty('--bg','#f4f6f9'); r.setProperty('--surface','#ffffff');
-      r.setProperty('--surface2','#f0f2f7'); r.setProperty('--surface3','#e6eaf2');
-      r.setProperty('--surface4','#dde1ee'); r.setProperty('--border','rgba(0,0,0,0.08)');
-      r.setProperty('--text','#0f1923'); r.setProperty('--text-muted','#4a6670');
-      r.setProperty('--text-dim','#94a8b3');
-    }
-  }, [dark]);
+        }
 
-  const views = {
-    overview: <AdminOverview setSection={setSection} />,
-    integrations: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
-    tickets: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
-    payments: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments /></div>,
-    currency: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
-    writers: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters /></div>,
-    users: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminUsers /></div>,
-    workflow: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
-    theme: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>
-  };
+        /* ── APP ── */
+        function App() {
+            const [section, setSection] = useState(() => localStorage.getItem('xw_admin_section') || 'overview');
+            const [dark, setDark] = useState(() => localStorage.getItem('xw_admin_dark') !== 'false');
 
-  return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <AdminSidebar active={section} setActive={setSection} dark={dark} />
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: dark ? 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.07) 0%, transparent 70%), var(--bg)' : 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.05) 0%, transparent 70%), var(--bg)' }}>
-        <AdminTopbar section={section} dark={dark} setDark={setDark} />
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {views[section] || views.overview}
-        </div>
-      </main>
-    </div>);
+            useEffect(() => { localStorage.setItem('xw_admin_section', section); }, [section]);
 
-}
+            useEffect(() => {
+                localStorage.setItem('xw_admin_dark', dark);
+                const r = document.documentElement.style;
+                if (dark) {
+                    r.setProperty('--bg', '#09090f'); r.setProperty('--surface', '#0d0d1c');
+                    r.setProperty('--surface2', '#121224'); r.setProperty('--surface3', '#181830');
+                    r.setProperty('--surface4', '#1e1e3a'); r.setProperty('--border', 'rgba(255,255,255,0.07)');
+                    r.setProperty('--text', '#eefcfb'); r.setProperty('--text-muted', '#6b9e9a');
+                    r.setProperty('--text-dim', '#2e4d4a');
+                } else {
+                    r.setProperty('--bg', '#f4f6f9'); r.setProperty('--surface', '#ffffff');
+                    r.setProperty('--surface2', '#f0f2f7'); r.setProperty('--surface3', '#e6eaf2');
+                    r.setProperty('--surface4', '#dde1ee'); r.setProperty('--border', 'rgba(0,0,0,0.08)');
+                    r.setProperty('--text', '#0f1923'); r.setProperty('--text-muted', '#4a6670');
+                    r.setProperty('--text-dim', '#94a8b3');
+                }
+            }, [dark]);
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
+            const views = {
+                overview: <AdminOverview setSection={setSection} />,
+                integrations: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
+                tickets: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
+                payments: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments /></div>,
+                currency: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
+                writers: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters /></div>,
+                services: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminServices /></div>,
+                offers: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminServices /></div>,
+                users: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminUsers /></div>,
+                workflow: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
+                theme: <div className="scrollable" style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTheme /></div>
+            };
+
+            return (
+                <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+                    <AdminSidebar active={section} setActive={setSection} dark={dark} />
+                    <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: dark ? 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.07) 0%, transparent 70%), var(--bg)' : 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13,148,136,0.05) 0%, transparent 70%), var(--bg)' }}>
+                        <AdminTopbar section={section} dark={dark} setDark={setDark} />
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                            {views[section] || views.overview}
+                        </div>
+                    </main>
+                </div>);
+
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
 </body>
+
 </html>

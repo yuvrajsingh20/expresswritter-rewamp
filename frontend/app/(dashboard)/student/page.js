@@ -196,7 +196,7 @@ function Overview({ setActive, setSelectedOrder, projects = [], writers = [], us
   const [recentNotifications, setRecentNotifications] = useState([]);
   useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     fetch('/api/notifications', { signal: controller.signal })
       .then(res => res.json())
@@ -379,13 +379,27 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
   const filters = ['All', 'Active', 'Delivered', 'Revision'];
   const detailRef = useRef(null);
 
+  const [detailedProject, setDetailedProject] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
   useEffect(() => {
     if (selectedOrder) {
+      setLoadingDetails(true);
+      fetch(`/api/projects/${selectedOrder}`)
+        .then(res => res.json())
+        .then(data => {
+          setDetailedProject(data);
+          setLoadingDetails(false);
+        })
+        .catch(() => setLoadingDetails(false));
+
       setTimeout(() => {
         if (detailRef.current) {
           detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 150);
+    } else {
+      setDetailedProject(null);
     }
   }, [selectedOrder]);
 
@@ -447,14 +461,25 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
     });
   };
 
-  const handleReorder = (project) => {
+  const handleReorder = async (project) => {
     // Find proper service name for NewOrder form pre-filling
     const allSvcs = Object.values(servicesData.individualServices).flat();
     const svc = allSvcs.find(s => s.id === project.serviceType) || allSvcs.find(s => s.name === project.serviceType);
 
+    let fullDescription = project.description;
+    if (!fullDescription) {
+      try {
+        const res = await fetch(`/api/projects/${project.id}`);
+        const data = await res.json();
+        fullDescription = data.description || '';
+      } catch (err) {
+        fullDescription = '';
+      }
+    }
+
     localStorage.setItem('pendingOrder', JSON.stringify({
       category: svc?.name || project.serviceType || project.title,
-      details: `[REORDER] Original Order: XW-${project.id.slice(-5).toUpperCase()}\n\n${project.description || ''}`,
+      details: `[REORDER] Original Order: XW-${project.id.slice(-5).toUpperCase()}\n\n${fullDescription}`,
       wordCount: 1000
     }));
     setActive('new-order');
@@ -634,10 +659,10 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
           <div style={{ marginTop: 32, padding: '24px 0', borderTop: '1px solid var(--border2)' }}>
             <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Project Brief & Initial Files</h4>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, background: 'var(--surface2)', padding: 16, borderRadius: 10, marginBottom: 16 }}>
-              {projects.find(p => p.id === o.id)?.description || 'No detailed brief provided.'}
+              {loadingDetails ? 'Loading brief...' : (detailedProject?.description || projects.find(p => p.id === o.id)?.description || 'No detailed brief provided.')}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-              {(projects.find(p => p.id === o.id)?.attachments || []).map((file, idx) => (
+              {(detailedProject?.attachments || projects.find(p => p.id === o.id)?.attachments || []).map((file, idx) => (
                 <a key={idx} href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10,
                   background: 'var(--surface2)', border: '1px solid var(--border2)', textDecoration: 'none', color: 'inherit'
@@ -1423,6 +1448,12 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   const [tab, setTab] = useState('All');
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
   const getServiceIcon = (catId) => {
     const icons = {
       sop: '🎓',
@@ -1486,6 +1517,41 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
     }
   }, [setForm]);
 
+  // Handle custom Admin Checkout Session
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      if (sessionId) {
+        const fetchCustomSession = async () => {
+          try {
+            const res = await fetch(`/api/checkout-sessions/${sessionId}`);
+            if (!res.ok) throw new Error("Session not found");
+            const sessionData = await res.json();
+            
+            const serviceNames = sessionData.services?.map(s => s.name).join(' & ') || 'Custom Package';
+            setForm(f => ({
+              ...f,
+              category: serviceNames,
+              details: `Custom Admin Checkout Session (${sessionId})`,
+              isCustomSession: true,
+              checkoutSessionId: sessionId,
+              customPrice: sessionData.totalPrice,
+              customServices: sessionData.services,
+            }));
+            setStep(3); // Go straight to confirmation step!
+            
+            // Clean up URL query parameters
+            window.history.replaceState({}, '', window.location.pathname);
+          } catch (err) {
+            console.error("Error fetching custom session:", err);
+          }
+        };
+        fetchCustomSession();
+      }
+    }
+  }, [setForm]);
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -1517,6 +1583,15 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   const variant = form.variant ? variants.find(v => v.id === form.variant) : variants[0];
 
   const computePricing = () => {
+    if (form.isCustomSession) {
+      return {
+        total: form.customPrice || 0,
+        breakdown: form.customServices?.map(s => ({
+          l: `${s.name} (x${s.quantity})`,
+          v: s.price * s.quantity
+        })) || []
+      };
+    }
     if (!variant) return { total: 0, breakdown: [] };
     let total = variant.price;
     let breakdown = [{ l: variant.label, v: variant.price }];
@@ -1528,36 +1603,102 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   };
 
   const pricing = computePricing();
-  const amountToCharge = pricing.total;
+  const baseAmount = pricing.total;
+  const amountToCharge = appliedCoupon ? appliedCoupon.finalAmount : baseAmount;
+
+  // Clear coupon code if the base price changes to prevent exploits
+  useEffect(() => {
+    if (appliedCoupon) {
+      setAppliedCoupon(null);
+      setCouponError('Price updated. Please re-apply coupon code.');
+    }
+  }, [baseAmount]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const res = await fetch('/api/promos/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponInput.trim(), amount: baseAmount }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponError(data.error || 'Failed to apply coupon.');
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon(data);
+        setCouponError('');
+      }
+    } catch (err) {
+      console.error(err);
+      setCouponError('Error validating coupon code.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      if (!selectedService) throw new Error("Service not selected");
+      if (!form.isCustomSession && !selectedService) throw new Error("Service not selected");
 
-      const paymentRes = await fetch('/api/payments/razorpay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: amountToCharge,
-          idempotencyKey,
-          title: `${selectedService.name} Order`,
-          description: form.details,
-          deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
-          serviceType: selectedService.id,
-          attachments: form.attachments
-        }),
-      });
+      let order;
+      if (form.isCustomSession) {
+        const paymentRes = await fetch('/api/payments/razorpay-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: form.checkoutSessionId,
+            planKey: 'custom',
+            planName: form.category || 'Custom Package',
+            userId: session?.user?.id
+          }),
+        });
 
-      if (!paymentRes.ok) throw new Error('Failed to initiate payment');
-      const order = await paymentRes.json();
+        if (!paymentRes.ok) {
+          const errData = await paymentRes.json();
+          throw new Error(errData.message || 'Failed to initiate payment');
+        }
+        order = await paymentRes.json();
+      } else {
+        const paymentRes = await fetch('/api/payments/razorpay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amountToCharge,
+            idempotencyKey,
+            title: `${selectedService.name} Order`,
+            description: form.details,
+            deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+            serviceType: selectedService.id,
+            attachments: form.attachments,
+            couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+            baseAmount: baseAmount
+          }),
+        });
+
+        if (!paymentRes.ok) {
+          const errData = await paymentRes.json();
+          throw new Error(errData.message || 'Failed to initiate payment');
+        }
+        order = await paymentRes.json();
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder",
         amount: order.amount,
         currency: "INR",
         name: "Xpresswriters",
-        description: `Payment for ${selectedService.name}`,
+        description: form.isCustomSession ? `Payment for Custom Session` : `Payment for ${selectedService.name}`,
         order_id: order.id,
         handler: async (response) => {
           const verifyRes = await fetch('/api/payments/verify', {
@@ -1595,7 +1736,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
       }
     } catch (error) {
       console.error("Order creation failed:", error);
-      alert("Something went wrong. Please try again.");
+      alert(error.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -1754,10 +1895,84 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
                       <span style={{ fontWeight: 600, fontSize: 15 }}>{fmt(row.v)}</span>
                     </div>
                   ))}
+                  {appliedCoupon && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--surface3)', color: 'var(--green)' }}>
+                      <span style={{ fontSize: 15 }}>Discount ({appliedCoupon.code})</span>
+                      <span style={{ fontWeight: 600, fontSize: 15 }}>-{fmt(appliedCoupon.discountAmount)}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8 }}>
                     <span style={{ fontSize: 16, fontWeight: 600 }}>Total Price</span>
                     <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--teal-light)' }}>{fmt(amountToCharge)}</span>
                   </div>
+                </div>
+
+                {/* Promotional Coupon Section */}
+                <div style={{ background: 'var(--surface)', borderRadius: 10, padding: '20px 28px', marginBottom: 28, border: '1px solid var(--border2)' }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', display: 'block', marginBottom: 10 }}>PROMOTIONAL COUPON</label>
+                  
+                  {appliedCoupon ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--green)', padding: '12px 16px', borderRadius: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>🎉</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                          Code <strong style={{ color: 'var(--green)' }}>{appliedCoupon.code}</strong> applied! Saved {fmt(appliedCoupon.discountAmount)}
+                        </span>
+                      </div>
+                      <button 
+                        onClick={handleRemoveCoupon} 
+                        style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12, fontWeight: 600, textDecoration: 'underline' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <input 
+                          type="text" 
+                          placeholder="Enter coupon code (e.g. SAVE25)" 
+                          value={couponInput}
+                          onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                          style={{
+                            flex: 1,
+                            background: 'var(--surface2)',
+                            border: '1.5px solid var(--border2)',
+                            borderRadius: 8,
+                            padding: '10px 14px',
+                            color: '#fff',
+                            fontSize: 13,
+                            fontFamily: 'var(--font)',
+                            outline: 'none'
+                          }}
+                        />
+                        <button 
+                          onClick={handleApplyCoupon}
+                          disabled={couponLoading || !couponInput.trim()}
+                          style={{
+                            background: 'var(--teal)',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '10px 20px',
+                            borderRadius: 8,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: (!couponInput.trim() || couponLoading) ? 0.6 : 1
+                          }}
+                        >
+                          {couponLoading ? 'Checking...' : 'Apply'}
+                        </button>
+                      </div>
+                      
+                      {couponError && (
+                        <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
+                          ❌ {couponError}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 32 }}>
@@ -1849,12 +2064,13 @@ export default function App() {
 
       const params = new URLSearchParams(window.location.search);
       const isCheckout = params.get('action') === 'checkout';
+      const sessionId = params.get('session_id');
       const pending = localStorage.getItem('pendingOrder');
 
       if (isCheckout || pending) {
         setActive('new-order');
         if (pending) localStorage.removeItem('pendingOrder');
-        if (isCheckout) window.history.replaceState({}, '', window.location.pathname);
+        if (isCheckout && !sessionId) window.history.replaceState({}, '', window.location.pathname);
       }
     }
   }, [status, session?.user?.role, router]);
@@ -1881,7 +2097,7 @@ export default function App() {
   const fetchProjects = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const res = await fetch('/api/projects', { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -1895,7 +2111,7 @@ export default function App() {
 
   const fetchProfile = async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
       const res = await fetch('/api/user/profile', { signal: controller.signal });
       const data = await res.json();
@@ -1913,7 +2129,7 @@ export default function App() {
   const fetchWriters = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const res = await fetch('/api/writers', { signal: controller.signal });
       clearTimeout(timeoutId);

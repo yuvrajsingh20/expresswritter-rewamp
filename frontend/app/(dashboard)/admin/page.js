@@ -12,6 +12,7 @@ import { AdminOrders } from "./admin-orders";
 import { AdminAnalytics } from "./admin-analytics";
 import { AdminRefunds } from "./admin-refunds";
 import { AdminPromos } from "./admin-promos";
+import { AdminPaymentLinks } from "./admin-payment-links";
 import Notifications from "@/components/NotificationsView";
 import NotificationBell from "@/components/NotificationBell";
 import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar, AdminToastProvider } from "./admin-shared";
@@ -32,8 +33,10 @@ const NAV = [
   { id: 'refunds', label: 'Refund Claims', icon: '↩️', group: 'Platform' },
   { id: 'promos', label: 'Promo Engine', icon: '🏷️', group: 'Platform' },
   { id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
+  { id: 'payment-links', label: 'Payment Links', icon: '🔗', group: 'Platform' },
   { id: 'writers', label: 'Writer Management', icon: '✍️', group: 'People' },
   { id: 'users', label: 'User Management', icon: '👤', group: 'People' },
+  { id: 'sla', label: 'SLA Performance', icon: '🏆', group: 'People' },
   { id: 'audit', label: 'Audit Logs', icon: '📜', group: 'System' },
   { id: 'seo', label: 'SEO & Marketing', icon: '🔍', group: 'System' },
   { id: 'workflow', label: 'Order Workflow', icon: '⟳', group: 'System' },
@@ -54,7 +57,7 @@ function AdminOverview({ setSection, projects = [], freelancers = [], isMobile, 
 
   React.useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     setNotificationsLoading(true);
     
     fetch('/api/notifications', { signal: controller.signal })
@@ -409,7 +412,7 @@ export default function App() {
       setDataLoading(true);
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
         
         const [projRes, freeRes, confRes] = await Promise.all([
           fetch('/api/projects', { signal: controller.signal }),
@@ -505,10 +508,12 @@ export default function App() {
     payments: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} /></div>,
     refunds: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
     promos: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
+    'payment-links': <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPaymentLinks /></div>,
     analytics: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAnalytics projects={projects} freelancersCount={freelancers.length} /></div>,
     currency: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminCurrency /></div>,
     writers: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWriters freelancers={freelancers} isMobile={isMobile} /></div>,
     users: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminUsers /></div>,
+    sla: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSLADashboard freelancers={freelancers} setSection={setSection} isMobile={isMobile} /></div>,
     audit: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminAudit /></div>,
     seo: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminSEO /></div>,
     workflow: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminWorkflow /></div>,
@@ -669,6 +674,147 @@ function AdminSEO() {
         </Card>
       </div>
       <SaveBar show={true} onSave={save} saved={saving} />
+    </div>
+  );
+}
+
+/* ── ADMIN SLA PERFORMANCE ── */
+function AdminSLADashboard({ freelancers = [], setSection, isMobile }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = freelancers.filter(f => 
+    f.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const teamAvgSla = freelancers.length
+    ? Math.round(freelancers.reduce((acc, f) => acc + (f.slaScore ?? 0), 0) / freelancers.length)
+    : 0;
+
+  const eliteCount = freelancers.filter(f => (f.slaScore ?? 0) >= 90).length;
+
+  const avgOnTime = freelancers.length
+    ? Math.round(
+        freelancers.reduce((acc, f) => acc + (f.slaBreakdown?.sla?.onTimeDeliveryPct ?? 100), 0) / freelancers.length
+      )
+    : 100;
+
+  const avgReply = freelancers.length
+    ? Math.round(
+        freelancers.reduce((acc, f) => acc + (f.slaBreakdown?.sla?.avgReplyMinutes ?? 45), 0) / freelancers.length
+      )
+    : 45;
+
+  return (
+    <div style={{ animation: 'fadeIn .3s ease' }}>
+      <SectionHeader 
+        title="Team SLA Performance Dashboard" 
+        subtitle="Real-time writer milestones, delivery SLA compliance, and scoring metrics." 
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+        {[
+          { label: 'Team SLA Average', val: `${teamAvgSla} / 100`, sub: 'Target: ≥ 85', color: 'var(--teal-light)', icon: '🏆' },
+          { label: 'Elite Specialists', val: eliteCount, sub: 'Score ≥ 90', color: 'var(--green)', icon: '⭐' },
+          { label: 'Avg On-Time Delivery', val: `${avgOnTime}%`, sub: 'Target: ≥ 95%', color: 'var(--gold)', icon: '⚡' },
+          { label: 'Avg First Reply Time', val: `${avgReply} min`, sub: 'Target: ≤ 60m', color: '#f472b6', icon: '💬' }
+        ].map((s, i) => (
+          <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '16px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -10, right: -10, width: 48, height: 48, borderRadius: '50%', background: `${s.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{s.icon}</div>
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: s.color, marginBottom: 2 }}>{s.val}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader 
+          title="Team SLA Leaderboard" 
+          action={
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input 
+                type="text" 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                placeholder="Search specialists..." 
+                style={{
+                  background: 'var(--surface3)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  outline: 'none',
+                  width: 200,
+                  fontFamily: 'var(--font)'
+                }}
+              />
+            </div>
+          }
+        />
+        
+        <Table 
+          cols={['Specialist & Level', 'SLA Score & Tier', 'On-Time Delivery', 'First Reply', 'Acceptance', 'Revision Turnaround', 'Action']}
+          rows={filtered.map(f => {
+            const avatar = f.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            const label = f.slaLabel || { label: 'New', color: '#6B7280' };
+            const score = f.slaScore ?? 50;
+            const level = f.freelancerProfile?.writerLevel === 'SENIOR' ? '⭐ Senior' : '✍️ Junior';
+            
+            const onTimeVal = f.slaBreakdown?.sla?.onTimeDeliveryPct !== undefined 
+              ? `${f.slaBreakdown.sla.onTimeDeliveryPct}%` 
+              : `${f.freelancerProfile?.onTimeRate ?? 0}%`;
+            
+            const replyVal = f.slaBreakdown?.sla?.avgReplyMinutes !== undefined && f.slaBreakdown.sla.avgReplyMinutes !== null
+              ? `${f.slaBreakdown.sla.avgReplyMinutes} min` 
+              : f.freelancerProfile?.responseTime || 'N/A';
+
+            const startVal = f.slaBreakdown?.sla?.avgStartMinutes !== undefined && f.slaBreakdown.sla.avgStartMinutes !== null
+              ? `${f.slaBreakdown.sla.avgStartMinutes} min` 
+              : 'N/A';
+
+            const revVal = f.slaBreakdown?.sla?.avgRevisionMinutes !== undefined && f.slaBreakdown.sla.avgRevisionMinutes !== null
+              ? `${f.slaBreakdown.sla.avgRevisionMinutes} min` 
+              : 'N/A';
+
+            return [
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: '#fff' }}>{avatar}</div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{f.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{level} · {f.freelancerProfile?.country || 'N/A'}</div>
+                </div>
+              </div>,
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '3px 10px',
+                borderRadius: 100,
+                background: `${label.color}15`,
+                color: label.color,
+                border: `1px solid ${label.color}30`,
+                display: 'inline-block'
+              }}>
+                {label.label} ({score})
+              </span>,
+              <span style={{ fontWeight: 600, color: (f.slaBreakdown?.sla?.onTimeDeliveryPct ?? 100) >= 95 ? 'var(--green)' : 'var(--red)' }}>{onTimeVal}</span>,
+              <span style={{ color: (f.slaBreakdown?.sla?.avgReplyMinutes ?? 0) <= 60 ? 'var(--green)' : 'var(--amber)' }}>{replyVal}</span>,
+              <span>{startVal}</span>,
+              <span>{revVal}</span>,
+              <Btn 
+                small 
+                onClick={() => setSection('writers')}
+                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                Manage ↗
+              </Btn>
+            ];
+          })}
+        />
+        {filtered.length === 0 && (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>No specialists found matching filters.</div>
+        )}
+      </Card>
     </div>
   );
 }

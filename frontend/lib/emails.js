@@ -146,7 +146,7 @@ export function paymentConfirmedHtml({ name, orderId, projectTitle, amount, dead
     ${heading('Your Order is Secured! ✅')}
     ${body(`Hi <strong>${name}</strong>, your payment has been successfully processed. Our team will now assign the best specialist for your project.`)}
     ${infoTable(`
-      ${infoRow('Order ID',       `XW-${orderId.slice(-6).toUpperCase()}`)}
+      ${infoRow('Order ID',       `XW-${orderId.slice(-5).toUpperCase()}`)}
       ${infoRow('Project',        projectTitle)}
       ${infoRow('Amount Paid',    `₹${amount}`)}
       ${infoRow('Deadline',       safeFormatDate(deadline))}
@@ -168,7 +168,7 @@ export function writerAssignedStudentHtml({ studentName, writerName, projectTitl
     ${infoTable(`
       ${infoRow('Writer',      writerName)}
       ${infoRow('Project',     projectTitle)}
-      ${infoRow('Order ID',    `XW-${orderId.slice(-6).toUpperCase()}`)}
+      ${infoRow('Order ID',    `XW-${orderId.slice(-5).toUpperCase()}`)}
       ${infoRow('Deadline',    safeFormatDate(deadline))}
     `)}
     ${body('You can now chat directly with your writer in the order dashboard. Feel free to share any additional details or files.')}
@@ -185,7 +185,7 @@ export function writerAssignedWriterHtml({ writerName, projectTitle, projectDesc
     ${body(`Hi <strong>${writerName}</strong>, a new project has been assigned to you. Please review the details below and begin work promptly.`)}
     ${infoTable(`
       ${infoRow('Project',     projectTitle)}
-      ${infoRow('Order ID',    `XW-${orderId.slice(-6).toUpperCase()}`)}
+      ${infoRow('Order ID',    `XW-${orderId.slice(-5).toUpperCase()}`)}
       ${infoRow('Client',      studentName)}
       ${infoRow('Deadline',    safeFormatDate(deadline))}
     `)}
@@ -263,7 +263,7 @@ export function orderCompletedHtml({ studentName, writerName, projectTitle, orde
     ${infoTable(`
       ${infoRow('Project',    projectTitle)}
       ${infoRow('Writer',     writerName)}
-      ${infoRow('Order ID',   `XW-${orderId.slice(-6).toUpperCase()}`)}
+      ${infoRow('Order ID',   `XW-${orderId.slice(-5).toUpperCase()}`)}
       ${infoRow('Status',     '✅ Completed')}
     `)}
     ${body('All final files are available in your order dashboard for download at any time.')}
@@ -352,7 +352,7 @@ export function refundStatusHtml({ name, status, amount, orderId }) {
     ${badge(`Refund ${status}`, approved ? '#059669' : rejected ? '#DC2626' : '#D97706')}
     <br/><br/>
     ${heading(`Refund Request ${status} ${approved ? '✅' : rejected ? '❌' : '⏳'}`)}
-    ${body(`Hi <strong>${name}</strong>, your refund request for order <strong>XW-${orderId.slice(-6).toUpperCase()}</strong> has been <strong>${status.toLowerCase()}</strong>.`)}
+    ${body(`Hi <strong>${name}</strong>, your refund request for order <strong>XW-${orderId.slice(-5).toUpperCase()}</strong> has been <strong>${status.toLowerCase()}</strong>.`)}
     ${approved
       ? body(`Your refund of <strong>₹${amount}</strong> will be credited to your original payment method within <strong>5–7 business days</strong>.`)
       : rejected
@@ -360,7 +360,7 @@ export function refundStatusHtml({ name, status, amount, orderId }) {
       : body('Our team is reviewing your request and will update you shortly.')
     }
     ${btn('View Order', `${BRAND.url}/student/orders/${orderId}`)}
-  `, `Refund ${status} for order XW-${orderId.slice(-6).toUpperCase()}`);
+  `, `Refund ${status} for order XW-${orderId.slice(-5).toUpperCase()}`);
 }
 
 // 14. Password Reset OTP (replaces existing one)

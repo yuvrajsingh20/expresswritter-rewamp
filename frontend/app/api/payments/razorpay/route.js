@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import razorpay from "@/lib/razorpay";
 import { getAuthUser } from "@/lib/auth";
 import { createPaymentSession, getSessionByIdempotencyKey } from "@/lib/paymentSession";
+import prisma from "@/lib/prisma";
 import { z } from "zod";
 
 const paymentSchema = z.object({
@@ -12,6 +13,8 @@ const paymentSchema = z.object({
   deadline: z.string().optional(),
   serviceType: z.string().optional(),
   attachments: z.array(z.object({ url: z.string(), name: z.string() })).optional(),
+  couponCode: z.string().optional(),
+  baseAmount: z.number().optional(),
 });
 
 export async function POST(req) {
@@ -27,7 +30,59 @@ export async function POST(req) {
       return NextResponse.json({ message: errorMessages }, { status: 400 });
     }
 
-    const { amount, idempotencyKey, title, description, deadline, serviceType, attachments } = result.data;
+    const { amount, idempotencyKey, title, description, deadline, serviceType, attachments, couponCode, baseAmount } = result.data;
+
+    let finalAmount = amount;
+    let verifiedPromoId = null;
+
+    // Backend-side double check of coupon to avoid price spoofing
+    if (couponCode && baseAmount) {
+      const promo = await prisma.promoCode.findFirst({
+        where: {
+          code: {
+            equals: couponCode.trim(),
+            mode: "insensitive"
+          }
+        }
+      });
+
+      if (!promo) {
+        return NextResponse.json({ message: "Coupon code does not exist" }, { status: 400 });
+      }
+
+      if (!promo.isActive) {
+        return NextResponse.json({ message: "Coupon code is inactive" }, { status: 400 });
+      }
+
+      if (promo.expiryDate && new Date(promo.expiryDate) < new Date()) {
+        return NextResponse.json({ message: "Coupon code has expired" }, { status: 400 });
+      }
+
+      if (promo.usageLimit && promo.usageCount >= promo.usageLimit) {
+        return NextResponse.json({ message: "Coupon code reached maximum usage" }, { status: 400 });
+      }
+
+      if (baseAmount < promo.minOrderValue) {
+        return NextResponse.json({ message: "Minimum order value not met for coupon" }, { status: 400 });
+      }
+
+      let expectedDiscount = 0;
+      if (promo.type === "PERCENTAGE") {
+        expectedDiscount = (baseAmount * promo.value) / 100;
+      } else if (promo.type === "FIXED") {
+        expectedDiscount = promo.value;
+      }
+
+      const expectedFinal = Math.max(0, baseAmount - expectedDiscount);
+
+      // Verify that the final checkout amount sent matches within a tiny margin
+      if (Math.abs(amount - expectedFinal) > 1.0) {
+        return NextResponse.json({ message: "Payment amount verification failed" }, { status: 400 });
+      }
+
+      finalAmount = expectedFinal;
+      verifiedPromoId = promo.id;
+    }
 
     const existingSession = await getSessionByIdempotencyKey(idempotencyKey);
     if (existingSession) {
@@ -40,7 +95,7 @@ export async function POST(req) {
     }
 
     const options = {
-      amount: amount * 100,
+      amount: Math.round(finalAmount * 100),
       currency: "INR",
       receipt: `receipt_${idempotencyKey.slice(0, 8)}`,
     };
@@ -50,12 +105,13 @@ export async function POST(req) {
     await createPaymentSession(order.id, {
       idempotencyKey,
       studentId: authUser.id,
-      amount,
+      amount: finalAmount,
       title,
       description: description || "",
       deadline: deadline || null,
       serviceType: serviceType || null,
       attachments: attachments || [],
+      promoCodeId: verifiedPromoId,
     });
 
     return NextResponse.json(order, { status: 200 });

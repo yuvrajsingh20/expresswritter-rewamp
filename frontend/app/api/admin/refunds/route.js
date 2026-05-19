@@ -52,7 +52,7 @@ export async function PATCH(req) {
     if (student?.email) {
       await safeSendEmail({
         to:      student.email,
-        subject: `Refund ${status} — Order XW-${refund.orderId.slice(-6).toUpperCase()}`,
+        subject: `Refund ${status} — Order XW-${refund.orderId.slice(-5).toUpperCase()}`,
         html:    refundStatusHtml({
           name:    student.name || 'Student',
           status,

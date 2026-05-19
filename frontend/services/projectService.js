@@ -83,32 +83,15 @@ export const getProjectsByUser = async (userId, role) => {
       serviceType: true,
       studentId: true,
       freelancerId: true,
-      description: true,
-      attachments: true,
-      // Only select what we need from relations
       student: { select: { id: true, name: true, role: true } },
       freelancer: { select: { id: true, name: true, role: true } },
-      subAdmin: is_admin ? { select: { id: true, name: true } } : false,
-      orders: { select: { paymentStatus: true } },
       // Summary counts are much lighter than full arrays
       _count: {
         select: {
           messages: true,
           logs: true
         }
-      },
-      // If messages are needed (for non-admins), select ONLY essential fields
-      messages: is_admin ? false : { 
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          senderId: true,
-          sender: { select: { id: true, name: true, role: true } }
-        }
-      },
+      }
     },
   });
 };

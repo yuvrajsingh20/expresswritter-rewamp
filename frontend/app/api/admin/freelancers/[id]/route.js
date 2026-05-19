@@ -28,6 +28,7 @@ export async function PATCH(req, { params }) {
         ...(data.isVerified !== undefined && { isVerified: data.isVerified }),
         ...(data.availability !== undefined && { availability: data.availability }),
         ...(data.rejectionReason !== undefined && { rejectionReason: data.rejectionReason }),
+        ...(data.writerLevel !== undefined && { writerLevel: data.writerLevel }),
       },
       create: {
         userId: id,
@@ -35,6 +36,7 @@ export async function PATCH(req, { params }) {
         isVerified: data.isVerified || false,
         availability: data.availability !== undefined ? data.availability : true,
         rejectionReason: data.rejectionReason || null,
+        writerLevel: data.writerLevel || 'JUNIOR',
       }
     });
 

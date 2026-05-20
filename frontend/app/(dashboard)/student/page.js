@@ -1343,6 +1343,7 @@ function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
   const [tab, setTab] = useState('All');
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCatalogService, setSelectedCatalogService] = useState(null);
 
   useEffect(() => {
     fetch('/api/services?type=catalog')
@@ -1399,8 +1400,7 @@ function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
         {filtered.map((s, i) => (
           <div key={i} onClick={() => {
-            setOrderForm(f => ({ ...f, category: s.name }));
-            setActive('new-order');
+            setSelectedCatalogService(s);
           }} style={{
             background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, padding: 24, cursor: 'pointer',
             transition: 'all 0.25s', display: 'flex', flexDirection: 'column', gap: 12
@@ -1419,6 +1419,179 @@ function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
           </div>
         ))}
       </div>
+
+      {/* Service Details Modal */}
+      {selectedCatalogService && (
+        <div 
+          onClick={() => setSelectedCatalogService(null)}
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: 'rgba(0,0,0,0.75)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            zIndex: 1000, 
+            backdropFilter: 'blur(8px)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              background: 'var(--surface)', 
+              padding: '32px', 
+              borderRadius: '16px', 
+              width: '500px', 
+              maxWidth: '90%', 
+              border: '1px solid var(--border2)', 
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+              position: 'relative',
+              animation: 'fadeUp 0.3s ease-out'
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedCatalogService(null)}
+              style={{ 
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'none', 
+                border: 'none', 
+                color: 'var(--text-muted)', 
+                cursor: 'pointer', 
+                fontSize: '24px', 
+                padding: '4px', 
+                lineHeight: 1,
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              title="Close"
+            >
+              &times;
+            </button>
+
+            {/* Icon & Category */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ 
+                width: '56px', 
+                height: '56px', 
+                borderRadius: '12px', 
+                background: 'rgba(13,148,136,0.12)', 
+                border: '1px solid rgba(13,148,136,0.25)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '30px' 
+              }}>
+                {selectedCatalogService.icon || '📄'}
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--teal-light)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                  {selectedCatalogService.cat}
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--text)' }}>
+                  {selectedCatalogService.name}
+                </h3>
+              </div>
+            </div>
+
+            <div style={{ borderBottom: '1px solid var(--border2)', marginBottom: '20px' }} />
+
+            {/* Description */}
+            <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px' }}>
+              Service Overview
+            </h4>
+            <p style={{ 
+              fontSize: '14px', 
+              color: 'var(--text-muted)', 
+              lineHeight: 1.6, 
+              margin: '0 0 24px 0' 
+            }}>
+              {selectedCatalogService.description}
+            </p>
+
+            {/* Price & Value Proposition */}
+            <div style={{ 
+              background: 'var(--surface2)', 
+              borderRadius: '12px', 
+              padding: '16px 20px', 
+              border: '1px solid var(--border2)',
+              marginBottom: '28px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>Starting Price</span>
+                <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--teal-light)' }}>
+                  {selectedCatalogService.price}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-dim)' }}>
+                  <span style={{ color: 'var(--teal-light)' }}>✓</span> 100% Plagiarism-Free Guarantee
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-dim)' }}>
+                  <span style={{ color: 'var(--teal-light)' }}>✓</span> Written by Subject Matter Experts
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-dim)' }}>
+                  <span style={{ color: 'var(--teal-light)' }}>✓</span> Unlimited Revisions Included
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setSelectedCatalogService(null)}
+                style={{ 
+                  flex: 1, 
+                  padding: '14px', 
+                  borderRadius: '10px', 
+                  background: 'transparent', 
+                  border: '1px solid var(--border2)', 
+                  color: 'var(--text-muted)', 
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.color = 'var(--text)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+              >
+                Close
+              </button>
+              <button 
+                onClick={() => {
+                  setOrderForm(f => ({ ...f, category: selectedCatalogService.name }));
+                  setActive('new-order');
+                  setSelectedCatalogService(null);
+                }}
+                style={{ 
+                  flex: 1.5, 
+                  padding: '14px', 
+                  borderRadius: '10px', 
+                  background: 'var(--teal)', 
+                  border: 'none', 
+                  color: '#fff', 
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(13,148,136,0.2)'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--teal-light)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--teal)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                Order Now →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1539,6 +1712,14 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
       }
     }
   }, [setForm]);
+
+  // Fallback to step 1 if the selected service is not found and it's not a custom session
+  useEffect(() => {
+    const selected = allServices.find(s => s.label === form.category);
+    if (!loadingServices && step === 2 && !selected && !form.isCustomSession) {
+      setStep(1);
+    }
+  }, [loadingServices, step, allServices, form.category, form.isCustomSession]);
 
   // Handle custom Admin Checkout Session
   useEffect(() => {
@@ -1768,7 +1949,11 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', height: '100%', animation: 'fadeIn 0.3s ease' }}>
       <div style={{ maxWidth: step === 1 ? 1200 : 800, margin: '0 auto' }}>
-        {submitted ? (
+        {loadingServices ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '100px 0', color: 'var(--text-dim)', minHeight: 400 }}>
+            <div style={{ width: 32, height: 32, border: '3px solid var(--teal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          </div>
+        ) : submitted ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ fontSize: 64, marginBottom: 20 }}>🎉</div>
             <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Order Placed!</h2>
@@ -1830,7 +2015,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
               </div>
             )}
 
-            {step === 2 && (
+            {step === 2 && variant && (
               <div style={{ animation: 'fadeUp 0.3s ease' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
                   <button onClick={() => setStep(1)} style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', color: 'var(--text)', width: 32, height: 32, borderRadius: 8, cursor: 'pointer' }}>←</button>

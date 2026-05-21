@@ -31,7 +31,7 @@ export async function POST(request) {
     let deliveryOnTime = null;
     let revisionMinutes = null;
 
-    if (eventType === 'ASSIGN_ACCEPT' || eventType === 'FIRST_REPLY') {
+    if (eventType === 'ASSIGN_ACCEPT') {
       // Find the project log recording the assignment
       const assignmentLog = await prisma.projectLog.findFirst({
         where: {
@@ -43,10 +43,18 @@ export async function POST(request) {
       assignedAt = assignmentLog ? assignmentLog.createdAt : project.createdAt;
       
       const elapsedMinutes = Math.max(0, Math.round((now.getTime() - new Date(assignedAt).getTime()) / (1000 * 60)));
-      if (eventType === 'ASSIGN_ACCEPT') {
-        startMinutes = elapsedMinutes;
+      startMinutes = elapsedMinutes;
+    } else if (eventType === 'FIRST_REPLY') {
+      // Calculate response time from the client's first message, not assignedAt
+      const firstClientMsg = await prisma.message.findFirst({
+        where: { projectId, senderId: project.studentId },
+        orderBy: { createdAt: 'asc' }
+      });
+      
+      if (firstClientMsg) {
+        responseMinutes = Math.max(0, Math.round((now.getTime() - new Date(firstClientMsg.createdAt).getTime()) / (1000 * 60)));
       } else {
-        responseMinutes = elapsedMinutes;
+        responseMinutes = 0; // If the writer sends a message before the client, 0 mins response time
       }
     } else if (eventType === 'DELIVERY') {
       deliveryOnTime = project.deadline ? now <= new Date(project.deadline) : true;

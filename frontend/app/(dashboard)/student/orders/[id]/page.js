@@ -10,10 +10,10 @@ import {
   User, MessageSquare, Download, AlertCircle,
   Loader2, FileText, Info, ExternalLink, Calendar,
   CreditCard, ShieldCheck, Zap, Edit3, X, Save,
-  Plus, Trash2, LayoutGrid, Mic
+  Plus, Trash2, LayoutGrid, Mic, RefreshCcw
 } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { useRazorpay } from '@/hooks/useRazorpay';
+import { useCashfree } from '@/hooks/useCashfree';
 
 import servicesData from '@/data/services_data.json';
 
@@ -28,7 +28,7 @@ export default function OrderDetailsPage() {
   const { id } = useParams();
   const { data: session } = useSession();
   const router = useRouter();
-  const { processPayment } = useRazorpay();
+  const { processPayment } = useCashfree();
   
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
@@ -43,9 +43,41 @@ export default function OrderDetailsPage() {
   const [verifyLoading, setVerifyLoading] = useState(false);
 
   useEffect(() => {
+    const verifyCashfree = async () => {
+      const cf_order_id = searchParams.get('cf_order_id') || searchParams.get('order_id');
+      if (cf_order_id) {
+        setVerifyLoading(true);
+        try {
+          const res = await fetch('/api/payments/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cashfree_order_id: cf_order_id })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setShowSuccessModal(true);
+            router.replace(`/student/orders/${id}`);
+            const projRes = await fetch(`/api/projects/${id}`);
+            if (projRes.ok) {
+              const updatedProject = await projRes.json();
+              setProject(updatedProject);
+            }
+          } else {
+            console.error("Cashfree verification failed:", data.message);
+          }
+        } catch (error) {
+          console.error("Cashfree verify connection error:", error);
+        } finally {
+          setVerifyLoading(false);
+        }
+      }
+    };
+
     if (searchParams.get('success') === 'true') {
       setShowSuccessModal(true);
       router.replace(`/student/orders/${id}`);
+    } else {
+      verifyCashfree();
     }
   }, [searchParams, id, router]);
 
@@ -543,6 +575,7 @@ export default function OrderDetailsPage() {
     { label: 'Assigned', status: 'ASSIGNED', icon: User },
     { label: 'In Progress', status: 'IN_PROGRESS', icon: PlayCircle },
     { label: 'Review', status: 'REVIEW', icon: Package },
+    { label: 'Revision', status: 'REVISION', icon: RefreshCcw },
     { label: 'Completed', status: 'COMPLETED', icon: CheckCircle2 },
   ];
 

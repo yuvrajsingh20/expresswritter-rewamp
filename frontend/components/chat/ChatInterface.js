@@ -189,7 +189,7 @@ const ChatInterface = ({ role = 'ADMIN', projectId, currentUserId }) => {
                          {msg.content}
                       </div>
                       <p className="text-[8px] font-black text-slate-300 uppercase mt-2 px-2 tracking-widest">
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                    </div>
                 </motion.div>

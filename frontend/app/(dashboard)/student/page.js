@@ -969,8 +969,8 @@ function Messages({ projects = [], userId, isMobile }) {
               {(activeProject.freelancer?.name || 'W').split(' ').map(n => n[0]).join('').toUpperCase()}
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{activeProject.freelancer?.name || 'Your Writer'}</div>
-              <div style={{ fontSize: 12, color: 'var(--teal-light)' }}>● Active · {activeProject.serviceType || activeProject.title}</div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{activeProject.serviceType || activeProject.title || 'Standard Package'}</div>
+              <div style={{ fontSize: 12, color: 'var(--teal-light)' }}>● Active · {activeProject.freelancer?.name || 'Your Writer'}</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
               <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 6, background: 'rgba(13,148,136,0.1)', border: '1px solid var(--border)', color: 'var(--teal-light)' }}>XW-{activeProject.id.slice(-5).toUpperCase()}</div>
@@ -1049,7 +1049,7 @@ function Messages({ projects = [], userId, isMobile }) {
                         )}
                       </div>
                       <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4, textAlign: isMe ? 'right' : 'left' }}>
-                        {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        {msg.createdAt ? `${new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
                       </div>
                     </div>
                   </div>

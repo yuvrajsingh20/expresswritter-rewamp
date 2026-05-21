@@ -51,9 +51,9 @@ export async function POST(req, { params }) {
     try {
       await prisma.message.create({
         data: {
-          content: `📢 Specialist ${writer?.name || 'A writer'} has joined the chat and is now leading your project.`,
+          content: `I am your writer ${writer?.name || 'Your Writer'} and assigned in our service.`,
           projectId,
-          senderId: session.user.id,
+          senderId: freelancerId,
           chatType: 'CLIENT_CHAT',
         },
       });

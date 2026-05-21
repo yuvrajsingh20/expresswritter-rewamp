@@ -153,7 +153,7 @@ export default function ChatWindow({ projectId }: { projectId: string }) {
                 )}
                 <p className="leading-relaxed">{msg.content}</p>
                 <span className={`text-[10px] opacity-60 mt-1 block text-right ${msg.sender.name === user?.name ? 'text-white' : 'text-muted-foreground'}`}>
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             </motion.div>

@@ -2256,6 +2256,7 @@ export default function App() {
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [socket, setSocket] = useState(null);
   const socketRef = useRef(null);
   const { data: session } = useSession();

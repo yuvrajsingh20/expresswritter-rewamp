@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import Sidebar from '@/components/dashboard/Sidebar';
 import { 
-  DollarSign, TrendingUp, Calendar, 
+  IndianRupee, TrendingUp, Calendar, 
   ArrowUpRight, Clock, CheckCircle2, 
   ChevronRight, Wallet, History, Info
 } from 'lucide-react';
@@ -199,7 +199,7 @@ export default function FreelancerEarnings() {
                          <div key={proj.id} className="p-4 bg-slate-50 border border-slate-100 rounded-sm flex items-center justify-between hover:border-slate-300 transition-all group">
                             <div className="flex items-center gap-4">
                                <div className="w-9 h-9 bg-white border border-slate-200 rounded-sm flex items-center justify-center text-slate-400 group-hover:text-[#0067B8] transition-colors">
-                                  <DollarSign size={16} />
+                                  <IndianRupee size={16} />
                                </div>
                                <div>
                                   <p className="text-[11px] font-bold text-slate-900">{proj.title}</p>

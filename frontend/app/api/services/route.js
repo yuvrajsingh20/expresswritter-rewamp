@@ -11,34 +11,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
 
-    // 1. Sync check: Ensure all 20 real services are present in the database
-    for (const item of INITIAL_SERVICES) {
-      const existing = await prisma.service.findUnique({
-        where: { slug: item.slug }
-      });
-      if (!existing) {
-        console.log(`[API/Services/Client] Syncing missing service: ${item.name} (${item.slug})`);
-        await prisma.service.create({
-          data: {
-            slug: item.slug,
-            name: item.name,
-            description: item.description,
-            features: item.features,
-            basePrice: item.priceMin,
-            isActive: item.isActive,
-            tagline: item.tagline,
-            category: item.category,
-            icon: item.icon,
-            priceMin: item.priceMin,
-            priceMax: item.priceMax,
-            variantsCount: item.variantsCount,
-            addonsCount: item.addonsCount,
-            ordersCount: item.ordersCount,
-            revenue: item.revenue,
-          }
-        });
-      }
-    }
+    // Note: The INITIAL_SERVICES sync loop has been removed for performance.
 
     // 2. Fetch all active services from database
     const dbServices = await prisma.service.findMany({

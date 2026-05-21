@@ -19,7 +19,7 @@ export async function GET(req) {
       where: { key: "CURRENCY_SETTINGS" }
     });
 
-    const userCurrency = freelancer?.freelancerProfile?.currency || 'USD';
+    const userCurrency = 'INR'; // Standardized to Rupees (INR) for both student and freelancer
     const config = currencyConfig?.value || {};
     
     const FALLBACK_CURRENCIES = [

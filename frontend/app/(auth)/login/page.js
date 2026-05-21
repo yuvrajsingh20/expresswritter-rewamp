@@ -74,6 +74,38 @@ function LoginForm() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px clamp(20px, 5vw, 56px)', maxWidth: 520, margin: '0 auto', width: '100%', animation: 'fadeUp .4s ease' }}>
+      {/* Back button to landing page */}
+      <div style={{ marginBottom: 24, alignSelf: 'flex-start' }}>
+        <Link href="/" style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 12px',
+          borderRadius: 8,
+          background: 'var(--surface3)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-muted)',
+          textDecoration: 'none',
+          fontSize: 12,
+          fontWeight: 500,
+          transition: 'all 0.2s ease',
+          fontFamily: 'inherit'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = 'var(--text)';
+          e.currentTarget.style.background = 'var(--surface4)';
+          e.currentTarget.style.borderColor = 'var(--teal)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = 'var(--text-muted)';
+          e.currentTarget.style.background = 'var(--surface3)';
+          e.currentTarget.style.borderColor = 'var(--border)';
+        }}
+        >
+          <span>←</span> Back to home
+        </Link>
+      </div>
+
       <div style={{ marginBottom: 36 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 6 }}>Welcome back</h1>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300 }}>Sign in to your Xpresswriters account</p>

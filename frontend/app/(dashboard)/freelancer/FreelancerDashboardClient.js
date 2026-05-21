@@ -3,7 +3,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, CheckCircle, Clock, 
-  DollarSign, Star, Zap, ChevronRight,
+  IndianRupee, Star, Zap, ChevronRight,
   Filter, Download, ArrowUpRight
 } from 'lucide-react';
 
@@ -135,7 +135,7 @@ function OrderStrip({ order, isActive, onClick }) {
               {client}
             </span>
             <span className="text-[#334e4c]">·</span>
-            <span className="text-[#334e4c]">{words.toLocaleString()} words · ${price}</span>
+            <span className="text-[#334e4c]">{words.toLocaleString()} words · ₹{price}</span>
           </div>
         </div>
 
@@ -247,7 +247,7 @@ export default function FreelancerDashboardClient({ session, profile }) {
 
   const stats = [
     { title: 'Active Tasks', count: tasks.filter(t => t.status !== 'COMPLETED').length, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Total Earnings', count: '₹0', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'Total Earnings', count: '₹0', icon: IndianRupee, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { title: 'Avg Rating', count: profile.rating?.toFixed(1) || '5.0', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
   ];
 

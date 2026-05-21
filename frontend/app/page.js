@@ -8,30 +8,7 @@ import servicesData from '@/data/services_data.json';
 
 const fmt = n => typeof n === 'number' ? `₹${n.toLocaleString('en-IN')}` : n;
 
-const CATEGORIES = servicesData.categories.map(c => ({
-  id: c.id,
-  label: c.name,
-  icon: c.id === 'sop' ? '🎓' : c.id === 'lor' ? '📜' : c.id === 'resume' ? '💼' : c.id === 'visa_application' ? '🛂' : '📄'
-}));
-
-const CATALOG = Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) => 
-  svcs.map((s, idx) => {
-    const basePrice = typeof s.price === 'string' ? parseInt(s.price.replace(/[^\d]/g, '')) || 2499 : s.price || 2499;
-    return {
-      id: s.id,
-      cat: catId.charAt(0).toUpperCase() + catId.slice(1).replace('_', ' '),
-      icon: catId === 'sop' ? '🎓' : catId === 'lor' ? '📜' : catId === 'resume' ? '💼' : catId === 'visa_application' ? '🛂' : '📄',
-      name: s.name,
-      tagline: s.description,
-      desc: s.description,
-      delivery: '3-5 days',
-      variants: [
-        { id: s.id + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
-        { id: s.id + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: catId === 'resume' ? 299 : undefined }
-      ]
-    };
-  })
-);
+// Static data removed in favor of dynamic fetching
 
 const WRITERS = [
   { n: 'Dr. Amara Singh', av: 'AS', c: '#0d9488', spec: 'SOP · MBA Admissions', exp: '9 yrs · 340 orders', rate: 4.98, price: '₹7,999+', badge: 'Elite', tags: ['PhD Stanford', 'Wharton MBA', 'Top 1%'] },
@@ -667,6 +644,45 @@ export default function App() {
   const [openProd, setOpenProd] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [catalog, setCatalog] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/services?type=catalog', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const list = data.map(s => {
+            const basePrice = s.priceMin || s.basePrice || 2499;
+            let variants = s.variants || [];
+            if (variants.length === 0) {
+              variants = [
+                { id: (s.slug || s.id) + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
+                { id: (s.slug || s.id) + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: s.category?.toLowerCase() === 'resume' ? 299 : undefined }
+              ];
+            }
+            return {
+              id: s.slug || s.id,
+              cat: s.category || 'Academic',
+              icon: s.icon || '📄',
+              name: s.name,
+              tagline: s.tagline || s.description,
+              desc: s.description,
+              delivery: '3-5 days',
+              variants
+            };
+          });
+          setCatalog(list);
+          const uniqueCats = [...new Set(list.map(s => s.cat))];
+          setCategories(uniqueCats.map(c => ({
+            id: c.toLowerCase(),
+            label: c,
+            icon: c.toLowerCase().includes('sop') ? '🎓' : c.toLowerCase().includes('lor') ? '📜' : c.toLowerCase().includes('resume') ? '💼' : '📄'
+          })));
+        }
+      })
+      .catch(err => console.error("Failed to load catalog:", err));
+  }, []);
 
   useEffect(() => {
     try {
@@ -679,11 +695,11 @@ export default function App() {
     localStorage.setItem('xw_cart', JSON.stringify(cart));
   }, [cart]);
 
-  const filtered = useMemo(() => CATALOG.filter(p => {
+  const filtered = useMemo(() => catalog.filter(p => {
     if (activeCat !== 'all' && p.cat !== activeCat) return false;
     if (search && !`${p.name} ${p.tagline} ${p.cat}`.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
-  }), [activeCat, search]);
+  }), [activeCat, search, catalog]);
 
   const addToCart = (item, buyNow) => {
     setCart(c => [...c, item]);
@@ -717,7 +733,7 @@ export default function App() {
         <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 5, padding: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 9, flexWrap: 'wrap' }}>
             <button onClick={() => setActiveCat('all')} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === 'all' ? 'var(--teal)' : 'transparent', color: activeCat === 'all' ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>All</button>
-            {CATEGORIES.map(c => (
+            {categories.map(c => (
               <button key={c.id} onClick={() => setActiveCat(c.label)} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === c.label ? 'var(--teal)' : 'transparent', color: activeCat === c.label ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>
                 <span>{c.icon}</span>{c.label}
               </button>

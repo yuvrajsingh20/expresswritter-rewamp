@@ -169,7 +169,7 @@ function OrderStrip({ order, isActive, onClick }) {
               </span>
             </span>
             <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>·</span>
-            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{order.words.toLocaleString()} words · ${order.price}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{order.words.toLocaleString()} words · ₹{order.price}</span>
           </div>
         </div>
 
@@ -452,7 +452,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
               </button>
               {showStatusMenu &&
                 <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px', zIndex: 100, minWidth: 180, boxShadow: '0 16px 48px rgba(0,0,0,0.5)', animation: 'popIn .2s ease' }}>
-                  {ALL_STATUSES.filter((s) => s !== order.status && s !== 'New Order').map((s) => {
+                  {ALL_STATUSES.filter((s) => s !== order.status && s !== 'New Order' && s !== 'Finding Writer' && s !== 'Writer Assigned').map((s) => {
                     const sm = STATUS_META[s];
                     return (
                       <div key={s} 
@@ -1618,7 +1618,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
    EARNINGS
 ═══════════════════════════════════════════════ */
 function Earnings({ isMobile }) {
-  const [data, setData] = useState({ balance: 0, totalEarned: 0, pending: 0, history: [], projects: [], currency: 'USD', symbol: '$' });
+  const [data, setData] = useState({ balance: 0, totalEarned: 0, pending: 0, history: [], projects: [], currency: 'INR', symbol: '₹' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -1726,7 +1726,7 @@ function Profile({ isMobile, profile, onUpdate }) {
     occupation: profile?.occupation || 'Freelancer',
     college: profile?.college || '',
     country: profile?.freelancerProfile?.country || '',
-    currency: profile?.freelancerProfile?.currency || 'USD',
+    currency: profile?.freelancerProfile?.currency || 'INR',
   });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -1740,7 +1740,7 @@ function Profile({ isMobile, profile, onUpdate }) {
         occupation: profile.occupation || 'Freelancer',
         college: profile.college || '',
         country: profile.freelancerProfile?.country || '',
-        currency: profile.freelancerProfile?.currency || 'USD',
+        currency: profile.freelancerProfile?.currency || 'INR',
       });
     }
   }, [profile]);
@@ -1914,7 +1914,7 @@ const SENIOR_RATES = {
 function PricingCatalog({ userProfile, isMobile }) {
   const level = userProfile?.freelancerProfile?.writerLevel || 'JUNIOR';
   const isSenior = level === 'SENIOR';
-  const [currency, setCurrency] = useState('INR'); // INR or USD
+  const currency = 'INR';
   
   // Calculator state
   const [service, setService] = useState('academic');
@@ -1924,8 +1924,8 @@ function PricingCatalog({ userProfile, isMobile }) {
   const rates = isSenior ? SENIOR_RATES : JUNIOR_RATES;
   const currentRateObj = rates[service] || rates.academic;
   
-  const baseRate = currency === 'INR' ? currentRateObj.inr : currentRateObj.usd;
-  const unitSymbol = currency === 'INR' ? '₹' : '$';
+  const baseRate = currentRateObj.inr;
+  const unitSymbol = '₹';
   
   // Calculate pricing
   const basePayout = words * baseRate;
@@ -1940,71 +1940,51 @@ function PricingCatalog({ userProfile, isMobile }) {
         border: `1px solid ${isSenior ? 'rgba(217, 119, 6, 0.25)' : 'rgba(37, 99, 235, 0.2)'}`,
         borderRadius: 16,
         padding: '20px 24px',
-        marginBottom: 28,
         display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16
+        gap: 16,
+        marginBottom: 32,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, textAlign: isMobile ? 'center' : 'left', flexDirection: isMobile ? 'column' : 'row' }}>
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: isSenior ? 'linear-gradient(135deg, #d97706, #b45309)' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 24,
-            boxShadow: isSenior ? '0 8px 24px rgba(217, 119, 6, 0.2)' : '0 8px 24px rgba(37, 99, 235, 0.15)'
-          }}>
-            {isSenior ? '👑' : '✍️'}
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>You are a {isSenior ? 'Senior' : 'Junior'} Expert</h2>
-              <span style={{
-                background: isSenior ? '#d97706' : '#2563eb',
-                color: '#fff',
-                fontSize: 10,
-                fontWeight: 800,
-                padding: '2px 8px',
-                borderRadius: 100,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>{level} STATUS</span>
-            </div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
-              {isSenior 
-                ? 'Enjoy maximum pay-rates, direct access to premium briefs, and priority payout cycles.' 
-                : 'Complete more assignments with high client ratings to unlock Senior Writer status & +150% higher payouts!'}
-            </p>
-          </div>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          background: isSenior ? 'rgba(217, 119, 6, 0.2)' : 'rgba(37, 99, 235, 0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 22
+        }}>
+          {isSenior ? '👑' : '✍️'}
         </div>
-        
-        {/* Currency Switcher */}
-        <div style={{ display: 'flex', background: 'var(--surface2)', border: '1px solid var(--border)', padding: 4, borderRadius: 10, gap: 4 }}>
-          {['INR', 'USD'].map(cur => (
-            <button
-              key={cur}
-              onClick={() => setCurrency(cur)}
-              style={{
-                background: currency === cur ? 'var(--teal)' : 'transparent',
-                color: currency === cur ? '#fff' : 'var(--text-dim)',
-                border: 'none',
-                padding: '6px 14px',
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'var(--font)',
-                transition: 'all 0.2s'
-              }}
-            >
-              {cur === 'INR' ? '₹ INR' : '$ USD'}
-            </button>
-          ))}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 15, fontWeight: 700 }}>My Writer Status</span>
+            <span style={{
+              background: isSenior ? 'rgba(217, 119, 6, 0.8)' : 'var(--teal)',
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: 100,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>{level} STATUS</span>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+            {isSenior 
+              ? 'Enjoy maximum pay-rates, direct access to premium briefs, and priority payout cycles.' 
+              : 'Complete more assignments with high client ratings to unlock Senior Writer status & +150% higher payouts!'}
+          </p>
+        </div>
+      </div>
+      
+      {/* Title block */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 16 }}>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Earnings Catalog & Calculator</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '4px 0 0 0' }}>Estimate your writing payouts in Indian Rupees (₹ INR).</p>
         </div>
       </div>
 

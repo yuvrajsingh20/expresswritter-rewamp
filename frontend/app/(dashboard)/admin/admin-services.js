@@ -501,7 +501,7 @@ export function AdminServices() {
 
   const fetchServices = () => {
     setLoading(true);
-    fetch('/api/admin/services')
+    fetch('/api/admin/services', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setServices(Array.isArray(data) ? data : []);
@@ -590,9 +590,16 @@ export function AdminServices() {
         revenue: '₹0',
       }),
       headers: { 'Content-Type': 'application/json' }
-    }).then(() => {
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json();
+        alert("Failed to create service: " + (err.error || err.details || "Unknown error"));
+        return;
+      }
       setShowNew(false);
       fetchServices();
+    }).catch((err) => {
+      alert("Network error: " + err.message);
     });
   };
 
@@ -739,12 +746,15 @@ export function AdminServices() {
             <div style={{ fontSize: 12 }}>{((s.addonPrice && s.addonPrice > 0 ? 1 : 0) + (s.customisationPrice && s.customisationPrice > 0 ? 1 : 0)) || 0}</div>
             <div style={{ fontSize: 12, textAlign: 'right', fontFamily: 'var(--mono)' }}>
               {(() => {
-                const prices = s.variants?.map(v => typeof v.price === "string" ? parseFloat(v.price.replace(/[^0-9.]/g, '')) || 0 : v.price) || [s.priceMin || s.basePrice || 0];
+                const prices = s.variants?.length > 0
+                  ? s.variants.map(v => typeof v.price === "string" ? parseFloat(v.price.replace(/[^0-9.]/g, '')) || 0 : v.price)
+                  : [s.priceMin || s.basePrice || 0];
                 const min = Math.min(...prices);
                 const max = Math.max(...prices);
+
                 return (
                   <>
-                    ₹{min.toLocaleString('en-IN')}
+                    ₹{min > 0 ? min.toLocaleString('en-IN') : 0}
                     {max > min && <span style={{ color: 'var(--text-dim)' }}>–{max.toLocaleString('en-IN')}</span>}
                   </>
                 );

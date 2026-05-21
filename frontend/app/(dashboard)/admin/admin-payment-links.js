@@ -1,8 +1,7 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardHeader, Btn, Input } from "./admin-shared";
 import { useSession } from "next-auth/react";
-import servicesData from "@/data/services_data.json";
 
 /* ─── HELPER FOR ICONS ─── */
 const getServiceIcon = (catId) => {
@@ -48,40 +47,65 @@ export function AdminPaymentLinks() {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [fastTrack, setFastTrack] = useState(false);
 
-  /* ─── LOAD CATALOG DATA ─── */
-  const CATEGORIES = useMemo(() => {
-    return [
-      { id: "all", label: "All", icon: "✨" },
-      ...servicesData.categories.map((c) => ({
-        id: c.id,
-        label: c.name.replace(" Services", ""),
-        icon: getServiceIcon(c.id),
-      })),
-    ];
-  }, []);
+  const [catalogData, setCatalogData] = useState([]);
+  const [categories, setCategories] = useState([{ id: "all", label: "All", icon: "✨" }]);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
 
-  const CATALOG = useMemo(() => {
-    return Object.entries(servicesData.individualServices).flatMap(([catId, svcs]) =>
-      svcs.map((s) => ({
-        ...s,
-        cat: catId,
-        icon: getServiceIcon(catId),
-      }))
-    );
+  useEffect(() => {
+    fetch('/api/services?type=catalog', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const list = data.map(s => {
+            const basePrice = s.priceMin || s.basePrice || 2499;
+            let variants = s.variants || [];
+            if (variants.length === 0) {
+              variants = [
+                { id: (s.slug || s.id) + '_standard', label: 'Standard Tier', words: '500 words', delivery: '3-4 days', price: basePrice, fast: Math.round(basePrice * 0.4), addon: 499, custom: 799 },
+                { id: (s.slug || s.id) + '_premium', label: 'Premium Tier', words: '1000 words', delivery: '2-3 days', price: basePrice + 1500, fast: Math.round((basePrice + 1500) * 0.4), addon: 499, custom: 799, ats: s.category?.toLowerCase() === 'resume' ? 299 : undefined }
+              ];
+            }
+            return {
+              ...s,
+              id: s.slug || s.id,
+              cat: s.category || 'Academic',
+              icon: s.icon || getServiceIcon(s.category?.toLowerCase() || ''),
+              name: s.name,
+              description: s.description,
+              variants
+            };
+          });
+          setCatalogData(list);
+          const uniqueCats = [...new Set(list.map(s => s.cat))];
+          setCategories([
+            { id: "all", label: "All", icon: "✨" },
+            ...uniqueCats.map(c => ({
+              id: c.toLowerCase(),
+              label: c,
+              icon: getServiceIcon(c.toLowerCase())
+            }))
+          ]);
+        }
+        setLoadingCatalog(false);
+      })
+      .catch(err => {
+        console.error("Failed to load catalog:", err);
+        setLoadingCatalog(false);
+      });
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return CATALOG.filter((p) => {
-      if (activeCat !== "all" && p.cat !== activeCat) return false;
+    return catalogData.filter((p) => {
+      if (activeCat !== "all" && p.cat?.toLowerCase() !== activeCat) return false;
       if (search && !`${p.name} ${p.description}`.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [activeCat, search, CATALOG]);
+  }, [activeCat, search, catalogData]);
 
   /* ─── PRODUCT SELECT ACTION ─── */
   const handleProductSelect = (product) => {
     setActiveProduct(product);
-    const variants = servicesData.sopVariants?.[product.name] || [];
+    const variants = product.variants || [];
     if (variants.length > 0) {
       setSelectedVariant(variants[0]);
     } else {
@@ -93,12 +117,12 @@ export function AdminPaymentLinks() {
   /* ─── CALCULATE ITEM PRICE ON CONFIGURATION ─── */
   const currentConfigPrice = useMemo(() => {
     if (!activeProduct) return 0;
-    const variants = servicesData.sopVariants?.[activeProduct.name] || [];
+    const variants = activeProduct.variants || [];
     
     if (variants.length > 0 && selectedVariant) {
       let base = selectedVariant.price || 0;
-      if (fastTrack && selectedVariant.fastTrackPrice) {
-        base += selectedVariant.fastTrackPrice;
+      if (fastTrack && selectedVariant.fast) {
+        base += selectedVariant.fast;
       }
       return base;
     } else {
@@ -121,7 +145,14 @@ export function AdminPaymentLinks() {
     let itemName = activeProduct.name;
     let details = [];
 
-    if (selectedVariant) {
+    if (activeProduct.isCustom) {
+      if (!activeProduct.name.trim()) {
+        alert("Please enter a service name");
+        return;
+      }
+      itemName = activeProduct.name;
+      if (activeProduct.description) details.push(activeProduct.description);
+    } else if (selectedVariant) {
       itemName += ` (${selectedVariant.label})`;
       if (fastTrack) {
         details.push("Fast-Track Delivery");
@@ -275,7 +306,12 @@ export function AdminPaymentLinks() {
                 {selectedItems.length === 0 ? (
                   <div style={{ padding: "40px 20px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 8, color: "var(--text-dim)", fontSize: 13 }}>
                     No services selected yet.<br />
-                    Select a service from the catalog to build this custom package.
+                    Select a service from the catalog or add a custom service to build this custom package.
+                    <div style={{ marginTop: 16 }}>
+                      <Btn variant="outline" onClick={() => setActiveProduct({ isCustom: true, id: "custom", name: "", description: "", price: 0 })}>
+                        + Add Custom Service
+                      </Btn>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -356,6 +392,13 @@ export function AdminPaymentLinks() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+                {selectedItems.length > 0 && (
+                  <div style={{ marginTop: 16, textAlign: 'center' }}>
+                    <Btn variant="outline" size="sm" onClick={() => setActiveProduct({ isCustom: true, id: "custom", name: "", description: "", price: 0 })}>
+                      + Add Custom Service
+                    </Btn>
                   </div>
                 )}
               </div>
@@ -455,7 +498,7 @@ export function AdminPaymentLinks() {
 
           {/* Category Badges Grid */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingBottom: 4 }}>
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setActiveCat(c.id)}
@@ -481,9 +524,12 @@ export function AdminPaymentLinks() {
           </div>
 
           {/* Product Cards Grid */}
+          {loadingCatalog ? (
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Loading catalog...</div>
+          ) : (
           <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, paddingRight: 4 }}>
             {filteredProducts.map((p) => {
-              const startPrice = servicesData.sopVariants?.[p.name]?.[0]?.price 
+              const startPrice = p.variants?.[0]?.price 
                 || (typeof p.price === 'string' ? p.price : `₹${p.price}`);
               
               return (
@@ -530,6 +576,7 @@ export function AdminPaymentLinks() {
               );
             })}
           </div>
+          )}
         </div>
       </div>
 
@@ -579,72 +626,112 @@ export function AdminPaymentLinks() {
 
             {/* Content */}
             <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, overflowY: "auto", maxHeight: "60vh" }}>
-              <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                {activeProduct.description}
-              </p>
-
-              {/* Dynamic Variants (Radio Pill List) */}
-              {servicesData.sopVariants?.[activeProduct.name] && (
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.07em", color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: 10 }}>
-                    Select Variant
-                  </label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {servicesData.sopVariants[activeProduct.name].map((v, i) => (
-                      <div
-                        key={i}
-                        onClick={() => setSelectedVariant(v)}
-                        style={{
-                          padding: "12px 14px",
-                          borderRadius: 8,
-                          border: `1.5px solid ${selectedVariant?.label === v.label ? "var(--teal)" : "var(--border)"}`,
-                          background: selectedVariant?.label === v.label ? "rgba(13,148,136,0.06)" : "var(--surface2)",
-                          cursor: "pointer",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          transition: "all .15s",
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{v.label}</div>
-                          {v.wordCount && <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{v.wordCount}</span>}
-                        </div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: selectedVariant?.label === v.label ? "var(--teal-light)" : "var(--text-muted)" }}>
-                          ₹{v.price.toLocaleString("en-IN")}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Fast Track Add-on */}
-              {selectedVariant && selectedVariant.fastTrackPrice && (
-                <div
-                  onClick={() => setFastTrack(!fastTrack)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "12px 14px",
-                    background: fastTrack ? "rgba(13,148,136,0.06)" : "var(--surface2)",
-                    border: `1.5px solid ${fastTrack ? "var(--teal)" : "var(--border)"}`,
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    transition: "all .15s",
-                  }}
-                >
+              {activeProduct.isCustom ? (
+                <>
+                  <Input 
+                    label="Service Name *" 
+                    placeholder="E.g. Custom Rush Content Editing" 
+                    value={activeProduct.name} 
+                    onChange={val => setActiveProduct({...activeProduct, name: val})} 
+                  />
+                  <Input 
+                    label="Description (Optional)" 
+                    placeholder="Specific details about this custom package" 
+                    value={activeProduct.description} 
+                    onChange={val => setActiveProduct({...activeProduct, description: val})} 
+                  />
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>🚀 Fast-Track Delivery</div>
-                    <span style={{ fontSize: 11, color: "var(--text-dim)" }}>
-                      Deliver within {selectedVariant.fastTrackDelivery || "24-48 hours"}
-                    </span>
+                    <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.07em", color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                      Price (INR) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={activeProduct.price}
+                      onChange={e => setActiveProduct({...activeProduct, price: parseFloat(e.target.value) || 0})}
+                      style={{
+                        width: "100%",
+                        background: "var(--surface2)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6,
+                        padding: "10px 14px",
+                        color: "var(--text)",
+                        fontSize: 14,
+                        outline: "none",
+                      }}
+                    />
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: fastTrack ? "var(--teal-light)" : "var(--text-muted)" }}>
-                    +₹{selectedVariant.fastTrackPrice}
-                  </div>
-                </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                    {activeProduct.description}
+                  </p>
+
+                  {/* Dynamic Variants (Radio Pill List) */}
+                  {activeProduct.variants && activeProduct.variants.length > 0 && (
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.07em", color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: 10 }}>
+                        Select Variant
+                      </label>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {activeProduct.variants.map((v, i) => (
+                          <div
+                            key={i}
+                            onClick={() => setSelectedVariant(v)}
+                            style={{
+                              padding: "12px 14px",
+                              borderRadius: 8,
+                              border: `1.5px solid ${selectedVariant?.label === v.label ? "var(--teal)" : "var(--border)"}`,
+                              background: selectedVariant?.label === v.label ? "rgba(13,148,136,0.06)" : "var(--surface2)",
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              transition: "all .15s",
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{v.label}</div>
+                              {v.words && <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{v.words}</span>}
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: selectedVariant?.label === v.label ? "var(--teal-light)" : "var(--text-muted)" }}>
+                              ₹{v.price.toLocaleString("en-IN")}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fast Track Add-on */}
+                  {selectedVariant && selectedVariant.fast && (
+                    <div
+                      onClick={() => setFastTrack(!fastTrack)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "12px 14px",
+                        background: fastTrack ? "rgba(13,148,136,0.06)" : "var(--surface2)",
+                        border: `1.5px solid ${fastTrack ? "var(--teal)" : "var(--border)"}`,
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        transition: "all .15s",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>🚀 Fast-Track Delivery</div>
+                        <span style={{ fontSize: 11, color: "var(--text-dim)" }}>
+                          Deliver within {selectedVariant.delivery || "24-48 hours"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: fastTrack ? "var(--teal-light)" : "var(--text-muted)" }}>
+                        +₹{selectedVariant.fast}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -662,7 +749,7 @@ export function AdminPaymentLinks() {
                 <Btn variant="outline" onClick={() => setActiveProduct(null)}>
                   Cancel
                 </Btn>
-                <Btn onClick={handleAddToPackage}>
+                <Btn onClick={handleAddToPackage} disabled={activeProduct.isCustom && !activeProduct.name.trim()}>
                   Add to Package
                 </Btn>
               </div>

@@ -1056,12 +1056,12 @@ export default function OrderDetailsPage() {
                        <MessageSquare size={20} />
                      </div>
                      <div>
-                        <h4 className="text-sm font-black text-slate-900 tracking-tight">
-                           {project.freelancer?.name || 'Support Node'}
-                        </h4>
-                        <p className="text-[10px] text-[#0067B8] font-bold uppercase tracking-widest">
-                           {project.freelancerId ? 'Specialist Stream' : 'Secured Stream'}
-                        </p>
+                         <h4 className="text-sm font-black text-[#0067B8] tracking-tight uppercase text-xs">
+                            {currentService?.name || project.serviceType || 'Standard Package'}
+                         </h4>
+                         <p className="text-[10px] text-slate-900 font-bold uppercase tracking-widest mt-0.5">
+                            {project.freelancer?.name || 'Support Node'}
+                         </p>
                      </div>
                   </div>
                   <div className="flex -space-x-3">
@@ -1131,7 +1131,7 @@ export default function OrderDetailsPage() {
                                         )}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'CLIENT CONSOLE' : ((msg.sender?.role === 'FREELANCER' || msg.senderRole === 'FREELANCER') ? `SPECIALIST: ${msg.sender?.name || 'Assigned'}` : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
+                                        {isMe ? 'CLIENT CONSOLE' : ((msg.sender?.role === 'FREELANCER' || msg.senderRole === 'FREELANCER') ? `SPECIALIST: ${msg.sender?.name || 'Assigned'}` : 'OPERATOR')} • {msg.timestamp ? `${new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : `${new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                                     </span>
                                 </div>
                             </motion.div>

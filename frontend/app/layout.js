@@ -36,6 +36,7 @@ export default function RootLayout({ children }) {
           <CookieBanner />
           {/* <FloatingChat /> */}
         </SessionWrapper>
+        <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="afterInteractive" />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
       </body>
     </html>

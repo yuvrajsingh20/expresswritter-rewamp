@@ -732,7 +732,7 @@ const mapProjectsToOrders = (rawProjects, userId) => {
           const isWriterMsg = m.sender?.role === 'FREELANCER' || m.senderId === userId;
           const isAdminMsg = m.sender?.role === 'ADMIN';
           const rawTs = m.createdAt ? new Date(m.createdAt) : new Date();
-          const time = isNaN(rawTs.getTime()) ? '' : rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const time = isNaN(rawTs.getTime()) ? '' : `${rawTs.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
           return {
             id: m.id,
             type: m.isSystem ? 'system' : (m.type || 'text'),
@@ -848,7 +848,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
           text: data.content,
           content: data.content,
           attachments: Array.isArray(data.attachments) ? data.attachments : [],
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: `${new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
           createdAt: data.timestamp || new Date().toISOString(),
         };
         return { ...o, thread: [...o.thread, newMsg], unreadMsgs: o.unreadMsgs + 1 };
@@ -885,7 +885,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
             const isWriterMsg = m.sender?.role === 'FREELANCER' || m.senderId === userId;
             const isAdminMsg = m.sender?.role === 'ADMIN';
             const rawTs = m.createdAt ? new Date(m.createdAt) : new Date();
-            const time = isNaN(rawTs.getTime()) ? '' : rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const time = isNaN(rawTs.getTime()) ? '' : `${rawTs.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${rawTs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             return {
               id: m.id,
               type: m.isSystem ? 'system' : (m.type || 'text'),

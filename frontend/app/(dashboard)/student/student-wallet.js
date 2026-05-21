@@ -114,7 +114,7 @@ export default function Wallet({ projects = [], userName = "Student", isMobile }
             Pay ₹{amount.toLocaleString()}
           </button>
           <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text-dim)', textAlign: 'center' }}>
-            Secure payment powered by Razorpay. Credits never expire.
+            Secure payment powered by Cashfree. Credits never expire.
           </div>
         </div>
       </div>

@@ -621,7 +621,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
                 </span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.due.replace(', 2026', '')}</div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>${order.price}</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>₹{order.price}</div>
             </div>
           );
         })}
@@ -1627,7 +1627,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   const [loadingServices, setLoadingServices] = useState(true);
 
   useEffect(() => {
-    fetch('/api/services?type=catalog')
+    fetch('/api/services?type=catalog', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -1855,9 +1855,29 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
     try {
       if (!form.isCustomSession && !selectedService) throw new Error("Service not selected");
 
+      // Secure dynamic Cashfree SDK script loader
+      const loadScript = (src) => {
+        return new Promise((resolve) => {
+          if (window.Cashfree) {
+            resolve(true);
+            return;
+          }
+          const script = document.createElement("script");
+          script.src = src;
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      const loaded = await loadScript("https://sdk.cashfree.com/js/v3/cashfree.js");
+      if (!loaded || !window.Cashfree) {
+        throw new Error("Cashfree SDK failed to load. Please verify your connection.");
+      }
+
       let order;
       if (form.isCustomSession) {
-        const paymentRes = await fetch('/api/payments/razorpay-order', {
+        const paymentRes = await fetch('/api/payments/cashfree-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1874,7 +1894,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
         }
         order = await paymentRes.json();
       } else {
-        const paymentRes = await fetch('/api/payments/razorpay', {
+        const paymentRes = await fetch('/api/payments/cashfree', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1897,47 +1917,22 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
         order = await paymentRes.json();
       }
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder",
-        amount: order.amount,
-        currency: "INR",
-        name: "Xpresswriters",
-        description: form.isCustomSession ? `Payment for Custom Session` : `Payment for ${selectedService.name}`,
-        order_id: order.id,
-        handler: async (response) => {
-          const verifyRes = await fetch('/api/payments/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
+      if (!order.payment_session_id) {
+        throw new Error("No payment session received from gateway.");
+      }
 
-          if (verifyRes.ok) {
-            const { projectId } = await verifyRes.json();
-            setSubmitted(true);
-            if (onOrderCreated) onOrderCreated();
-            setTimeout(() => {
-              setActive('orders');
-            }, 3000);
-          }
-        },
-        prefill: {
-          name: session?.user?.name || userProfile?.name || "Student",
-          email: session?.user?.email || userProfile?.email || "",
-          contact: userProfile?.phone || "",
-        },
-        theme: { color: "#0d9488" },
+      // Initialize Cashfree client SDK instance
+      const envMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === "production" ? "production" : "sandbox";
+      const cashfree = window.Cashfree({
+        mode: envMode,
+      });
+
+      const checkoutOptions = {
+        paymentSessionId: order.payment_session_id,
+        redirectTarget: "_self", // Redirect inside standard self viewport
       };
 
-      if (window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        alert("Payment gateway not loaded. Please refresh.");
-      }
+      await cashfree.checkout(checkoutOptions);
     } catch (error) {
       console.error("Order creation failed:", error);
       alert(error.message || "Something went wrong. Please try again.");
@@ -2265,6 +2260,50 @@ export default function App() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [paymentVerifyError, setPaymentVerifyError] = useState("");
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role === 'STUDENT') {
+      const params = new URLSearchParams(window.location.search);
+      const cfOrderId = params.get('cf_order_id');
+      if (cfOrderId) {
+        const verifyPayment = async () => {
+          setVerifyingPayment(true);
+          setPaymentVerifyError("");
+          try {
+            const verifyRes = await fetch('/api/payments/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cashfree_order_id: cfOrderId }),
+            });
+            const data = await verifyRes.json();
+            if (verifyRes.ok) {
+              await fetchProjects();
+              setActive('orders');
+              if (data.projectId) {
+                setSelectedOrder(data.projectId);
+              }
+              window.history.replaceState({}, '', window.location.pathname);
+            } else {
+              setPaymentVerifyError(data.message || 'Payment verification failed.');
+              alert(data.message || 'Payment verification failed.');
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+          } catch (err) {
+            console.error("Verification failed", err);
+            setPaymentVerifyError("An unexpected error occurred during verification.");
+            alert("An unexpected error occurred during payment verification.");
+            window.history.replaceState({}, '', window.location.pathname);
+          } finally {
+            setVerifyingPayment(false);
+          }
+        };
+        verifyPayment();
+      }
+    }
+  }, [status, session, router]);
+
   // Auth guard — runs once session status is known
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -2533,6 +2572,39 @@ const [orderForm, setOrderForm] = useState(() => {
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      {verifyingPayment && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(13, 19, 42, 0.92)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          color: '#fff',
+          fontFamily: 'var(--font)'
+        }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            border: '4px solid rgba(13, 148, 136, 0.15)',
+            borderTop: '4px solid var(--teal-light)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: 24,
+            boxShadow: '0 0 15px rgba(45, 212, 191, 0.2)'
+          }} />
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--teal-light)', letterSpacing: '-0.01em' }}>Securing Your Order</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 380, textAlign: 'center', lineHeight: 1.6, padding: '0 20px' }}>
+            We are verifying your transaction with Cashfree. Please hold on — this will only take a moment. Do not refresh or close this tab.
+          </p>
+        </div>
+      )}
       {showProfilePrompt && <ProfilePrompt onComplete={() => setShowProfilePrompt(false)} />}
       {deliveredProject && (
         <DeliveredPopup

@@ -37,41 +37,12 @@ export async function GET() {
   }
 
   try {
-    // 1. Sync check: Make sure all INITIAL_SERVICES exist in database
-    for (const item of INITIAL_SERVICES) {
-      const existing = await prisma.service.findUnique({
-        where: { slug: item.slug }
-      });
-      if (!existing) {
-        console.log(`[API/Services] Auto-syncing missing service: ${item.name} (${item.slug})`);
-        await prisma.service.create({
-          data: {
-            slug: item.slug,
-            name: item.name,
-            description: item.description,
-            features: item.features,
-            basePrice: item.priceMin,
-            isActive: item.isActive,
-            tagline: item.tagline,
-            category: item.category,
-            icon: item.icon,
-            priceMin: item.priceMin,
-            priceMax: item.priceMax,
-            variantsCount: item.variantsCount,
-            addonsCount: item.addonsCount,
-            ordersCount: item.ordersCount,
-            revenue: item.revenue,
-          }
-        });
-      }
-    }
-
-    // 2. Query all services from the DB
+    // 1. Query all services from the DB
     const services = await prisma.service.findMany({
       orderBy: { createdAt: "desc" },
     });
 
-    // 3. Load catalog configuration dynamically (prefer database SystemConfig, fallback to disk)
+    // 2. Load catalog configuration dynamically (prefer database SystemConfig, fallback to disk)
     let servicesData = { sopVariants: {}, serviceAddons: {} };
     try {
       const config = await prisma.systemConfig.findUnique({
@@ -100,49 +71,14 @@ export async function GET() {
       }
     }
 
-    // 4. Fetch all real projects with their completed PAID orders to compute actual live count & revenue
-    const allProjects = await prisma.project.findMany({
-      include: {
-        orders: {
-          where: { paymentStatus: "PAID" }
-        }
-      }
-    });
-
     const servicesWithVariants = services.map(s => {
       const variants = servicesData.sopVariants?.[s.name] || [];
       const serviceAddons = servicesData.serviceAddons?.[s.name] || { addonPrice: 499, customisationPrice: 799 };
       
-      // Calculate dynamic live orders and revenue from the system
-      const serviceProjects = allProjects.filter(p => {
-        // Exact match on serviceType or title contains name
-        if (p.serviceType && (p.serviceType.toLowerCase() === s.slug.toLowerCase() || p.serviceType.toLowerCase() === s.name.toLowerCase())) {
-          return true;
-        }
-        if (p.title && p.title.toLowerCase().includes(s.name.toLowerCase())) {
-          return true;
-        }
-        return false;
-      });
-
-      const liveOrdersCount = serviceProjects.reduce((sum, p) => sum + p.orders.length, 0);
-      const liveRevenueAmount = serviceProjects.reduce((sum, p) => sum + p.orders.reduce((oSum, o) => oSum + o.amount, 0), 0);
-
-      let formattedRevenue = "₹0";
-      if (liveRevenueAmount > 0) {
-        if (liveRevenueAmount >= 100000) {
-          formattedRevenue = `₹${(liveRevenueAmount / 100000).toFixed(1)}L`;
-        } else {
-          formattedRevenue = `₹${liveRevenueAmount.toLocaleString('en-IN')}`;
-        }
-      }
-
       return {
         ...s,
         addonPrice: serviceAddons.addonPrice ?? 499,
         customisationPrice: serviceAddons.customisationPrice ?? 799,
-        ordersCount: liveOrdersCount,
-        revenue: formattedRevenue,
         variants: variants.map(v => ({
           label: v.label,
           words: v.words || v.wordCount || "1000 words",
@@ -191,15 +127,19 @@ export async function POST(req) {
       }
     });
 
-    // Log the action
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        userName: session.user.name,
-        action: `Created Service: ${data.name} (${data.slug || data.id})`,
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      }
-    });
+    try {
+      // Log the action
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user?.id && session.user.id.length === 24 ? session.user.id : null,
+          userName: session.user?.name || "Admin",
+          action: `Created Service: ${data.name} (${data.slug || data.id})`,
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        }
+      });
+    } catch (auditError) {
+      console.warn("[API/Services] AuditLog could not be created:", auditError);
+    }
 
     return NextResponse.json(service);
   } catch (error) {

@@ -476,10 +476,9 @@ export default function SpecialistConsole() {
       
       const savedMessage = await res.json();
 
-      // Fire FIRST_REPLY SLA if this is the first freelancer message on an ASSIGNED project
-      if (project?.status === 'ASSIGNED' || project?.status === 'IN_PROGRESS') {
-        const isFirstMsg = !messages.some(m => m.senderRole === 'FREELANCER' && m.id !== optimisticMsg.id);
-        if (isFirstMsg) fireSLA('FIRST_REPLY');
+      // Fire FIRST_REPLY SLA to update average response time for every message
+      if (project?.status === 'ASSIGNED' || project?.status === 'IN_PROGRESS' || project?.status === 'REVISION') {
+        fireSLA('FIRST_REPLY');
       }
 
       // Replace optimistic message with real saved one

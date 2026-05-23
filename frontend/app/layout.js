@@ -15,8 +15,8 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Express Writer | Production-Ready SaaS",
-  description: "Multi-role workflow automation platform",
+  title: "Xpresswriters: 45+ Content Writing Services",
+  description: "Dive into 45+ Content types for Exceptional Results! Talented writers at the most affordable price to get the most out of your time and cost.",
   manifest: "/manifest.json",
 };
 

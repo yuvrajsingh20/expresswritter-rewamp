@@ -377,7 +377,7 @@ function AdminProjectChatView({ project, freelancers, onClose, userId, isMobile 
               <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMe ? 'row-reverse' : 'row' }}>
                 <span style={{ fontWeight: 700 }}>{msg.senderName || (isAdmin ? 'Admin' : 'User')}</span>
                 <span style={{ opacity: 0.6 }}>({roleLabel})</span>
-                <span style={{ opacity: 0.4 }}>· {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                <span style={{ opacity: 0.4 }}>· {msg.createdAt ? `${new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}</span>
               </div>
               <div style={{ padding: '10px 14px', borderRadius: isMe ? '10px 10px 2px 10px' : '10px 10px 10px 2px', background: bubbleColor, border: `1px solid ${borderColor}`, color: textColor, fontSize: 13, maxWidth: '80%' }}>
                 {msg.content}

@@ -18,7 +18,7 @@ export async function POST(request) {
       where: { projectId, eventType }
     });
 
-    if (existing) {
+    if (existing && eventType !== 'FIRST_REPLY') {
       return NextResponse.json({ message: 'Event already logged', existing });
     }
 
@@ -31,7 +31,7 @@ export async function POST(request) {
     let deliveryOnTime = null;
     let revisionMinutes = null;
 
-    if (eventType === 'ASSIGN_ACCEPT' || eventType === 'FIRST_REPLY') {
+    if (eventType === 'ASSIGN_ACCEPT') {
       // Find the project log recording the assignment
       const assignmentLog = await prisma.projectLog.findFirst({
         where: {
@@ -43,10 +43,44 @@ export async function POST(request) {
       assignedAt = assignmentLog ? assignmentLog.createdAt : project.createdAt;
       
       const elapsedMinutes = Math.max(0, Math.round((now.getTime() - new Date(assignedAt).getTime()) / (1000 * 60)));
-      if (eventType === 'ASSIGN_ACCEPT') {
-        startMinutes = elapsedMinutes;
+      startMinutes = elapsedMinutes;
+    } else if (eventType === 'FIRST_REPLY') {
+      // Calculate average response time across ALL client messages
+      const clientMsgs = await prisma.message.findMany({
+        where: { projectId, senderId: project.studentId },
+        orderBy: { createdAt: 'asc' }
+      });
+      const writerMsgs = await prisma.message.findMany({
+        where: { projectId, senderId: project.freelancerId },
+        orderBy: { createdAt: 'asc' }
+      });
+      
+      let totalMins = 0;
+      let replyCount = 0;
+      
+      for (const cm of clientMsgs) {
+        // Find the first writer message that came AFTER this client message
+        const firstReply = writerMsgs.find(wm => new Date(wm.createdAt) > new Date(cm.createdAt));
+        if (firstReply) {
+          const mins = Math.max(0, Math.round((new Date(firstReply.createdAt).getTime() - new Date(cm.createdAt).getTime()) / (1000 * 60)));
+          totalMins += mins;
+          replyCount++;
+        }
+      }
+      
+      if (replyCount > 0) {
+        responseMinutes = Math.round(totalMins / replyCount);
       } else {
-        responseMinutes = elapsedMinutes;
+        responseMinutes = 0; // If the writer sends a message before the client, 0 mins response time
+      }
+      
+      if (existing) {
+        // Update the existing SLA record with the new rolling average
+        const updated = await prisma.sLAEvent.update({
+          where: { id: existing.id },
+          data: { responseMinutes, occurredAt: now }
+        });
+        return NextResponse.json(updated);
       }
     } else if (eventType === 'DELIVERY') {
       deliveryOnTime = project.deadline ? now <= new Date(project.deadline) : true;

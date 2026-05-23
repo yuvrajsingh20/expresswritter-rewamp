@@ -135,6 +135,20 @@ export async function PATCH(req, { params }) {
       } else {
         console.log(`[API PATCH Project] No writer email found. Skipped writer email.`);
       }
+
+      // Inject assignment message
+      try {
+        await prisma.message.create({
+          data: {
+            content: `I am your writer ${newWriter?.name || 'Your Writer'} and assigned in our service.`,
+            projectId: id,
+            senderId: body.freelancerId,
+            chatType: 'CLIENT_CHAT',
+          },
+        });
+      } catch (msgErr) {
+        console.warn("Could not inject assignment message:", msgErr);
+      }
     }
 
     // ── STATUS CHANGE ────────────────────────────────────────────

@@ -182,7 +182,9 @@ export default function OrderChat({ orderId, projectId, userId, role }: OrderCha
                   )}
                   <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                   <span className={`text-[10px] opacity-60 mt-1 block text-right ${msg.senderId === userId ? 'text-white' : 'text-muted-foreground'}`}>
-                    {msg.timestamp instanceof Date ? msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    {msg.timestamp 
+                      ? `${new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                      : ''}
                   </span>
                 </div>
               )}

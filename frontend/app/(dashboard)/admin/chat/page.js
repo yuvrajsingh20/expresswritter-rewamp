@@ -39,7 +39,7 @@ const AdminChatHub = () => {
                 sender: data.senderRole === 'ADMIN' ? 'Admin' : 'Expert',
                 text: data.content,
                 attachments: data.attachments,
-                time: new Date(data.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                time: `${new Date(data.timestamp || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(data.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
                 type: data.senderId === session.user.id ? 'outgoing' : 'incoming'
              }]);
           }
@@ -74,7 +74,7 @@ const AdminChatHub = () => {
                sender: m.senderId === session.user.id ? 'Admin' : m.sender.name,
                text: m.content,
                attachments: m.attachments,
-               time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+               time: `${new Date(m.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
                type: m.senderId === session.user.id ? 'outgoing' : 'incoming'
             })));
          } catch (e) { console.error(e); }
@@ -117,7 +117,7 @@ const AdminChatHub = () => {
           sender: 'Admin',
           text: saved.content,
           attachments: saved.attachments,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: `${new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
           type: 'outgoing'
         };
         setMessages(prev => [...prev, msg]);

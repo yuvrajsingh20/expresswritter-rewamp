@@ -59,7 +59,7 @@ const ChatWindow = ({ projectId, currentUser, initialMessages = [], chatType = '
               )}
               <p>{msg.message}</p>
               <p className={`text-[10px] text-right mt-1 opacity-50`}>
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>

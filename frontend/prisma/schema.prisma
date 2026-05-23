@@ -255,6 +255,7 @@ model Order {
   amount        Float
   paymentStatus PaymentStatus @default(PENDING)
   razorpayId    String?       @unique
+  cashfreeId    String?       @unique
   createdAt     DateTime      @default(now())
 
   // Relations
@@ -459,9 +460,12 @@ model CheckoutSession {
 model Payment {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   userId            String   
-  razorpayOrderId   String   @unique
+  razorpayOrderId   String?  @unique
   razorpayPaymentId String?
   razorpaySignature String?
+  cashfreeOrderId   String?  @unique
+  cashfreePaymentId String?
+  cashfreeSignature String?
   amount            Float
   currency          String
   status            String   @default("created")

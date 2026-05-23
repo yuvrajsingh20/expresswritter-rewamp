@@ -10,10 +10,10 @@ import {
   User, MessageSquare, Download, AlertCircle,
   Loader2, FileText, Info, ExternalLink, Calendar,
   CreditCard, ShieldCheck, Zap, Edit3, X, Save,
-  Plus, Trash2, LayoutGrid, Mic
+  Plus, Trash2, LayoutGrid, Mic, RefreshCcw
 } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { useRazorpay } from '@/hooks/useRazorpay';
+import { useCashfree } from '@/hooks/useCashfree';
 
 import servicesData from '@/data/services_data.json';
 
@@ -28,7 +28,7 @@ export default function OrderDetailsPage() {
   const { id } = useParams();
   const { data: session } = useSession();
   const router = useRouter();
-  const { processPayment } = useRazorpay();
+  const { processPayment } = useCashfree();
   
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
@@ -43,9 +43,41 @@ export default function OrderDetailsPage() {
   const [verifyLoading, setVerifyLoading] = useState(false);
 
   useEffect(() => {
+    const verifyCashfree = async () => {
+      const cf_order_id = searchParams.get('cf_order_id') || searchParams.get('order_id');
+      if (cf_order_id) {
+        setVerifyLoading(true);
+        try {
+          const res = await fetch('/api/payments/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cashfree_order_id: cf_order_id })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setShowSuccessModal(true);
+            router.replace(`/student/orders/${id}`);
+            const projRes = await fetch(`/api/projects/${id}`);
+            if (projRes.ok) {
+              const updatedProject = await projRes.json();
+              setProject(updatedProject);
+            }
+          } else {
+            console.error("Cashfree verification failed:", data.message);
+          }
+        } catch (error) {
+          console.error("Cashfree verify connection error:", error);
+        } finally {
+          setVerifyLoading(false);
+        }
+      }
+    };
+
     if (searchParams.get('success') === 'true') {
       setShowSuccessModal(true);
       router.replace(`/student/orders/${id}`);
+    } else {
+      verifyCashfree();
     }
   }, [searchParams, id, router]);
 
@@ -543,6 +575,7 @@ export default function OrderDetailsPage() {
     { label: 'Assigned', status: 'ASSIGNED', icon: User },
     { label: 'In Progress', status: 'IN_PROGRESS', icon: PlayCircle },
     { label: 'Review', status: 'REVIEW', icon: Package },
+    { label: 'Revision', status: 'REVISION', icon: RefreshCcw },
     { label: 'Completed', status: 'COMPLETED', icon: CheckCircle2 },
   ];
 
@@ -1056,12 +1089,12 @@ export default function OrderDetailsPage() {
                        <MessageSquare size={20} />
                      </div>
                      <div>
-                        <h4 className="text-sm font-black text-slate-900 tracking-tight">
-                           {project.freelancer?.name || 'Support Node'}
-                        </h4>
-                        <p className="text-[10px] text-[#0067B8] font-bold uppercase tracking-widest">
-                           {project.freelancerId ? 'Specialist Stream' : 'Secured Stream'}
-                        </p>
+                         <h4 className="text-sm font-black text-[#0067B8] tracking-tight uppercase text-xs">
+                            {currentService?.name || project.serviceType || 'Standard Package'}
+                         </h4>
+                         <p className="text-[10px] text-slate-900 font-bold uppercase tracking-widest mt-0.5">
+                            {project.freelancer?.name || 'Support Node'}
+                         </p>
                      </div>
                   </div>
                   <div className="flex -space-x-3">
@@ -1131,7 +1164,7 @@ export default function OrderDetailsPage() {
                                         )}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'CLIENT CONSOLE' : ((msg.sender?.role === 'FREELANCER' || msg.senderRole === 'FREELANCER') ? `SPECIALIST: ${msg.sender?.name || 'Assigned'}` : 'OPERATOR')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
+                                        {isMe ? 'CLIENT CONSOLE' : ((msg.sender?.role === 'FREELANCER' || msg.senderRole === 'FREELANCER') ? `SPECIALIST: ${msg.sender?.name || 'Assigned'}` : 'OPERATOR')} • {msg.timestamp ? `${new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : `${new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                                     </span>
                                 </div>
                             </motion.div>

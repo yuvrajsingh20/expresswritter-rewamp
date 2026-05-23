@@ -322,7 +322,7 @@ export default function FreelancerChatInbox() {
                                         )}
                                      </div>
                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">
-                                        {isMe ? 'YOU' : 'ADMIN'} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {isMe ? 'YOU' : 'ADMIN'} • {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                      </p>
                                   </div>
                                </motion.div>

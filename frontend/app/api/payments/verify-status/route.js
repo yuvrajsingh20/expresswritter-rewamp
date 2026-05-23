@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import razorpay from "@/lib/razorpay";
+import { fetchCashfreeOrder } from "@/lib/cashfree";
 import { getAuthUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { createNotification } from "@/lib/notify";
@@ -36,18 +37,32 @@ export async function POST(req) {
     }
 
     const razorpayOrderId = order.razorpayId;
-    if (!razorpayOrderId) return NextResponse.json({ message: "No Razorpay Order ID found" }, { status: 400 });
+    const cashfreeOrderId = order.cashfreeId;
 
-    // 2. Fetch payments from Razorpay to check if actually paid
+    if (!razorpayOrderId && !cashfreeOrderId) {
+      return NextResponse.json({ message: "No active payment transaction ID associated with this order" }, { status: 400 });
+    }
+
+    // 2. Fetch payments from PG to check if actually paid
     let isPaid = false;
-    try {
-      const payments = await razorpay.orders.fetchPayments(razorpayOrderId);
-      if (payments && Array.isArray(payments.items)) {
-        isPaid = payments.items.some(p => p.status === 'captured' || p.status === 'authorized');
+    if (cashfreeOrderId) {
+      try {
+        const cfOrder = await fetchCashfreeOrder(cashfreeOrderId);
+        isPaid = cfOrder.order_status === 'PAID';
+      } catch (cfErr) {
+        console.error("Failed to fetch Cashfree order status:", cfErr);
+        return NextResponse.json({ message: "Failed to communicate with Cashfree payment gateway" }, { status: 502 });
       }
-    } catch (rzpErr) {
-      console.error("Failed to fetch Razorpay order payments:", rzpErr);
-      return NextResponse.json({ message: "Failed to communicate with payment gateway" }, { status: 502 });
+    } else {
+      try {
+        const payments = await razorpay.orders.fetchPayments(razorpayOrderId);
+        if (payments && Array.isArray(payments.items)) {
+          isPaid = payments.items.some(p => p.status === 'captured' || p.status === 'authorized');
+        }
+      } catch (rzpErr) {
+        console.error("Failed to fetch Razorpay order payments:", rzpErr);
+        return NextResponse.json({ message: "Failed to communicate with Razorpay payment gateway" }, { status: 502 });
+      }
     }
 
     if (isPaid) {

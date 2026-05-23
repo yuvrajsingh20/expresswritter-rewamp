@@ -92,7 +92,7 @@ export default function EagleEyeMonitor() {
                     <span className="text-sm font-medium text-slate-300">Project #{msg.projectId.slice(-6)}</span>
                   </div>
                   <span className="text-xs text-slate-500 font-mono">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
+                    {new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 

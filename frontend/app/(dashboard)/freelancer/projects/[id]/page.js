@@ -7,9 +7,9 @@ import {
   Briefcase, Clock, FileText, Send, 
   ChevronLeft, MessageSquare, Info, 
   Upload, CheckCircle, CheckCircle2, AlertCircle, 
-  ExternalLink, Zap, Paperclip, Loader2, DollarSign,
+  ExternalLink, Zap, Paperclip, Loader2, IndianRupee,
   LayoutGrid, Calendar, Target, ShieldCheck,
-  Search, ArrowRight, Download, Mic, Terminal, X
+  Search, ArrowRight, Download, Mic, Terminal, X, PlayCircle, RefreshCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
@@ -476,10 +476,9 @@ export default function SpecialistConsole() {
       
       const savedMessage = await res.json();
 
-      // Fire FIRST_REPLY SLA if this is the first freelancer message on an ASSIGNED project
-      if (project?.status === 'ASSIGNED' || project?.status === 'IN_PROGRESS') {
-        const isFirstMsg = !messages.some(m => m.senderRole === 'FREELANCER' && m.id !== optimisticMsg.id);
-        if (isFirstMsg) fireSLA('FIRST_REPLY');
+      // Fire FIRST_REPLY SLA to update average response time for every message
+      if (project?.status === 'ASSIGNED' || project?.status === 'IN_PROGRESS' || project?.status === 'REVISION') {
+        fireSLA('FIRST_REPLY');
       }
 
       // Replace optimistic message with real saved one
@@ -757,15 +756,20 @@ export default function SpecialistConsole() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                     {[
+                      { s: 'CREATED', l: 'Payment', i: FileText },
                       { s: 'ASSIGNED', l: 'Assigned', i: Briefcase },
                       { s: 'IN_PROGRESS', l: 'Production', i: PlayCircle },
                       { s: 'REVIEW', l: 'Verification', i: Search },
+                      { s: 'REVISION', l: 'Revision', i: RefreshCcw },
                       { s: 'COMPLETED', l: 'Delivered', i: CheckCircle2 }
                     ].map((step, idx) => {
-                      const isPast = project.status === step.s || (idx === 0 && project.status !== 'CREATED') || (idx === 1 && (project.status === 'REVIEW' || project.status === 'COMPLETED')) || (idx === 2 && project.status === 'COMPLETED');
-                      const isCurrent = project.status === step.s;
+                      const sequence = ['CREATED', 'ASSIGNED', 'IN_PROGRESS', 'REVIEW', 'REVISION', 'COMPLETED'];
+                      const currentIdx = sequence.indexOf(project.status === 'CANCELLED' ? 'COMPLETED' : project.status);
+                      const stepIdx = sequence.indexOf(step.s);
+                      const isPast = currentIdx > stepIdx;
+                      const isCurrent = currentIdx === stepIdx;
                       return (
                         <div key={idx} className="relative group">
                            <div className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
@@ -975,7 +979,7 @@ export default function SpecialistConsole() {
                     <div className="flex items-center justify-between">
                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Financial Clearance</h3>
                        <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-                          <DollarSign size={16} />
+                          <IndianRupee size={16} />
                        </div>
                     </div>
                     
@@ -1010,7 +1014,7 @@ export default function SpecialistConsole() {
                     ) : (
                        <div className="flex flex-col items-center justify-center py-6 text-center">
                           <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-4">
-                             <DollarSign size={24} />
+                             <IndianRupee size={24} />
                           </div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting financial mapping from admin.</p>
                        </div>
@@ -1203,7 +1207,7 @@ export default function SpecialistConsole() {
                                         )}
                                     </div>
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">
-                                        {isMe ? 'SPECIALIST CONSOLE' : (msg.sender?.role === 'STUDENT' ? 'STUDENT NODE' : 'TEAM SPECIALIST')} • {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}
+                                        {isMe ? 'SPECIALIST CONSOLE' : (msg.sender?.role === 'STUDENT' ? 'STUDENT NODE' : 'TEAM SPECIALIST')} • {msg.timestamp ? `${new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : `${new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                                     </span>
                                 </div>
                             </motion.div>

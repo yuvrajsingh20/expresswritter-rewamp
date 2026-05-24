@@ -3,7 +3,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import { motion } from 'framer-motion';
-
+//test
 export default function DashboardLayout({
   children,
 }: {
@@ -16,7 +16,7 @@ export default function DashboardLayout({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+          transition={{ duration: 0.4, ease: "easeOut" }} //teset67
         >
           {children}
         </motion.div>

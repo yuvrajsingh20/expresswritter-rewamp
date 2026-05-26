@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import servicesData from '@/data/services_data.json';
+import { uploadFileToSupabase } from '@/lib/upload';
 
 const SERVICES = Object.values(servicesData.individualServices).flat();
 const getServiceName = (id) => SERVICES.find(s => s.id === id)?.name || id;
@@ -515,11 +516,9 @@ export default function SpecialistConsole() {
     setChatUploading(true);
     try {
       const uploadPromises = files.map(async (file) => {
-        const body = new FormData();
-        body.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body });
-        if (!res.ok) throw new Error('Upload failed');
-        return await res.json();
+        const res = await uploadFileToSupabase(file, 'chat_attachments');
+        if (res.error) throw new Error(res.error);
+        return { url: res.url, name: file.name };
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);
@@ -568,17 +567,10 @@ export default function SpecialistConsole() {
     if (!file) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const uploadData = await res.json();
+      const uploadRes = await uploadFileToSupabase(file, 'deliverables');
+      if (uploadRes.error) throw new Error(uploadRes.error);
+      const uploadData = { url: uploadRes.url, name: file.name };
         const deliveryAsset = { ...uploadData, type: 'DELIVERY' };
         
         await fetch(`/api/projects/${id}`, {
@@ -602,7 +594,6 @@ export default function SpecialistConsole() {
 
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
-      }
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {

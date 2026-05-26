@@ -93,10 +93,22 @@ export const authOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+      }
+      // Refresh permissions from DB on every token update
+      if (token.id && (trigger === "update" || !token.permissions)) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { permissions: true },
+          });
+          token.permissions = dbUser?.permissions ?? [];
+        } catch {
+          token.permissions = token.permissions ?? [];
+        }
       }
       return token;
     },
@@ -104,6 +116,7 @@ export const authOptions = {
       if (session?.user) {
         session.user.id = token.id;
         session.user.role = token.role;
+        session.user.permissions = token.permissions ?? [];
       }
       return session;
     }
@@ -112,13 +125,31 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+function fetchPermissions(user) {
+  if (user.permissions) return user;
+  try {
+    return prisma.user.findUnique({
+      where: { id: user.id },
+      select: { permissions: true },
+    }).then(dbUser => {
+      user.permissions = dbUser?.permissions ?? [];
+      return user;
+    }).catch(() => {
+      user.permissions = [];
+      return user;
+    });
+  } catch {
+    user.permissions = [];
+    return user;
+  }
+}
+
 export const getAuthUser = async (req) => {
     // 0. Try getServerSession (Robust for Next.js App Router API Routes)
     try {
         const session = await getServerSession(authOptions);
         if (session?.user) {
-            console.log("getAuthUser: Returning getServerSession user:", session.user.email);
-            return session.user;
+            return fetchPermissions(session.user);
         }
     } catch (e) {
         console.error("getServerSession error:", e);
@@ -135,12 +166,13 @@ export const getAuthUser = async (req) => {
         
         if (token) {
             console.log("getAuthUser: Returning token user:", token.email);
-            return {
+            return fetchPermissions({
                 id: token.id || token.sub,
                 role: token.role,
                 name: token.name,
-                email: token.email
-            };
+                email: token.email,
+                permissions: token.permissions ?? [],
+            });
         }
     } catch (e) {
         console.error("getToken execution error:", e);

@@ -111,14 +111,6 @@ function RegisterForm() {
     else if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
     if (!form.agree) e.agree = 'Please accept the terms to continue';
-    
-    if (role === 'writer') {
-      if (!form.education.trim()) e.education = 'Qualification is required';
-      if (!form.experience.trim()) e.experience = 'Experience is required';
-      if (!form.resumeUrl.trim()) e.resumeUrl = 'Resume link is required';
-      if (!form.country) e.country = 'Country is required';
-    }
-    
     return e;
   };
 
@@ -142,15 +134,6 @@ function RegisterForm() {
             email: form.email,
             password: form.password,
             role: backendRole,
-            writerProfile: role === 'writer' ? {
-              education: form.education,
-              experience: form.experience,
-              resumeUrl: form.resumeUrl,
-              country: form.country,
-              currency: form.currency,
-              bio: "Writer application from registration form",
-              domainId: "SOP" // Default domain
-            } : undefined
           }),
         });
 
@@ -174,7 +157,7 @@ function RegisterForm() {
       <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>Account created!</h2>
       <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 360, marginBottom: 28 }}>
         {role === 'writer' ?
-          'Your writer application is under review. We have received your qualification details and resume. We\'ll email you within 48 hours once approved. Then you can login and access your dashboard.' :
+          'Welcome to Xpresswriters! Check your email to verify your account, then log in to complete your comprehensive 6-step writer profile.' :
           'Welcome to Xpresswriters! Check your email to verify your account, then start placing orders.'}
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -249,43 +232,7 @@ function RegisterForm() {
           <InputField label="Full Name" value={form.name} onChange={(v) => update('name', v)} placeholder="Dr. Amara Singh" icon="👤" error={errors.name} autoComplete="name" />
           <InputField label="Email Address" type="email" value={form.email} onChange={(v) => update('email', v)} placeholder="you@example.com" icon="✉️" error={errors.email} autoComplete="email" />
           
-          {role === 'writer' && (
-            <>
-              <InputField label="Highest Qualification" value={form.education} onChange={(v) => update('education', v)} placeholder="e.g. Masters in English" icon="🎓" error={errors.education} />
-              <InputField label="Experience (Years)" value={form.experience} onChange={(v) => update('experience', v)} placeholder="e.g. 5" icon="💼" error={errors.experience} type="number" />
-              <InputField label="Resume Link / Portfolio" value={form.resumeUrl} onChange={(v) => update('resumeUrl', v)} placeholder="Link to your resume" icon="🔗" error={errors.resumeUrl} />
-              
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>🌍</span> Country of Residence
-                </div>
-                <select 
-                  value={form.country} 
-                  onChange={(e) => {
-                    const country = e.target.value;
-                    const activeConfig = currencyConfig.length > 0 ? currencyConfig : FALLBACK_CURRENCIES;
-                    const currency = activeConfig.find(c => c.region === country)?.currency || 'USD';
-                    setForm(f => ({ ...f, country, currency }));
-                    setErrors(errs => ({ ...errs, country: '' }));
-                  }}
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: 8, background: 'var(--surface3)', border: `1.5px solid ${errors.country ? 'var(--red)' : 'var(--border)'}`, color: 'var(--text)', fontSize: 14, outline: 'none' }}
-                >
-                  <option value="">Select your country</option>
-                  {currencyConfig.length > 0 ? (
-                    currencyConfig.map(c => <option key={c.region} value={c.region}>{c.region}</option>)
-                  ) : (
-                    FALLBACK_CURRENCIES.map(c => <option key={c.region} value={c.region}>{c.region}</option>)
-                  )}
-                </select>
-                {errors.country && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 5 }}>{errors.country}</div>}
-                {form.currency && form.country && (
-                  <div style={{ fontSize: 11, color: 'var(--teal-light)', marginTop: 6, fontWeight: 500 }}>
-                    Payout Currency: {form.currency}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+
 
           <InputField label="Password" type="password" value={form.password} onChange={(v) => update('password', v)} placeholder="Create a strong password" error={errors.password} autoComplete="new-password" />
           <PasswordStrength password={form.password} />

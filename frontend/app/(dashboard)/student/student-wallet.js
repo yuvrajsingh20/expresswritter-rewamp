@@ -125,40 +125,64 @@ export default function Wallet({ projects = [], userName = "Student", isMobile }
           <h2 style={{ fontSize: 18, fontWeight: 600 }}>Transaction History</h2>
           <button style={{ background: 'none', border: 'none', color: 'var(--teal-light)', fontSize: 13, cursor: 'pointer' }}>Download All Invoices</button>
         </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', padding: '12px 20px', background: 'var(--surface2)', borderBottom: '1px solid var(--border2)', minWidth: 600 }}>
-            {['ID', 'Date', 'Description', 'Amount', 'Invoice'].map(h => (
-              <div key={h} style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
-            ))}
-          </div>
-          {transactions.length > 0 ? transactions.map((tx, i) => (
-            <div key={tx.id} style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', 
-              padding: '16px 20px', 
-              minWidth: 600,
-              borderBottom: i < transactions.length - 1 ? '1px solid var(--border2)' : 'none',
-              alignItems: 'center'
-            }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{tx.id}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{tx.date}</div>
-              <div style={{ fontSize: 13, color: 'var(--text)' }}>{tx.type}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>₹{tx.amount.toLocaleString()}</div>
-              <div>
-                <button style={{ 
-                  background: 'none', 
-                  border: '1px solid var(--border2)', 
-                  borderRadius: 4, 
-                  padding: '4px 8px', 
-                  fontSize: 11, 
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)'
-                }}>PDF ↓</button>
-              </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, overflow: 'hidden' }}>
+          {isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12 }}>
+              {transactions.length > 0 ? transactions.map(tx => (
+                <div key={tx.id} style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{tx.id}</div>
+                    <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{tx.date}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{tx.type}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>₹{tx.amount.toLocaleString()}</div>
+                    <button style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 4, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: 'var(--text-muted)' }}>PDF ↓</button>
+                  </div>
+                </div>
+              )) : (
+                <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
+                  No transactions yet.
+                </div>
+              )}
             </div>
-          )) : (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
-              No transactions yet.
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', padding: '12px 20px', background: 'var(--surface2)', borderBottom: '1px solid var(--border2)', minWidth: 600 }}>
+                {['ID', 'Date', 'Description', 'Amount', 'Invoice'].map(h => (
+                  <div key={h} style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
+                ))}
+              </div>
+              {transactions.length > 0 ? transactions.map((tx, i) => (
+                <div key={tx.id} style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr', 
+                  padding: '16px 20px', 
+                  minWidth: 600,
+                  borderBottom: i < transactions.length - 1 ? '1px solid var(--border2)' : 'none',
+                  alignItems: 'center'
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{tx.id}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{tx.date}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{tx.type}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>₹{tx.amount.toLocaleString()}</div>
+                  <div>
+                    <button style={{ 
+                      background: 'none', 
+                      border: '1px solid var(--border2)', 
+                      borderRadius: 4, 
+                      padding: '4px 8px', 
+                      fontSize: 11, 
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)'
+                    }}>PDF ↓</button>
+                  </div>
+                </div>
+              )) : (
+                <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
+                  No transactions yet.
+                </div>
+              )}
             </div>
           )}
         </div>

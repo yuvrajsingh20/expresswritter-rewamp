@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { motion } from 'framer-motion';
 import {
   Home, Users, Briefcase,
@@ -12,15 +12,18 @@ import {
   LayoutGrid, Activity
 } from 'lucide-react';
 
-const Sidebar = ({ role = 'ADMIN' }) => {
+const Sidebar = ({ role: propRole }) => {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const role = propRole || session?.user?.role || 'STUDENT';
+  const permissions = session?.user?.permissions || [];
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/login" });
   };
 
-  const menuItems = {
+  const allMenuItems = {
     ADMIN: [
       { name: 'Mission Control', icon: LayoutGrid, path: '/admin' },
       { name: 'Elite Workforce', icon: Zap, path: '/admin/freelancers' },
@@ -49,7 +52,24 @@ const Sidebar = ({ role = 'ADMIN' }) => {
     ],
   };
 
-  const currentMenu = menuItems[role] || menuItems.STUDENT;
+  const subAdminPermissionMap = {
+    '/subadmin/writers': 'freelancer:verify',
+    '/subadmin/orders': 'order:read_assigned',
+    '/subadmin/revenue': 'payment:view_metrics',
+    '/subadmin/payment-links': 'payment:issue_links',
+    '/subadmin/promos': 'promo:manage',
+    '/subadmin/tickets': 'ticket:resolve',
+  };
+
+  let currentMenu = allMenuItems[role] || allMenuItems.STUDENT;
+
+  // Filter SUB_ADMIN menu items based on permissions
+  if (role === 'SUB_ADMIN') {
+    currentMenu = currentMenu.filter(item => {
+      const requiredPermission = subAdminPermissionMap[item.path];
+      return !requiredPermission || permissions.includes(requiredPermission);
+    });
+  }
 
   return (
     <>

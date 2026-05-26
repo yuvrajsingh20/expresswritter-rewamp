@@ -18,6 +18,8 @@ const Sidebar = ({ role: propRole }) => {
   const pathname = usePathname();
   const role = propRole || session?.user?.role || 'STUDENT';
   const permissions = session?.user?.permissions || [];
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const currentTab = searchParams ? searchParams.get('tab') : null;
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/login" });
@@ -43,6 +45,7 @@ const Sidebar = ({ role: propRole }) => {
       { name: 'Project Hub', icon: LayoutGrid, path: '/freelancer' },
       { name: 'Active Tasks', icon: Briefcase, path: '/freelancer' },
       { name: 'Secure Inbox', icon: MessageSquare, path: '/freelancer/chat' },
+      { name: 'Admin Support', icon: Shield, path: '/freelancer/chat?tab=ADMIN' },
       { name: 'Financials', icon: CreditCard, path: '/freelancer/earnings' },
     ],
     STUDENT: [
@@ -112,8 +115,17 @@ const Sidebar = ({ role: propRole }) => {
             <p className="text-[9px] font-black text-slate-300 uppercase tracking-wider">Institutional Core</p>
           </div>
           {currentMenu.map((item) => {
-            const isActive = pathname === item.path ||
-              (item.path !== '/admin' && item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path));
+            const hasQuery = item.path.includes('?');
+            let isActive = false;
+            if (hasQuery) {
+              const urlParams = new URLSearchParams(item.path.split('?')[1]);
+              const itemTab = urlParams.get('tab');
+              isActive = pathname === item.path.split('?')[0] && currentTab === itemTab;
+            } else {
+              isActive = (pathname === item.path && !currentTab) || 
+                (item.path !== '/admin' && item.path !== '/student' && item.path !== '/freelancer' && pathname.startsWith(item.path) && !currentTab);
+            }
+            
             return (
               <Link
                 key={item.name}

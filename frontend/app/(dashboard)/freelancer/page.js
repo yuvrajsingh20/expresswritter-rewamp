@@ -70,7 +70,8 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
     { id: 'all-orders', icon: '📋', label: 'Orders List' },
     { id: 'earnings', icon: '💰', label: 'Earnings' },
     { id: 'pricing', icon: '🏷️', label: 'Pricing Catalog' },
-    { id: 'profile', icon: '👤', label: 'My Profile' }
+    { id: 'profile', icon: '👤', label: 'My Profile' },
+    { id: 'admin-chat', icon: '🛡️', label: 'Admin Chat' }
   ];
 
   return (
@@ -101,7 +102,13 @@ function Sidebar({ active, setActive, orders = [], userName = "Writer" }) {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
         {nav.map((item) =>
-          <button key={item.id} onClick={() => setActive(item.id)} style={{
+          <button key={item.id} onClick={() => {
+            if (item.href) {
+              window.location.href = item.href;
+            } else {
+              setActive(item.id);
+            }
+          }} style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13, fontWeight: active === item.id ? 600 : 400, marginBottom: 2, transition: 'all .2s', position: 'relative',
             background: active === item.id ? 'rgba(13,148,136,0.14)' : 'transparent',
             color: active === item.id ? 'var(--teal-light)' : 'var(--text-muted)'
@@ -580,7 +587,7 @@ function OrderChatPanel({ order, onClose, onStatusChange, onSend, userId, socket
             <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px', fontSize: 13, color: 'var(--text)', lineHeight: 1.7 }}>{order.brief}</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[['Invoice', order.displayId], ['Words', `${order.words.toLocaleString()} words`], ['Price', `$${order.price}`], ['Due', order.due], ['Delivery', order.deliveryType === 'urgent' ? '⚡ Urgent' : '📅 Timeline'], ['NDA', order.hasNDA ? 'Active' : 'Not required']].map(([k, v]) =>
+            {[['Invoice', order.displayId], ['Words', `${order.words.toLocaleString()} words`], ['Price', `₹${order.price}`], ['Due', order.due], ['Delivery', order.deliveryType === 'urgent' ? '⚡ Urgent' : '📅 Timeline'], ['NDA', order.hasNDA ? 'Active' : 'Not required']].map(([k, v]) =>
               <div key={k} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
                 <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{v}</div>
@@ -965,6 +972,9 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
       newStatus;
     try {
       const payload = { status: dbStatus };
+      if (newStatus === 'Writer Assigned') {
+        payload.freelancerId = session?.user?.id;
+      }
       if (deliveryAsset) {
         // Fetch current project to get latest attachments list
         const projRes = await fetch(`/api/projects/${id}`);
@@ -1017,7 +1027,7 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {/* Orders list panel */}
-      <div style={{ width: activeOrder ? 340 : 540, flexShrink: 0, display: 'flex', flexDirection: 'column', height: '100%', borderRight: activeOrder ? '1px solid var(--border)' : 'none', transition: 'width .3s ease' }}>
+      <div style={{ width: isMobile ? '100%' : (activeOrder ? 340 : 540), flexShrink: 0, display: (isMobile && activeOrder) ? 'none' : 'flex', flexDirection: 'column', height: '100%', borderRight: activeOrder ? '1px solid var(--border)' : 'none', transition: 'width .3s ease' }}>
         {/* Header */}
         <div style={{ padding: '20px 20px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -1055,23 +1065,25 @@ function OrdersView({ projects = [], userId, isMobile, userName, socket, onUpdat
       </div>
 
       {/* Chat / Detail panel */}
-      {selectedOrder ?
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {selectedOrder ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <OrderChatPanel order={selectedOrder} onClose={() => setActiveOrder(null)} onStatusChange={handleStatusChange} onSend={handleSend} userId={userId} socket={socket} userName={userName} loading={fetchingThread} />
-        </div> :
-
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
-          <div style={{ fontSize: 48, opacity: .3 }}>💬</div>
-          <div style={{ fontSize: 14, fontWeight: 500 }}>Select an order to open the chat</div>
-          <div style={{ fontSize: 12, opacity: .6 }}>All conversations are end-to-end encrypted</div>
         </div>
-      }
+      ) : (
+        !isMobile && (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: 'var(--text-dim)' }}>
+            <div style={{ fontSize: 48, opacity: .3 }}>💬</div>
+            <div style={{ fontSize: 14, fontWeight: 500 }}>Select an order to open the chat</div>
+            <div style={{ fontSize: 12, opacity: .6 }}>All conversations are end-to-end encrypted</div>
+          </div>
+        )
+      )}
       {deliveryModal.isOpen && (
         <div style={{
           position: 'fixed',
           inset: 0,
           background: 'rgba(5, 5, 10, 0.85)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1448,45 +1460,66 @@ function AllOrdersList({ orders = [], isMobile }) {
       </div>
 
       <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
-              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Order ID</th>
-              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Service / Title</th>
-              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Client</th>
-              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Deadline</th>
-              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Amount</th>
-              <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length > 0 ? filtered.map((o) => (
-              <tr key={o.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                <td style={{ padding: '16px 18px', fontWeight: 600, color: 'var(--teal-light)', fontFamily: 'var(--mono)', fontSize: 12 }}>{o.displayId}</td>
-                <td style={{ padding: '16px 18px' }}>
-                  <div style={{ fontWeight: 600 }}>{o.service}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{o.displayId}</div>
-                </td>
-                <td style={{ padding: '16px 18px' }}>{o.client}</td>
-                <td style={{ padding: '16px 18px', color: 'var(--text-muted)' }}>{o.due}</td>
-                <td style={{ padding: '16px 18px', fontWeight: 700 }}>${o.price}</td>
-                <td style={{ padding: '16px 18px' }}>
-                  <span style={{ 
-                    padding: '3px 10px', borderRadius: 100, fontSize: 10, fontWeight: 700,
-                    background: 'rgba(13,148,136,0.1)', color: 'var(--teal-light)',
-                    border: '1px solid rgba(13,148,136,0.2)', textTransform: 'uppercase'
-                  }}>
-                    {o.status}
-                  </span>
-                </td>
-              </tr>
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12 }}>
+            {filtered.length > 0 ? filtered.map(o => (
+              <div key={o.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: 'var(--teal-light)', fontFamily: 'var(--mono)', fontSize: 12 }}>{o.displayId}</div>
+                  <span style={{ padding: '3px 10px', borderRadius: 100, fontSize: 10, fontWeight: 700, background: 'rgba(13,148,136,0.1)', color: 'var(--teal-light)', border: '1px solid rgba(13,148,136,0.2)', textTransform: 'uppercase' }}>{o.status}</span>
+                </div>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>{o.service}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-dim)' }}>
+                  <span>{o.client}</span>
+                  <span>{o.due}</span>
+                </div>
+                <div style={{ marginTop: 8, fontWeight: 700, color: 'var(--text)' }}>${o.price}</div>
+              </div>
             )) : (
-              <tr>
-                <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No orders found matching your criteria.</td>
-              </tr>
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No orders found matching your criteria.</div>
             )}
-          </tbody>
-        </table>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Order ID</th>
+                <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Service / Title</th>
+                <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Client</th>
+                <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Deadline</th>
+                <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Amount</th>
+                <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length > 0 ? filtered.map((o) => (
+                <tr key={o.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <td style={{ padding: '16px 18px', fontWeight: 600, color: 'var(--teal-light)', fontFamily: 'var(--mono)', fontSize: 12 }}>{o.displayId}</td>
+                  <td style={{ padding: '16px 18px' }}>
+                    <div style={{ fontWeight: 600 }}>{o.service}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{o.displayId}</div>
+                  </td>
+                  <td style={{ padding: '16px 18px' }}>{o.client}</td>
+                  <td style={{ padding: '16px 18px', color: 'var(--text-muted)' }}>{o.due}</td>
+                  <td style={{ padding: '16px 18px', fontWeight: 700 }}>${o.price}</td>
+                  <td style={{ padding: '16px 18px' }}>
+                    <span style={{ 
+                      padding: '3px 10px', borderRadius: 100, fontSize: 10, fontWeight: 700,
+                      background: 'rgba(13,148,136,0.1)', color: 'var(--teal-light)',
+                      border: '1px solid rgba(13,148,136,0.2)', textTransform: 'uppercase'
+                    }}>
+                      {o.status}
+                    </span>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No orders found matching your criteria.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
@@ -1523,7 +1556,7 @@ function Overview({ setActive, projects = [], userName = "Writer", isMobile, ses
   const stats = useMemo(() => [
     { label: 'Active Orders', val: active.length, icon: '⚡', color: 'var(--teal)', sub: 'Requires attention' },
     { label: 'Unread Messages', val: unreadCount, icon: '💬', color: 'var(--amber)', sub: 'From clients' },
-    { label: 'Total Earnings', val: `$${earnings.toFixed(2)}`, icon: '💰', color: 'var(--green)', sub: 'All time' },
+    { label: 'Total Earnings', val: `₹${earnings.toLocaleString()}`, icon: '💰', color: 'var(--green)', sub: 'All time' },
     { label: 'Avg Rating', val: (userProfile?.freelancerProfile?.rating || 5.0).toFixed(1), icon: '★', color: 'var(--gold)', sub: 'Top Writer' }
   ], [active.length, unreadCount, earnings, userProfile?.freelancerProfile?.rating]);
 
@@ -1859,7 +1892,7 @@ function ProfilePrompt({ onComplete }) {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'none', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <style>{`
         @keyframes softPop {
           from { opacity: 0; transform: scale(0.97) translateY(10px); }
@@ -2212,12 +2245,143 @@ function PricingCatalog({ userProfile, isMobile }) {
   );
 }
 
+function AdminChat({ userId, socket, isMobile }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const endRef = useRef(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/messages?senderId=${userId}&type=ADMIN_CHAT`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setMessages(data);
+      })
+      .catch(e => console.error(e));
+  }, [userId]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      if (data.chatType === 'ADMIN_CHAT') {
+        setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
+      }
+    };
+    socket.on('receive_message', handler);
+    return () => socket.off('receive_message', handler);
+  }, [socket]);
+
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length]);
+
+  const send = async () => {
+    if (!input.trim() || !userId) return;
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: input,
+          chatType: 'ADMIN_CHAT',
+          receiverId: null
+        })
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        setMessages(prev => [...prev, saved]);
+        if (socket) {
+          socket.emit('send_message', {
+            id: saved.id,
+            content: saved.content,
+            senderId: userId,
+            receiverId: null,
+            senderRole: 'FREELANCER',
+            chatType: 'ADMIN_CHAT',
+            timestamp: saved.createdAt
+          });
+        }
+        setInput('');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeIn .3s ease' }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Admin Support Chat</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Direct secure line to the Master Admin.</p>
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, var(--teal), #0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🛡️</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Master Admin</div>
+            <div style={{ fontSize: 11, color: 'var(--teal-light)' }}>Online • Secure Channel</div>
+          </div>
+        </div>
+        
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {messages.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 13, marginTop: 40 }}>No messages yet. Send a message to start the conversation!</div>}
+          {messages.map((m, i) => {
+            const isMe = m.senderId === userId;
+            return (
+              <div key={m.id || i} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                <div style={{ maxWidth: '70%' }}>
+                  <div style={{ 
+                    padding: '12px 16px', 
+                    background: isMe ? 'var(--teal)' : 'var(--surface3)',
+                    color: isMe ? '#fff' : 'var(--text)',
+                    borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    boxShadow: isMe ? '0 4px 12px rgba(13,148,136,0.2)' : 'none',
+                    border: isMe ? 'none' : '1px solid var(--border)'
+                  }}>
+                    {m.content}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4, textAlign: isMe ? 'right' : 'left' }}>
+                    {isMe ? 'You' : 'Admin'} • {new Date(m.createdAt || m.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={endRef} />
+        </div>
+
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: 12 }}>
+          <input 
+            type="text" 
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && send()}
+            placeholder="Type your message to Admin..." 
+            style={{ flex: 1, background: 'var(--surface3)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 16px', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+          />
+          <button 
+            onClick={send}
+            disabled={!input.trim()}
+            style={{ background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 8, padding: '0 20px', fontWeight: 600, fontSize: 13, cursor: input.trim() ? 'pointer' : 'not-allowed', opacity: input.trim() ? 1 : 0.6 }}
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [active, setActive] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      const validTabs = ['overview', 'orders', 'messages', 'earnings', 'settings', 'projects', 'pricing'];
+      const validTabs = ['overview', 'orders', 'all-orders', 'earnings', 'profile', 'projects', 'pricing', 'admin-chat'];
       if (tabParam && validTabs.includes(tabParam)) return tabParam;
       if (params.get('orderId')) return 'orders';
     }
@@ -2267,10 +2431,19 @@ export default function App() {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
-      const res = await fetch('/api/projects', { signal: controller.signal });
+      const [res, availableRes] = await Promise.all([
+        fetch('/api/projects', { signal: controller.signal }),
+        fetch('/api/projects/available', { signal: controller.signal })
+      ]);
       clearTimeout(timeoutId);
       const data = await res.json();
-      setProjects(Array.isArray(data) ? data : []);
+      const availableData = await availableRes.json();
+      const allProjects = [...(Array.isArray(data) ? data : []), ...(Array.isArray(availableData) ? availableData : [])];
+      
+      // Deduplicate projects in case of overlap
+      const uniqueProjects = Array.from(new Map(allProjects.map(item => [item.id, item])).values());
+      
+      setProjects(uniqueProjects);
     } catch (err) {
       if (err.name !== 'AbortError') console.error(err);
     }
@@ -2384,6 +2557,7 @@ export default function App() {
     earnings: <Earnings isMobile={isMobile} />,
     pricing: <PricingCatalog userProfile={userProfile} isMobile={isMobile} />,
     profile: <Profile isMobile={isMobile} profile={userProfile} onUpdate={fetchProfile} />,
+    'admin-chat': <AdminChat userId={session?.user?.id} socket={socket} isMobile={isMobile} />,
     notifications: <Notifications userName={userName} isMobile={isMobile} />
   }), [projects, userName, isMobile, session, userProfile, socket]);
 

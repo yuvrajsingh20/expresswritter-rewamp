@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 
 export async function GET(req) {
-  const user = await getAuthUser(req);
-  if (!user) {
+  const authUser = await getAuthUser(req);
+  if (!authUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const notifications = await prisma.notification.findMany({
-      where: { userId: user.id },
+      where: { userId: authUser.id },
       orderBy: { createdAt: "desc" },
     });
 
@@ -45,8 +46,8 @@ export async function GET(req) {
 }
 
 export async function PATCH(request) {
-  const user = await getAuthUser(request);
-  if (!user) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -56,13 +57,13 @@ export async function PATCH(request) {
     // If specific ID provided, mark only that notification
     if (body?.id) {
       await prisma.notification.updateMany({
-        where: { id: body.id, userId: user.id },
+        where: { id: body.id, userId: authUser.id },
         data: { read: true },
       });
     } else {
       // Otherwise mark all as read
       await prisma.notification.updateMany({
-        where: { userId: user.id, read: false },
+        where: { userId: authUser.id, read: false },
         data: { read: true },
       });
     }
@@ -74,10 +75,9 @@ export async function PATCH(request) {
 }
 
 export async function POST(request) {
-  const user = await getAuthUser(request);
-  // Allow admins to send notifications
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser(request);
+  if (!authUser || !checkPermission(authUser, "system:config")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {

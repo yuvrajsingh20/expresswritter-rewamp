@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSession } from "next-auth/react";
 import Sidebar from '@/components/dashboard/Sidebar';
 import { 
@@ -11,14 +11,33 @@ import {
 import Link from 'next/link';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
 export default function FreelancerChatInbox() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading Chat...</div>}>
+      <ChatInboxContent />
+    </Suspense>
+  );
+}
+
+function ChatInboxContent() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState('CLIENT'); // CLIENT or ADMIN
-  
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'ADMIN') {
+      setActiveTab('ADMIN');
+    } else if (tab === 'CLIENT' || !tab) {
+      setActiveTab('CLIENT');
+    }
+  }, [searchParams]);
+
   // Admin Chat State
   const [adminMessages, setAdminMessages] = useState([]);
   const [adminInput, setAdminInput] = useState("");

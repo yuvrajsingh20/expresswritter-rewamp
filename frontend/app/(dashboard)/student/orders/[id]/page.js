@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useCashfree } from '@/hooks/useCashfree';
+import { uploadFileToSupabase } from '@/lib/upload';
 
 import servicesData from '@/data/services_data.json';
 
@@ -271,11 +272,9 @@ export default function OrderDetailsPage() {
     setUploading(true);
     try {
       const uploadPromises = files.map(async (file) => {
-        const body = new FormData();
-        body.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body });
-        if (!res.ok) throw new Error('Upload failed');
-        return await res.json();
+        const res = await uploadFileToSupabase(file, 'student_uploads');
+        if (res.error) throw new Error(res.error);
+        return { url: res.url, name: file.name };
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);
@@ -540,11 +539,9 @@ export default function OrderDetailsPage() {
     setChatUploading(true);
     try {
       const uploadPromises = files.map(async (file) => {
-        const body = new FormData();
-        body.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body });
-        if (!res.ok) throw new Error('Upload failed');
-        return await res.json();
+        const res = await uploadFileToSupabase(file, 'chat_attachments');
+        if (res.error) throw new Error(res.error);
+        return { url: res.url, name: file.name };
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-guards';
 import { createNotification } from '@/lib/notify';
 import { safeSendEmail, writerApprovedHtml } from '@/lib/emails';
 
 export async function POST(req) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || !['ADMIN', 'SUB_ADMIN'].includes(authUser.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    if (!authUser || !checkPermission(authUser, 'freelancer:verify')) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const { userId } = await req.json();

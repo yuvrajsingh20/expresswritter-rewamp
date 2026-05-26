@@ -112,8 +112,18 @@ export function AdminWriters({ freelancers = [], isMobile }) {
     bio: f.freelancerProfile?.bio || '',
     linkedinUrl: f.freelancerProfile?.linkedinUrl || '',
     portfolioUrl: f.freelancerProfile?.portfolioUrl || '',
+    portfolioFiles: f.freelancerProfile?.portfolioFiles || '',
+    aadharUrl: f.freelancerProfile?.aadharUrl || '',
     age: f.freelancerProfile?.age || 'N/A',
     gender: f.freelancerProfile?.gender || 'N/A',
+    title: f.freelancerProfile?.title || 'N/A',
+    language: f.freelancerProfile?.language || 'N/A',
+    credentials: f.freelancerProfile?.credentials || '',
+    sample: f.freelancerProfile?.sample || '',
+    rate: f.freelancerProfile?.rate || 0,
+    rushRate: f.freelancerProfile?.rushRate || 'N/A',
+    availabilityType: f.freelancerProfile?.availabilityType || 'N/A',
+    fastestTurn: f.freelancerProfile?.fastestTurn || 'N/A',
     writerLevel: f.freelancerProfile?.writerLevel || 'JUNIOR',
     slaScore: f.slaScore ?? 50,
     slaBreakdown: f.slaBreakdown ?? {},
@@ -356,6 +366,10 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                         <div style={{ fontSize: 11, color: 'var(--teal-light)', marginBottom: 8, fontWeight: 700, letterSpacing: '0.05em' }}>APPLICATION DETAILS</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                           <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Title & Language</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.title} ({selected_w.language})</div>
+                          </div>
+                          <div>
                             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Qualification</div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.education}</div>
                           </div>
@@ -364,12 +378,24 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.experience} years</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Age / Gender</div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.age} / {selected_w.gender}</div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Rates (Std / Rush)</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>${selected_w.rate}/100w / {selected_w.rushRate}</div>
                           </div>
                           <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Availability & Turnaround</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.availabilityType} / {selected_w.fastestTurn}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Credentials/Certifications</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{selected_w.credentials || 'None'}</div>
+                          </div>
+                          <div style={{ gridColumn: 'span 2' }}>
                             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Bio</div>
                             <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>{selected_w.bio || 'No bio provided'}</div>
+                          </div>
+                          <div style={{ gridColumn: 'span 2' }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 2 }}>Writing Sample</div>
+                            <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.4, background: 'var(--surface2)', padding: '8px', borderRadius: '4px', maxHeight: '100px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{selected_w.sample || 'No sample provided'}</div>
                           </div>
                         </div>
 
@@ -389,6 +415,26 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                               🎨 Portfolio ↗
                             </a>
                           )}
+                          {selected_w.aadharUrl && (
+                            <a href={selected_w.aadharUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#8b5cf6', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, background: 'rgba(139,92,246,0.1)', padding: '4px 8px', borderRadius: 4 }}>
+                              🪪 Aadhar Card (KYC) ↗
+                            </a>
+                          )}
+                          {selected_w.portfolioFiles && (
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                              {(() => {
+                                try {
+                                  const files = JSON.parse(selected_w.portfolioFiles);
+                                  if (!Array.isArray(files)) return null;
+                                  return files.map((file, i) => (
+                                    <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" style={{ color: '#f59e0b', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, background: 'rgba(245,158,11,0.1)', padding: '4px 8px', borderRadius: 4 }}>
+                                      📁 Portfolio File {i + 1} ↗
+                                    </a>
+                                  ));
+                                } catch (e) { return null; }
+                              })()}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -405,6 +451,9 @@ export function AdminWriters({ freelancers = [], isMobile }) {
                           {!v.done && <Btn small variant="ghost" onClick={() => {
                             import('./admin-shared').then(m => m.showToast(`Request for ${v.label} sent to ${selected_w.name}.`));
                           }} style={{ marginLeft: 'auto', fontSize: 10 }}>Request</Btn>}
+                          {v.label === 'KYC Submitted' && !selected_w.verified && (
+                             <Btn small onClick={() => handleUpdate(selected_w.id, { isVerified: true, status: 'Active', kycDone: true })} loading={loadingId === selected_w.id} style={{ marginLeft: !v.done ? '10px' : 'auto', fontSize: 10, background: 'var(--teal)', color: '#fff', border: 'none' }}>Verify & Approve</Btn>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -455,7 +504,7 @@ export function AdminWriters({ freelancers = [], isMobile }) {
         </div>
       )}
       {rejectionModal.open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'none', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400, animation: 'fadeUp .2s ease' }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Reject Writer Application</h3>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Please provide a reason for rejection. This will be shown to the writer.</p>

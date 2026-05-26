@@ -56,10 +56,13 @@ io.on("connection", (socket) => {
       logger.socket(socket.id, `User ${chalk.cyan(userId)} joined private room`);
     }
 
-    // Admins and SubAdmins also join global monitoring
-    if (role === "ADMIN" || role === "SUB_ADMIN") {
+    // Only ADMINS and sub-admins with order:moderate_chat permission join global monitoring
+    if (role === "ADMIN") {
       socket.join(`eagle_eye`);
       logger.socket(socket.id, `${chalk.yellow(role)} ${userId} enabled ${chalk.bold('Eagle Eye')} mode`);
+    } else if (role === "SUB_ADMIN" && data.permissions?.includes("order:moderate_chat")) {
+      socket.join(`eagle_eye`);
+      logger.socket(socket.id, `${chalk.yellow(role)} ${userId} enabled ${chalk.bold('Eagle Eye')} mode (chat moderator)`);
     }
     
     if (projectId) {
@@ -134,9 +137,17 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("admin_join_chat", (projectId) => {
-    socket.join(`project_${projectId}`);
-    logger.socket(socket.id, `${chalk.yellow('ADMIN')} hooked into project ${chalk.blue(projectId)}`);
+  socket.on("admin_join_chat", (data) => {
+    const { projectId, role, userId, permissions } = typeof data === 'string' ? { projectId: data, role: null, userId: null, permissions: [] } : data;
+    if (role === "ADMIN") {
+      socket.join(`project_${projectId}`);
+      logger.socket(socket.id, `${chalk.yellow('ADMIN')} hooked into project ${chalk.blue(projectId)}`);
+    } else if (role === "SUB_ADMIN" && permissions?.includes("order:moderate_chat")) {
+      socket.join(`project_${projectId}`);
+      logger.socket(socket.id, `${chalk.yellow('SUB_ADMIN')} hooked into project ${chalk.blue(projectId)} (moderator)`);
+    } else {
+      logger.warn(`Blocked ${role || 'unknown'} ${userId} from accessing project ${projectId} — missing order:moderate_chat`);
+    }
   });
 
   socket.on("reassign_freelancer", (data) => {

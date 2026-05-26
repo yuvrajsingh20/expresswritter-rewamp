@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-guards';
 
 export async function GET(req) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    if (!authUser || !checkPermission(authUser, 'payment:view_metrics')) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const orders = await prisma.order.findMany({

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 
 export async function POST(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const authUser = await getAuthUser();
+    if (!authUser || !checkPermission(authUser, 'order:assign_writer')) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
     const { id: projectId } = await params;
@@ -44,7 +44,7 @@ export async function POST(req, { params }) {
       data: {
         action: `${action === 'ADD' ? 'Added' : 'Removed'} collaborator ${freelancerId}`,
         projectId: projectId,
-        userId: session.user.id
+        userId: authUser.id
       }
     });
 
@@ -57,7 +57,7 @@ export async function POST(req, { params }) {
             ? `📢 Specialist ${freelancer.name} has joined the team to collaborate on this node.` 
             : `📢 Specialist ${freelancer.name} has left the collaboration stream.`,
           projectId: projectId,
-          senderId: session.user.id,
+          senderId: authUser.id,
           chatType: 'CLIENT_CHAT'
         }
       });

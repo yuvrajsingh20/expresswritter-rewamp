@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { useSession } from "next-auth/react";
 import { ShieldAlert, Eye, Phone, Mail, Link as LinkIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -19,6 +20,7 @@ interface FlaggedMessage {
 }
 
 export default function EagleEyeMonitor() {
+  const { data: session } = useSession();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [flaggedMessages, setFlaggedMessages] = useState<FlaggedMessage[]>([]);
 
@@ -26,8 +28,12 @@ export default function EagleEyeMonitor() {
     const newSocket = io();
     setSocket(newSocket);
 
-    // Admin joins global monitoring room
-    newSocket.emit("join_chat", { role: "ADMIN", userId: "admin-session-id" });
+    const user = session?.user as { role?: string; id?: string; permissions?: string[] } | undefined;
+    const role = user?.role || "ADMIN";
+    const userId = user?.id || "admin-session-id";
+    const permissions = user?.permissions || [];
+
+    newSocket.emit("join_chat", { role, userId, permissions });
 
     newSocket.on("flagged_message", (data: FlaggedMessage) => {
       setFlaggedMessages((prev) => [data, ...prev]);
@@ -36,11 +42,23 @@ export default function EagleEyeMonitor() {
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [session]);
 
   const jumpToOrderChat = (projectId: string) => {
     if (!socket) return;
-    socket.emit("admin_join_chat", projectId);
+
+    const user = session?.user as { role?: string; id?: string; permissions?: string[] } | undefined;
+    const modRole = user?.role || "ADMIN";
+    const modUserId = user?.id;
+    const modPermissions = user?.permissions || [];
+
+    const canModerate = modRole === "ADMIN" || modPermissions.includes("order:moderate_chat");
+    if (!canModerate) {
+      alert("You do not have permission to monitor chat rooms.");
+      return;
+    }
+
+    socket.emit("admin_join_chat", { projectId, role: modRole, userId: modUserId, permissions: modPermissions });
     alert(`Now monitoring live chat for Project #${projectId.slice(-6)}`);
   };
 

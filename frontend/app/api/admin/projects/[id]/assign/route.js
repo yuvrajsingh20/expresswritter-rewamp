@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 import { createNotification } from "@/lib/notify";
 import {
   safeSendEmail,
@@ -11,9 +11,9 @@ import {
 
 export async function POST(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const authUser = await getAuthUser();
+    if (!authUser || !checkPermission(authUser, 'order:assign_writer')) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
     const { id: projectId } = await params;
@@ -37,7 +37,7 @@ export async function POST(req, { params }) {
       data: {
         action: `Project assigned to freelancer ${freelancerId}`,
         projectId,
-        userId: session.user.id,
+        userId: authUser.id,
       },
     });
 

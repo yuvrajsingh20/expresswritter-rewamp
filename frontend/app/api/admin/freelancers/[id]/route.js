@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-guards';
 
 export async function PATCH(req, { params }) {
   try {
     const { id } = await params;
     const authUser = await getAuthUser(req);
-    if (!authUser || !['ADMIN', 'SUB_ADMIN'].includes(authUser.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    if (!authUser || !checkPermission(authUser, 'freelancer:verify')) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const data = await req.json();

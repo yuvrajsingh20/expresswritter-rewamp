@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 
 const prisma = new PrismaClient();
 
 export async function GET(request) {
-  const user = await getAuthUser(request);
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser(request);
+  if (!authUser || !checkPermission(authUser, "ticket:resolve")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -67,14 +68,19 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  const user = await getAuthUser(request);
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser(request);
+  if (!authUser || !checkPermission(authUser, "ticket:resolve")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
     const { id, status, priority, escalation, aiStatus } = await request.json();
-    
+
+    // Level 3 escalation requires ADMIN role (financial refunds, systemic errors)
+    if (escalation === "Level 3" && authUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "Level 3 escalation requires Admin privileges. Contact a Super Admin." }, { status: 403 });
+    }
+
     const updateDoc = {};
     if (status) updateDoc.status = status;
     if (priority) updateDoc.priority = priority;

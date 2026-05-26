@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, Table, Btn, Pill, Input, Select } from "./admin-shared";
+import { Card, CardHeader, Table, Btn, Pill, Input, Select, useToast } from "./admin-shared";
 
 export function AdminPromos() {
+  const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [promos, setPromos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,10 +29,19 @@ export function AdminPromos() {
       method: 'POST',
       body: JSON.stringify(newPromo),
       headers: { 'Content-Type': 'application/json' }
-    }).then(() => {
+    })
+    .then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Failed to create promo code");
+      }
+      toast(data.message || "Promo code created successfully!", "success");
       setShowCreate(false);
       setNewPromo({ code: '', type: 'PERCENTAGE', value: '', minOrderValue: '', usageLimit: '', expiryDate: '' });
       fetchPromos();
+    })
+    .catch((err) => {
+      toast(err.message, "error");
     });
   };
 
@@ -40,14 +50,36 @@ export function AdminPromos() {
       method: 'PATCH',
       body: JSON.stringify({ isActive: !currentStatus }),
       headers: { 'Content-Type': 'application/json' }
-    }).then(() => fetchPromos());
+    })
+    .then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Failed to update status");
+      }
+      toast(data.message || `Promo code ${!currentStatus ? 'enabled' : 'disabled'} successfully!`, "success");
+      fetchPromos();
+    })
+    .catch((err) => {
+      toast(err.message, "error");
+    });
   };
 
   const handleDelete = (id) => {
     if (confirm("Are you sure you want to delete this promo code?")) {
       fetch(`/api/admin/promos/${id}`, {
         method: 'DELETE'
-      }).then(() => fetchPromos());
+      })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || data.message || "Failed to delete promo code");
+        }
+        toast(data.message || "Promo code deleted successfully!", "success");
+        fetchPromos();
+      })
+      .catch((err) => {
+        toast(err.message, "error");
+      });
     }
   };
 

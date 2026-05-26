@@ -114,11 +114,11 @@ export default function ProductsPage() {
         .products-hero{padding:140px 32px 36px;maxWidth:1320px;margin:0 auto;position:relative}
         .products-hero h1{fontSize:48px;fontWeight:700;letterSpacing:-0.03em;lineHeight:1.05;maxWidth:820px;marginBottom:14px}
         .products-hero p{fontSize:16px;color:var(--text-muted);fontWeight:300;maxWidth:680px;lineHeight:1.6}
-        .filter-bar{position:sticky;top:69px;zIndex:30;background:rgba(10,10,20,0.95);backdropFilter:blur(20px);borderBottom:1px solid var(--border);padding:14px 32px}
+        .filter-bar{position:sticky;top:69px;zIndex:30;background:rgba(10,10,20,0.98);borderBottom:1px solid var(--border);padding:14px 32px}
         .catalog-grid{display:grid;gridTemplateColumns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:28px 32px 60px;maxWidth:1320px;margin:0 auto}
         .product-card{background:var(--surface);border:1px solid var(--border);borderRadius:12px;padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
         .product-card:hover{borderColor:var(--teal);transform:translateY(-2px);boxShadow:0 12px 32px rgba(13,148,136,0.15)}
-        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdropFilter:blur(6px);zIndex:1000}
+        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);zIndex:1000}
         .drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,92vw);background:var(--surface);borderLeft:1px solid var(--border);zIndex:1001;display:flex;flexDirection:column;boxShadow:-30px 0 60px rgba(0,0,0,0.6);animation:slideIn 0.3s ease-out}
         @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
       ` }} />

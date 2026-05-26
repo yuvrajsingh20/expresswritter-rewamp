@@ -111,7 +111,7 @@ function OrderStrip({ order, isActive, onClick }) {
 function DeliveredPopup({ project, onClose, onAction }) {
   if (!project) return null;
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 20 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 20 }}>
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 16, width: '100%', maxWidth: 440, padding: 32, textAlign: 'center', animation: 'scaleUp 0.3s ease' }}>
         <div style={{ width: 64, height: 64, background: 'rgba(34,197,94,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 20px' }}>🎉</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>Service Delivered!</h2>
@@ -593,38 +593,65 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
       </div>
 
       {/* Table */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflowX: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', padding: '10px 20px', borderBottom: '1px solid var(--border2)', background: 'var(--surface2)', minWidth: 600 }}>
-          {['Order', 'Service', 'Writer', 'Status', 'Due', 'Price'].map(h => (
-            <div key={h} style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>{h}</div>
-          ))}
-        </div>
-        {filtered.map((order, i) => {
-          const sc = STATUS_META[order.status] || STATUS_META['In Progress'];
-          const isSelected = selectedOrder === order.id;
-          return (
-            <div key={order.id} onClick={() => setSelectedOrder(isSelected ? null : order.id)} style={{
-              display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', minWidth: 600,
-              padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '1px solid var(--border2)' : 'none',
-              cursor: 'pointer', transition: 'background 0.15s',
-              background: isSelected ? 'rgba(13,148,136,0.08)' : 'transparent',
-            }}
-              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.displayId}</div>
-              <div style={{ fontSize: 13, paddingRight: 12 }}>{order.service}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.writer.split(' ').slice(0, 2).join(' ')}</div>
-              <div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 100, background: sc.bg, color: sc.color }}>
-                  {order.status}
-                </span>
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.due.replace(', 2026', '')}</div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>₹{order.price}</div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, overflow: 'hidden' }}>
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12 }}>
+            {filtered.length > 0 ? filtered.map((order, i) => {
+              const sc = STATUS_META[order.status] || STATUS_META['In Progress'];
+              const isSelected = selectedOrder === order.id;
+              return (
+                <div key={order.id} onClick={() => setSelectedOrder(isSelected ? null : order.id)} style={{ background: isSelected ? 'rgba(13,148,136,0.08)' : 'var(--surface2)', border: `1px solid ${isSelected ? 'var(--teal)' : 'var(--border2)'}`, borderRadius: 8, padding: 16, cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.displayId}</div>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 100, background: sc.bg, color: sc.color }}>{order.status}</span>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{order.service}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)' }}>
+                    <span>{order.writer.split(' ').slice(0, 2).join(' ')}</span>
+                    <span>{order.due.replace(', 2026', '')}</span>
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 14, fontWeight: 700 }}>₹{order.price}</div>
+                </div>
+              );
+            }) : (
+              <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim)' }}>No orders found matching your criteria.</div>
+            )}
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', padding: '10px 20px', borderBottom: '1px solid var(--border2)', background: 'var(--surface2)', minWidth: 600 }}>
+              {['Order', 'Service', 'Writer', 'Status', 'Due', 'Price'].map(h => (
+                <div key={h} style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>{h}</div>
+              ))}
             </div>
-          );
-        })}
+            {filtered.map((order, i) => {
+              const sc = STATUS_META[order.status] || STATUS_META['In Progress'];
+              const isSelected = selectedOrder === order.id;
+              return (
+                <div key={order.id} onClick={() => setSelectedOrder(isSelected ? null : order.id)} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 0.7fr 0.6fr', minWidth: 600,
+                  padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '1px solid var(--border2)' : 'none',
+                  cursor: 'pointer', transition: 'background 0.15s',
+                  background: isSelected ? 'rgba(13,148,136,0.08)' : 'transparent',
+                }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-light)' }}>{order.displayId}</div>
+                  <div style={{ fontSize: 13, paddingRight: 12 }}>{order.service}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.writer.split(' ').slice(0, 2).join(' ')}</div>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 100, background: sc.bg, color: sc.color }}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{order.due.replace(', 2026', '')}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>₹{order.price}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Expanded detail */}
@@ -724,7 +751,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
 
       {/* Ticket Modal */}
       {showTicketModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'none' }}>
           <div style={{ background: 'var(--surface)', padding: 24, borderRadius: 12, width: 450, border: '1px solid var(--border2)', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
             {ticketSuccess ? (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -801,7 +828,7 @@ function Orders({ selectedOrder, setSelectedOrder, projects = [], setActive, isM
 
       {/* Rating Modal */}
       {showRatingModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'none' }}>
           <div style={{ background: 'var(--surface)', padding: 32, borderRadius: 16, width: 400, border: '1px solid var(--border2)', textAlign: 'center' }}>
             {ratingSuccess ? (
               <div>
@@ -1279,7 +1306,7 @@ function ProfilePrompt({ onComplete }) {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'none', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <style>{`
         @keyframes softPop {
           from { opacity: 0; transform: scale(0.97) translateY(10px); }
@@ -1435,7 +1462,7 @@ function ServicesCatalog({ setActive, setOrderForm, isMobile }) {
             alignItems: 'center', 
             justifyContent: 'center', 
             zIndex: 1000, 
-            backdropFilter: 'blur(8px)',
+            backdropFilter: 'none',
             animation: 'fadeIn 0.2s ease-out'
           }}
         >
@@ -1621,6 +1648,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [paymentGateway, setPaymentGateway] = useState('razorpay');
   const [tab, setTab] = useState('All');
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [servicesList, setServicesList] = useState([]);
@@ -1855,10 +1883,10 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
     try {
       if (!form.isCustomSession && !selectedService) throw new Error("Service not selected");
 
-      // Secure dynamic Cashfree SDK script loader
-      const loadScript = (src) => {
+      // Shared Dynamic Script Loader
+      const loadScript = (src, globalVar) => {
         return new Promise((resolve) => {
-          if (window.Cashfree) {
+          if (window[globalVar]) {
             resolve(true);
             return;
           }
@@ -1870,69 +1898,160 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
         });
       };
 
-      const loaded = await loadScript("https://sdk.cashfree.com/js/v3/cashfree.js");
-      if (!loaded || !window.Cashfree) {
-        throw new Error("Cashfree SDK failed to load. Please verify your connection.");
-      }
+      if (paymentGateway === 'cashfree') {
+        const loaded = await loadScript("https://sdk.cashfree.com/js/v3/cashfree.js", "Cashfree");
+        if (!loaded || !window.Cashfree) {
+          throw new Error("Cashfree SDK failed to load. Please verify your connection.");
+        }
 
-      let order;
-      if (form.isCustomSession) {
-        const paymentRes = await fetch('/api/payments/cashfree-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: form.checkoutSessionId,
-            planKey: 'custom',
-            planName: form.category || 'Custom Package',
-            userId: session?.user?.id
-          }),
+        let order;
+        if (form.isCustomSession) {
+          const paymentRes = await fetch('/api/payments/cashfree-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: form.checkoutSessionId,
+              planKey: 'custom',
+              planName: form.category || 'Custom Package',
+              userId: session?.user?.id
+            }),
+          });
+
+          if (!paymentRes.ok) {
+            const errData = await paymentRes.json();
+            throw new Error(errData.message || 'Failed to initiate payment');
+          }
+          order = await paymentRes.json();
+        } else {
+          const paymentRes = await fetch('/api/payments/cashfree', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: amountToCharge,
+              idempotencyKey,
+              title: `${selectedService.name} Order`,
+              description: form.details,
+              deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+              serviceType: selectedService.id,
+              attachments: form.attachments,
+              couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+              baseAmount: baseAmount
+            }),
+          });
+
+          if (!paymentRes.ok) {
+            const errData = await paymentRes.json();
+            throw new Error(errData.message || 'Failed to initiate payment');
+          }
+          order = await paymentRes.json();
+        }
+
+        if (!order.payment_session_id) {
+          throw new Error("No payment session received from gateway.");
+        }
+
+        const envMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === "production" ? "production" : "sandbox";
+        const cashfree = window.Cashfree({
+          mode: envMode,
         });
 
-        if (!paymentRes.ok) {
-          const errData = await paymentRes.json();
-          throw new Error(errData.message || 'Failed to initiate payment');
+        const checkoutOptions = {
+          paymentSessionId: order.payment_session_id,
+          redirectTarget: "_self",
+        };
+
+        await cashfree.checkout(checkoutOptions);
+      } else if (paymentGateway === 'razorpay') {
+        const loaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js", "Razorpay");
+        if (!loaded || !window.Razorpay) {
+          throw new Error("Razorpay SDK failed to load. Please verify your connection.");
         }
-        order = await paymentRes.json();
-      } else {
-        const paymentRes = await fetch('/api/payments/cashfree', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: amountToCharge,
-            idempotencyKey,
-            title: `${selectedService.name} Order`,
-            description: form.details,
-            deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
-            serviceType: selectedService.id,
-            attachments: form.attachments,
-            couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-            baseAmount: baseAmount
-          }),
+
+        let order;
+        if (form.isCustomSession) {
+          const paymentRes = await fetch('/api/payments/razorpay-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: form.checkoutSessionId,
+              planKey: 'custom',
+              planName: form.category || 'Custom Package',
+              userId: session?.user?.id
+            }),
+          });
+
+          if (!paymentRes.ok) {
+            const errData = await paymentRes.json();
+            throw new Error(errData.message || 'Failed to initiate payment');
+          }
+          order = await paymentRes.json();
+        } else {
+          const paymentRes = await fetch('/api/payments/razorpay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: amountToCharge,
+              idempotencyKey,
+              title: `${selectedService.name} Order`,
+              description: form.details,
+              deadline: form.deadline || new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+              serviceType: selectedService.id,
+              attachments: form.attachments,
+              couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+              baseAmount: baseAmount
+            }),
+          });
+
+          if (!paymentRes.ok) {
+            const errData = await paymentRes.json();
+            throw new Error(errData.message || 'Failed to initiate payment');
+          }
+          order = await paymentRes.json();
+        }
+
+        if (!order.id) {
+          throw new Error("No payment session received from gateway.");
+        }
+
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: order.currency,
+          name: "Expresswriters",
+          description: "Writing Service Payment",
+          order_id: order.id,
+          handler: async (response) => {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok) {
+              window.location.href = `/student?tab=orders&orderId=${verifyData.projectId || ''}`;
+            } else {
+              alert(verifyData.message || "Payment verification failed.");
+            }
+          },
+          prefill: {
+            name: userProfile?.name || session?.user?.name || "",
+            email: userProfile?.email || session?.user?.email || "",
+          },
+          theme: {
+            color: "#0d9488",
+          },
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.on('payment.failed', function (response) {
+          alert("Payment failed: " + response.error.description);
         });
-
-        if (!paymentRes.ok) {
-          const errData = await paymentRes.json();
-          throw new Error(errData.message || 'Failed to initiate payment');
-        }
-        order = await paymentRes.json();
+        paymentObject.open();
       }
-
-      if (!order.payment_session_id) {
-        throw new Error("No payment session received from gateway.");
-      }
-
-      // Initialize Cashfree client SDK instance
-      const envMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === "production" ? "production" : "sandbox";
-      const cashfree = window.Cashfree({
-        mode: envMode,
-      });
-
-      const checkoutOptions = {
-        paymentSessionId: order.payment_session_id,
-        redirectTarget: "_self", // Redirect inside standard self viewport
-      };
-
-      await cashfree.checkout(checkoutOptions);
     } catch (error) {
       console.error("Order creation failed:", error);
       alert(error.message || "Something went wrong. Please try again.");
@@ -2147,6 +2266,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
                           onChange={e => setCouponInput(e.target.value.toUpperCase())}
                           style={{
                             flex: 1,
+                            minWidth: 0,
                             background: 'var(--surface2)',
                             border: '1.5px solid var(--border2)',
                             borderRadius: 8,
@@ -2166,6 +2286,7 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
                             border: 'none',
                             padding: '10px 20px',
                             borderRadius: 8,
+                            flexShrink: 0,
                             fontSize: 13,
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -2184,6 +2305,33 @@ function NewOrder({ setActive, isMobile, onOrderCreated, form, setForm, userProf
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Payment Gateway Selection */}
+                <div style={{ background: 'var(--surface)', borderRadius: 10, padding: '20px 28px', marginBottom: 28, border: '1px solid var(--border2)' }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', display: 'block', marginBottom: 16 }}>PAYMENT METHOD</label>
+                  <div style={{ display: 'flex', gap: 16, flexDirection: isMobile ? 'column' : 'row' }}>
+                    <div 
+                      onClick={() => setPaymentGateway('razorpay')}
+                      style={{ flex: 1, padding: '16px', borderRadius: 8, border: `1.5px solid ${paymentGateway === 'razorpay' ? 'var(--teal)' : 'var(--border2)'}`, background: paymentGateway === 'razorpay' ? 'rgba(13,148,136,0.08)' : 'var(--surface2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s' }}
+                    >
+                      <input type="radio" checked={paymentGateway === 'razorpay'} readOnly style={{ accentColor: 'var(--teal)', width: 18, height: 18 }} />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: paymentGateway === 'razorpay' ? 'var(--teal-light)' : 'var(--text)' }}>Razorpay</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Cards, UPI, NetBanking</span>
+                      </div>
+                    </div>
+                    <div 
+                      onClick={() => setPaymentGateway('cashfree')}
+                      style={{ flex: 1, padding: '16px', borderRadius: 8, border: `1.5px solid ${paymentGateway === 'cashfree' ? 'var(--teal)' : 'var(--border2)'}`, background: paymentGateway === 'cashfree' ? 'rgba(13,148,136,0.08)' : 'var(--surface2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s' }}
+                    >
+                      <input type="radio" checked={paymentGateway === 'cashfree'} readOnly style={{ accentColor: 'var(--teal)', width: 18, height: 18 }} />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: paymentGateway === 'cashfree' ? 'var(--teal-light)' : 'var(--text)' }}>Cashfree</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Cards, UPI, Wallets</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 32 }}>
@@ -2580,7 +2728,7 @@ const [orderForm, setOrderForm] = useState(() => {
           right: 0,
           bottom: 0,
           background: 'rgba(13, 19, 42, 0.92)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'none',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

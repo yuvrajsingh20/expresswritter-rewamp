@@ -2435,8 +2435,7 @@ export default function App() {
               window.history.replaceState({}, '', window.location.pathname);
             } else {
               setPaymentVerifyError(data.message || 'Payment verification failed.');
-              alert(data.message || 'Payment verification failed.');
-              window.history.replaceState({}, '', window.location.pathname);
+              router.push(`/payment-failed?reason=${encodeURIComponent(data.message || 'Payment verification failed.')}`);
             }
           } catch (err) {
             console.error("Verification failed", err);

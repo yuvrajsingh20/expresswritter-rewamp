@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 
 export async function PATCH(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session || !["ADMIN", "SUB_ADMIN"].includes(session.user.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser();
+  if (!authUser || !checkPermission(authUser, "promo:manage")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -34,8 +34,8 @@ export async function PATCH(req, { params }) {
     // Log the action
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
-        userName: session.user.name,
+        userId: authUser.id,
+        userName: authUser.name,
         action: `Updated Promo Code: ${updated.code} (Active: ${updated.isActive})`,
         ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       }
@@ -49,9 +49,9 @@ export async function PATCH(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser();
+  if (!authUser || !checkPermission(authUser, "promo:manage")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -64,8 +64,8 @@ export async function DELETE(req, { params }) {
     // Log the action
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
-        userName: session.user.name,
+        userId: authUser.id,
+        userName: authUser.name,
         action: `Deleted Promo Code: ${deleted.code}`,
         ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       }

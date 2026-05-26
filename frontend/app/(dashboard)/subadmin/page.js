@@ -1,17 +1,8 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
-import Sidebar from '@/components/dashboard/Sidebar';
 import ProjectTable from '@/components/dashboard/ProjectTable';
-import { 
-  Users, Briefcase, MessageSquare, 
-  Search, Bell, Filter, Clock,
-  ChevronRight, Calendar, UserPlus,
-  ArrowUpRight
-} from 'lucide-react';
 
 export default function SubAdminDashboard() {
-  const { data: session } = useSession();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,146 +25,118 @@ export default function SubAdminDashboard() {
   }, []);
 
   const stats = useMemo(() => [
-    { label: 'Pending Assignment', value: projects.filter(p => p.status === 'CREATED').length || '12', icon: UserPlus, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Active Drafts', value: projects.filter(p => p.status === 'ASSIGNED').length || '28', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Urgent Replies', value: '5', icon: MessageSquare, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Pending Assignment', value: projects.filter(p => p.status === 'CREATED').length || '12', color: 'var(--amber)', icon: '📋' },
+    { label: 'Active Drafts', value: projects.filter(p => p.status === 'ASSIGNED').length || '28', color: 'var(--blue)', icon: '⚡' },
+    { label: 'Urgent Replies', value: '5', color: 'var(--red)', icon: '💬' },
   ], [projects]);
 
   if (loading) {
     return (
-      <div className="flex bg-[#f8fafc] min-h-screen">
-        <div className="w-64 bg-white border-r border-slate-200 p-6">
-          <div className="w-10 h-10 bg-[#002D5B] rounded-lg mb-8" />
-          <div className="space-y-3">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-10 bg-slate-100 rounded-lg animate-pulse" />)}
-          </div>
+      <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
+          {[1,2,3].map(i => (
+            <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '18px', animation: 'pulse 2s infinite' }}>
+              <div style={{ height: 10, width: '60%', background: 'var(--surface3)', borderRadius: 4, marginBottom: 10 }} />
+              <div style={{ height: 30, width: '80%', background: 'var(--surface3)', borderRadius: 4, marginBottom: 3 }} />
+            </div>
+          ))}
         </div>
-        <div className="flex-1 p-10">
-          <div className="h-8 w-48 bg-slate-200 rounded mb-8 animate-pulse" />
-          <div className="grid grid-cols-3 gap-6 mb-8">
-            {[1,2,3].map(i => <div key={i} className="h-32 bg-white rounded-xl border border-slate-200 p-6 animate-pulse">
-              <div className="h-4 w-24 bg-slate-100 rounded mb-4" />
-              <div className="h-8 w-16 bg-slate-100 rounded" />
-            </div>)}
-          </div>
-          <div className="h-64 bg-white rounded-xl border border-slate-200 animate-pulse" />
-        </div>
+        <div style={{ height: 200, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8 }} />
       </div>
     );
   }
 
   return (
-    <div className="flex bg-[#f8fafc] min-h-screen">
-      <Sidebar role="SUB_ADMIN" />
-      
-      <div className="flex-1 md:ml-64 flex flex-col">
-        {/* SubAdmin Header */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-10 sticky top-0 z-10 transition-all">
-          <div className="flex items-center gap-6">
-            <h1 className="text-sm font-bold text-slate-800">Team Management</h1>
-            <div className="h-6 w-[1px] bg-slate-100" />
-            <div className="flex items-center gap-2 text-slate-400">
-               <Calendar size={14} />
-               <span className="text-[10px] font-bold uppercase tracking-wider">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}</span>
+    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, color: 'var(--text)' }}>Team Overview</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Monitoring active drafting cycles and resource allocation.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 28 }}>
+        {stats.map((s, i) => (
+          <div key={i} style={{
+            background: `linear-gradient(135deg, var(--surface2) 60%, ${s.color}0d 100%)`,
+            border: `1px solid ${s.color}22`, borderRadius: 8, padding: '18px',
+            animation: `fadeUp .3s ease ${i * .06}s both`, position: 'relative', overflow: 'hidden'
+          }}>
+            <div style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: '50%', background: `radial-gradient(circle, ${s.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{s.label}</span>
+              <span style={{ fontSize: 16 }}>{s.icon}</span>
             </div>
+            <div style={{ fontSize: 30, fontWeight: 700, color: s.color, marginBottom: 3, letterSpacing: '-0.02em' }}>{s.value}</div>
           </div>
-          
-          <div className="flex items-center gap-6">
-            <button className="p-2.5 bg-slate-50 border border-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition-all">
-               <Bell size={18} />
-            </button>
-            <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">SA</div>
-               <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest hidden sm:block">Manager Access</p>
-            </div>
-          </div>
-        </header>
+        ))}
+      </div>
 
-        <main className="p-4 md:p-10 max-w-7xl mx-auto w-full space-y-6 md:space-y-10">
-          <div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">Team Overview</h2>
-            <p className="text-slate-400 text-sm font-medium">Monitoring active drafting cycles and resource allocation.</p>
-          </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+        <div>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--text)' }}>Managed Project Log</h2>
+          <ProjectTable projects={projects} loading={loading} role="SUB_ADMIN" />
+        </div>
 
-          {/* Compact Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stats.map((stat) => (
-              <div key={stat.label} className="card-subtle p-6 flex items-center gap-5">
-                <div className={`w-12 h-12 ${stat.bg} ${stat.color} flex items-center justify-center rounded-xl`}>
-                   <stat.icon size={20} />
+        <div>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--text)' }}>Manager Toolkit</h2>
+          <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>System Health</p>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+                  <span>Assignment Rate</span>
+                  <span>84%</span>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                  <p className="text-2xl font-extrabold text-slate-900 leading-none">{stat.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Project List Area */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-lg font-bold text-slate-800">Managed Project Log</h3>
-                <div className="flex bg-white border border-slate-200 rounded-lg p-1">
-                   <button className="px-4 py-2 text-[10px] font-bold text-blue-600 bg-blue-50 rounded-md">All Streams</button>
-                   <button className="px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-slate-600">Pending</button>
+                <div style={{ height: 4, background: 'var(--surface3)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: '84%', background: 'var(--blue)', borderRadius: 2 }} />
                 </div>
               </div>
-              <ProjectTable projects={projects} loading={loading} role="SUB_ADMIN" />
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+                  <span>QA Completion</span>
+                  <span>92%</span>
+                </div>
+                <div style={{ height: 4, background: 'var(--surface3)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: '92%', background: 'var(--green)', borderRadius: 2 }} />
+                </div>
+              </div>
             </div>
 
-            {/* Manager Toolkit Area */}
-            <div className="space-y-6">
-               <h3 className="text-lg font-bold text-slate-800 px-1">Manager Toolkit</h3>
-               <div className="card-subtle p-6 space-y-8">
-                  <div className="space-y-4">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">System Health</p>
-                     <div className="space-y-6">
-                        <div className="space-y-2">
-                           <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                             <span>Assignment Rate</span>
-                             <span>84%</span>
-                           </div>
-                           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 w-[84%] transition-all duration-1000" />
-                           </div>
-                        </div>
-                        <div className="space-y-2">
-                           <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                             <span>QA Completion</span>
-                             <span>92%</span>
-                           </div>
-                           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-emerald-500 w-[92%] transition-all duration-1000" />
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="space-y-4 border-t border-slate-50 pt-8">
-                     <button className="w-full btn-primary py-3">
-                        <UserPlus size={16} /> Broadcast New Slot
-                     </button>
-                     <button className="w-full btn-outline py-3">
-                        Generate Team Audit
-                     </button>
-                  </div>
-               </div>
-
-               <div className="card-subtle p-6 bg-blue-600 text-white group cursor-pointer overflow-hidden relative">
-                  <div className="relative z-10">
-                    <h4 className="text-base font-bold mb-2">Live Chat Hub</h4>
-                    <p className="text-white/70 text-xs mb-6">3 writers are waiting for project clarification.</p>
-                    <div className="inline-flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-all">
-                      Open Communication Pane <ArrowUpRight size={14} />
-                    </div>
-                  </div>
-                  <MessageSquare className="absolute bottom-[-20px] right-[-20px] text-white/5 w-32 h-32 transform rotate-12" />
-               </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{
+                padding: '9px 14px', background: 'var(--teal)', color: '#fff', borderRadius: 6,
+                textAlign: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                transition: 'opacity .2s'
+              }}>
+                Broadcast New Slot
+              </div>
+              <div style={{
+                padding: '9px 14px', background: 'transparent', color: 'var(--text-muted)',
+                border: '1px solid var(--border)', borderRadius: 6, textAlign: 'center',
+                cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all .2s'
+              }}>
+                Generate Team Audit
+              </div>
             </div>
           </div>
-        </main>
+
+          <div style={{
+            marginTop: 14, background: 'linear-gradient(135deg, var(--teal) 0%, #115e59 100%)',
+            borderRadius: 8, padding: 16, position: 'relative', overflow: 'hidden', cursor: 'pointer'
+          }}>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Live Chat Hub</h4>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 12 }}>3 writers are waiting for project clarification.</p>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.12)',
+                padding: '7px 14px', borderRadius: 6
+              }}>
+                Open Communication Pane ↗
+              </div>
+            </div>
+            <span style={{ position: 'absolute', bottom: -20, right: -20, fontSize: 100, opacity: 0.08, transform: 'rotate(12deg)' }}>💬</span>
+          </div>
+        </div>
       </div>
     </div>
   );

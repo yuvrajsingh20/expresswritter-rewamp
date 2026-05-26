@@ -7,6 +7,7 @@ import {
   AlertCircle, Plus, Check, X, UserPlus, ChevronRight, ShieldCheck
 } from 'lucide-react';
 import { io } from 'socket.io-client';
+import { Table, Pill, Btn, Card } from '@/app/(dashboard)/admin/admin-shared';
 
 const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
   const [assigningId, setAssigningId] = useState(null);
@@ -59,17 +60,6 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
     }
   };
 
-  const getStatusStyle = (status) => {
-    const styles = {
-      CREATED: 'bg-blue-50 text-blue-600 border-blue-100',
-      ASSIGNED: 'bg-slate-50 text-slate-600 border-slate-200',
-      IN_PROGRESS: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-      REVIEW: 'bg-amber-50 text-amber-600 border-amber-100',
-      COMPLETED: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    };
-    return styles[status] || 'bg-slate-50 text-slate-400 border-slate-100';
-  };
-
   const getRolePrefix = () => {
     if (role === 'ADMIN') return '/admin/projects';
     if (role === 'SUB_ADMIN') return '/subadmin/projects';
@@ -78,21 +68,71 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
 
   if (loading) {
     return (
-      <div className="card-subtle py-32 flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Aggregating stream data...</p>
+      <div style={{
+        background: 'var(--surface2)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        padding: '80px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 16
+      }}>
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
+          border: '3px solid var(--surface3)',
+          borderTopColor: 'var(--teal)',
+          animation: 'spin .8s linear infinite'
+        }} />
+        <p style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em'
+        }}>
+          Aggregating stream data...
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (!projects || projects.length === 0) {
     return (
-      <div className="card-subtle py-32 flex flex-col items-center justify-center text-center px-10">
-        <div className="w-16 h-16 bg-slate-50 rounded-sm flex items-center justify-center mb-6 border border-[#E5E5E5]">
-          <AlertCircle size={28} className="text-slate-200" />
+      <div style={{
+        background: 'var(--surface2)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        padding: '80px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          width: 56,
+          height: 56,
+          background: 'var(--surface3)',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 20,
+          border: '1px solid var(--border)'
+        }}>
+          <AlertCircle size={28} style={{ color: 'var(--text-muted)' }} />
         </div>
-        <h3 className="text-lg font-bold text-slate-800 mb-2">No active projects found</h3>
-        <p className="text-sm text-slate-400 max-w-xs mx-auto">All current requests and historical data will appear here once initialized.</p>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+          No active projects found
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300, margin: '0 auto' }}>
+          All current requests and historical data will appear here once initialized.
+        </p>
       </div>
     );
   }
@@ -124,137 +164,193 @@ const ProjectTable = ({ projects = [], loading = false, role = 'ADMIN' }) => {
   };
 
   return (
-    <div className="card-subtle overflow-hidden border-t-4 border-blue-600">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-100/50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              <th className="px-4 py-4">Service</th>
-              <th className="px-4 py-4">Student</th>
-              <th className="px-4 py-4">Purchase</th>
-              <th className="px-4 py-4">Specialists (Team)</th>
-              <th className="px-4 py-4 text-right">Operational Link</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
-            {projects.map((project) => (
-              <tr key={project.id} className="hover:bg-blue-50/30 transition-all duration-150">
-                <td className="px-4 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-blue-50 rounded flex items-center justify-center text-blue-600 border border-blue-100">
-                      <FileText size={18} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">{project.title}</p>
-                      <p className="text-[9px] text-slate-400">#{project.id.slice(-6).toUpperCase()}</p>
-                    </div>
-                  </div>
-                </td>
+    <Card>
+      <Table
+        cols={['Service', 'Student', 'Purchase', 'Specialists (Team)', 'Operational Link']}
+        rows={projects.map((project) => [
+          // Cell 1: Service
+          <div key={`srv-${project.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ 
+              width: 32, 
+              height: 32, 
+              background: 'var(--surface3)', 
+              borderRadius: 6, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--teal-light)', 
+              border: '1px solid var(--border)',
+              flexShrink: 0
+            }}>
+              <FileText size={16} />
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{project.title}</p>
+              <p style={{ fontSize: 9, color: 'var(--text-muted)', margin: '2px 0 0 0' }}>#{project.id.slice(-6).toUpperCase()}</p>
+            </div>
+          </div>,
 
-                <td className="px-4 py-5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-none bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[10px] border border-slate-200">
-                      {project.student?.name?.charAt(0) || <User size={12} />}
-                    </div>
-                    <div className="text-xs font-bold text-slate-800 truncate max-w-[100px]">{project.student?.name || 'Unknown'}</div>
-                  </div>
-                </td>
+          // Cell 2: Student
+          <div key={`stu-${project.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ 
+              width: 24, 
+              height: 24, 
+              borderRadius: 6, 
+              background: 'var(--surface3)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--text-muted)', 
+              fontWeight: 700, 
+              fontSize: 10, 
+              border: '1px solid var(--border)',
+              flexShrink: 0
+            }}>
+              {project.student?.name?.charAt(0) || <User size={10} />}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }} title={project.student?.name || 'Unknown'}>
+              {project.student?.name || 'Unknown'}
+            </div>
+          </div>,
 
-                <td className="px-4 py-5">
-                  {project.orders?.some(o => o.paymentStatus === 'PAID') ? (
-                    <span className="px-2 py-0.5 rounded-none text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
-                      PAID: ₹{project.amount}
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-none text-[9px] font-black bg-amber-400 text-white uppercase tracking-wider">
-                      PENDING
-                    </span>
-                  )}
-                </td>
+          // Cell 3: Purchase
+          project.orders?.some(o => o.paymentStatus === 'PAID') ? (
+            <Pill key={`pur-${project.id}`} label={`PAID: ₹${project.amount}`} color="var(--green)" />
+          ) : (
+            <Pill key={`pur-${project.id}`} label="PENDING" color="var(--amber)" />
+          ),
 
-                <td className="px-4 py-5">
-                  <div className="flex flex-col gap-2">
-                    {/* Lead Writer */}
-                    {project.freelancer ? (
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-indigo-700 font-bold text-[11px]">
-                          <ShieldCheck size={14} className="shrink-0" /> {project.freelancer.name} (Lead)
-                        </div>
-                        {role === 'ADMIN' && (
-                          <button
-                            onClick={() => handlePayout(project)}
-                            className="text-[9px] font-bold text-blue-600 hover:underline text-left ml-5"
-                          >
-                            + ADD PAYOUT
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <select
-                        onChange={(e) => handleAssign(project.id, e.target.value)}
-                        className="bg-orange-600 text-white text-[10px] font-bold rounded px-2 py-1.5 cursor-pointer hover:bg-orange-700 transition-all border-none w-full max-w-[120px]"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>➜ ALLOCATE LEAD</option>
-                        {freelancers.map(f => (
-                          <option key={f.id} value={f.id} className="text-slate-900 bg-white">{f.name}</option>
-                        ))}
-                      </select>
-                    )}
+          // Cell 4: Specialists (Team)
+          <div key={`spec-${project.id}`} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Lead Writer */}
+            {project.freelancer ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--teal-light)', fontWeight: 700, fontSize: 12 }}>
+                  <ShieldCheck size={14} style={{ flexShrink: 0 }} /> {project.freelancer.name} <span style={{ opacity: 0.6, fontSize: 10, fontWeight: 400 }}>(Lead)</span>
+                </div>
+                {role === 'ADMIN' && (
+                  <button
+                    onClick={() => handlePayout(project)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: 'var(--teal-light)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      marginLeft: 20,
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    + ADD PAYOUT
+                  </button>
+                )}
+              </div>
+            ) : (
+              <select
+                onChange={(e) => handleAssign(project.id, e.target.value)}
+                style={{
+                  background: 'var(--surface3)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  maxWidth: 140,
+                  outline: 'none'
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled style={{ background: 'var(--surface2)', color: 'var(--text-dim)' }}>➜ ALLOCATE LEAD</option>
+                {freelancers.map(f => (
+                  <option key={f.id} value={f.id} style={{ background: 'var(--surface2)', color: 'var(--text)' }}>{f.name}</option>
+                ))}
+              </select>
+            )}
 
-                    {/* Collaborators */}
-                    {project.collaborators?.map(collab => (
-                      <div key={collab.id} className="flex items-center justify-between gap-2 text-slate-600 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <User size={12} className="shrink-0" /> {collab.name}
-                        </div>
-                        {role === 'ADMIN' && (
-                          <button
-                            onClick={() => handleCollaborator(project.id, collab.id, 'REMOVE')}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Add Collaborator Action */}
-                    {role === 'ADMIN' && project.freelancer && (
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) handleCollaborator(project.id, e.target.value, 'ADD');
-                        }}
-                        className="text-[9px] font-bold text-slate-400 bg-white border border-slate-200 rounded px-2 py-1 cursor-pointer hover:border-slate-300 transition-all w-full max-w-[120px]"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>+ ADD WRITER</option>
-                        {freelancers
-                          .filter(f => f.id !== project.freelancerId && !project.collaboratorIds?.includes(f.id))
-                          .map(f => (
-                            <option key={f.id} value={f.id}>{f.name}</option>
-                          ))
-                        }
-                      </select>
-                    )}
-                  </div>
-                </td>
-
-                <td className="px-4 py-5 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Link href={`${getRolePrefix()}/${project.id}`}>
-                      <button className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-slate-800 transition-all">
-                        OPEN BRIDGE
-                      </button>
-                    </Link>
-                  </div>
-                </td>
-              </tr>
+            {/* Collaborators */}
+            {project.collaborators?.map(collab => (
+              <div key={collab.id} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                gap: 8, 
+                color: 'var(--text-muted)', 
+                fontWeight: 600, 
+                fontSize: 11, 
+                background: 'var(--surface3)', 
+                padding: '4px 8px', 
+                borderRadius: 6, 
+                border: '1px solid var(--border)' 
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <User size={12} style={{ flexShrink: 0 }} /> {collab.name}
+                </div>
+                {role === 'ADMIN' && (
+                  <button
+                    onClick={() => handleCollaborator(project.id, collab.id, 'REMOVE')}
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      padding: 0, 
+                      color: 'var(--red)', 
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+
+            {/* Add Collaborator Action */}
+            {role === 'ADMIN' && project.freelancer && (
+              <select
+                onChange={(e) => {
+                  if (e.target.value) handleCollaborator(project.id, e.target.value, 'ADD');
+                }}
+                style={{
+                  background: 'var(--surface3)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 6,
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  maxWidth: 140,
+                  outline: 'none'
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled style={{ background: 'var(--surface2)', color: 'var(--text-dim)' }}>+ ADD WRITER</option>
+                {freelancers
+                  .filter(f => f.id !== project.freelancerId && !project.collaboratorIds?.includes(f.id))
+                  .map(f => (
+                    <option key={f.id} value={f.id} style={{ background: 'var(--surface2)', color: 'var(--text)' }}>{f.name}</option>
+                  ))
+                }
+              </select>
+            )}
+          </div>,
+
+          // Cell 5: Operational Link
+          <div key={`lnk-${project.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+            <Link href={`${getRolePrefix()}/${project.id}`}>
+              <Btn small>OPEN BRIDGE</Btn>
+            </Link>
+          </div>
+        ])}
+      />
+    </Card>
   );
 };
 

@@ -35,8 +35,8 @@ export async function GET(req) {
     
     if (!authUser) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    // For admin, fetch all projects directly with simpler query
-    if (authUser.role === 'ADMIN') {
+    // For admin and subadmin, fetch all projects directly with simpler query
+    if (authUser.role === 'ADMIN' || authUser.role === 'SUB_ADMIN') {
       const prisma = (await import('@/lib/prisma')).default;
       const projects = await prisma.project.findMany({
         orderBy: { createdAt: 'desc' },

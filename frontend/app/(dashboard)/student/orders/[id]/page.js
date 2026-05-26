@@ -65,6 +65,7 @@ export default function OrderDetailsPage() {
             }
           } else {
             console.error("Cashfree verification failed:", data.message);
+            router.push(`/payment-failed?reason=${encodeURIComponent(data.message || 'Payment verification failed.')}`);
           }
         } catch (error) {
           console.error("Cashfree verify connection error:", error);
@@ -351,7 +352,7 @@ export default function OrderDetailsPage() {
         setShowSuccessModal(true);
         router.refresh();
       } else {
-        alert(data.message || "Payment verification failed. If you have paid, please wait a minute and retry.");
+        router.push(`/payment-failed?reason=${encodeURIComponent(data.message || "Payment verification failed. If you have paid, please wait a minute and retry.")}`);
       }
     } catch (error) {
       console.error("Verification failed:", error);

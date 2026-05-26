@@ -99,6 +99,7 @@ model FreelancerProfile {
   linkedinUrl   String?
   photoUrl      String?  // Profile photo
   portfolioUrl  String?
+  portfolioFiles String? // JSON string of uploaded portfolio files
   rating        Float    @default(5.0)
   totalProjects Int      @default(0)
   isVerified    Boolean  @default(false)
@@ -110,6 +111,18 @@ model FreelancerProfile {
   // Regional Settings
   country       String?
   currency      String?  @default("USD")
+  
+  // Onboarding extended fields
+  title            String?
+  language         String?
+  credentials      String?
+  sample           String?
+  rate             Float?
+  rushRate         String?
+  availabilityType String?
+  fastestTurn      String?
+  aadharUrl        String?
+  kycDone          Boolean  @default(false)
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

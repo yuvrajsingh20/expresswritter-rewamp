@@ -31,7 +31,7 @@ function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabl
 /* ─── NAVBAR ─── */
 function Navbar({ cart, onCartClick, onLogin }) {
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(10,10,20,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(10,10,20,0.85)', backdropFilter: 'none', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>X</div>
         <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
@@ -117,7 +117,7 @@ function ProductDrawer({ prod, onClose, onAdd }) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 1100, animation: 'fadeIn .2s ease' }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'none', zIndex: 1100, animation: 'fadeIn .2s ease' }} />
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(620px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 1200, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '22px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           <div style={{ width: 54, height: 54, borderRadius: 12, background: 'linear-gradient(135deg,rgba(13,148,136,0.25),rgba(13,148,136,0.08))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{prod.icon}</div>
@@ -222,7 +222,7 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
   const total = subtotal + fee + tax;
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, animation: 'fadeIn .2s' }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'none', zIndex: 1100, animation: 'fadeIn .2s' }} />
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(480px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 1200, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div><div style={{ fontSize: 17, fontWeight: 700 }}>Your Cart</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{cart.length} {cart.length === 1 ? 'item' : 'items'}</div></div>
@@ -367,7 +367,7 @@ export default function ServicesPage() {
         </section>
 
         {/* Sticky category bar */}
-        <div style={{ position: 'sticky', top: 66, zIndex: 50, background: 'rgba(10,10,20,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
+        <div style={{ position: 'sticky', top: 66, zIndex: 50, background: 'rgba(10,10,20,0.95)', backdropFilter: 'none', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
           <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 5, padding: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 9, flexWrap: 'wrap' }}>
               <button onClick={() => setActiveCat('all')} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === 'all' ? 'var(--teal)' : 'transparent', color: activeCat === 'all' ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>All</button>

@@ -31,13 +31,25 @@ async function main() {
 
   console.log('Admin seeded:', admin.email);
 
-  // Seed SubAdmin
+  // Seed SubAdmin (with all available permissions)
   const subAdmin = await prisma.user.upsert({
     where: { email: 'subadmin-expresswritter@yopmail.com' },
     update: {
       role: 'SUB_ADMIN',
       emailVerified: now,
       password,
+      permissions: [
+        'freelancer:verify',
+        'freelancer:earnings',
+        'order:read_assigned',
+        'order:assign_writer',
+        'order:moderate_chat',
+        'payment:view_metrics',
+        'payment:issue_links',
+        'promo:manage',
+        'ticket:resolve',
+        'system:config',
+      ],
     },
     create: {
       email: 'subadmin-expresswritter@yopmail.com',
@@ -45,6 +57,18 @@ async function main() {
       password,
       role: 'SUB_ADMIN',
       emailVerified: now,
+      permissions: [
+        'freelancer:verify',
+        'freelancer:earnings',
+        'order:read_assigned',
+        'order:assign_writer',
+        'order:moderate_chat',
+        'payment:view_metrics',
+        'payment:issue_links',
+        'promo:manage',
+        'ticket:resolve',
+        'system:config',
+      ],
     },
   });
 

@@ -9,6 +9,7 @@ import {
   MessageCircle, Search, MoreVertical,
   CheckCheck, Phone, Video, Info, Loader2, X, FileText, ExternalLink
 } from 'lucide-react';
+import { uploadFileToSupabase } from '@/lib/upload';
 
 const AdminChatHub = () => {
   const { data: session } = useSession();
@@ -145,11 +146,9 @@ const AdminChatHub = () => {
     setChatUploading(true);
     try {
       const uploadPromises = files.map(async (file) => {
-        const body = new FormData();
-        body.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body });
-        if (!res.ok) throw new Error('Upload failed');
-        return await res.json();
+        const res = await uploadFileToSupabase(file, 'chat_attachments');
+        if (res.error) throw new Error(res.error);
+        return { url: res.url, name: file.name };
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);

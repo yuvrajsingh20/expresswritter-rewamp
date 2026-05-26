@@ -47,7 +47,7 @@ export async function POST(req, { params }) {
       select: { id: true, name: true, email: true },
     });
 
-    // Inject system join message
+    // Inject system join message yup tse
     try {
       await prisma.message.create({
         data: {

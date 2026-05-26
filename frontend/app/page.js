@@ -44,7 +44,7 @@ const FAQ = [
 ];
 
 /* ─── BUTTONS ─── */
-function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabled, full }) {
+function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabled, full, className }) {
   const [hov, setHov] = useState(false);
   const v = {
     primary: { bg: hov ? '#0f766e' : 'var(--teal)', c: '#fff', b: 'transparent' },
@@ -54,7 +54,7 @@ function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabl
   }[variant];
   const s = { sm: { p: '7px 12px', f: 11.5 }, md: { p: '10px 18px', f: 13 }, lg: { p: '14px 26px', f: 14 } }[size];
   return (
-    <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} disabled={disabled} style={{ padding: s.p, borderRadius: 7, border: `1.5px solid ${v.b}`, background: v.bg, color: v.c, fontSize: s.f, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)', display: full ? 'flex' : 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, transition: 'all .15s', opacity: disabled ? 0.5 : 1, width: full ? '100%' : 'auto' }}>
+    <button className={className} onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} disabled={disabled} style={{ padding: s.p, borderRadius: 7, border: `1.5px solid ${v.b}`, background: v.bg, color: v.c, fontSize: s.f, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)', display: full ? 'flex' : 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, transition: 'all .15s', opacity: disabled ? 0.5 : 1, width: full ? '100%' : 'auto' }}>
       {icon && <span>{icon}</span>}
       {children}
     </button>
@@ -63,31 +63,45 @@ function Btn({ children, onClick, variant = 'primary', size = 'md', icon, disabl
 
 /* ─── NAVBAR ─── */
 function Navbar({ cart, onCartClick, onLogin }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const links = [
+    ['Services', '/services', false],
+    ['Track Order', '/track', false],
+    ['Help', '/help', false],
+    ['About', '/about', false]
+  ];
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(10,10,20,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>X</div>
-        <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
-      </Link>
-      <div style={{ display: 'flex', gap: 18, marginLeft: 28 }}>
-        {[
-          ['Services', '/services', false],
-          ['Track Order', '/track', false],
-          ['Help', '/help', false],
-          ['About', '/about', false]
-        ].map(([l, h, act]) => (
-          <a key={l} href={h} style={{ fontSize: 13.5, color: act ? 'var(--teal-light)' : 'var(--text-muted)', textDecoration: 'none', fontWeight: act ? 600 : 500, padding: '6px 0', borderBottom: act ? '2px solid var(--teal)' : '2px solid transparent' }}>{l}</a>
-        ))}
-      </div>
-      <div style={{ flex: 1 }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onCartClick} style={{ position: 'relative', width: 38, height: 38, borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 16, fontFamily: 'var(--font)' }}>🛒
-          {cart.length > 0 && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: 'var(--teal)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg)', animation: 'bounce .4s ease' }}>{cart.length}</span>}
-        </button>
-        <Btn variant="ghost" onClick={onLogin}>Sign In</Btn>
-        <Btn variant="primary" onClick={onLogin}>Order Now</Btn>
-      </div>
-    </nav>
+    <>
+      <nav className="navbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(10,10,20,0.85)', backdropFilter: 'none', borderBottom: '1px solid var(--border)', padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>X</div>
+          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
+        </Link>
+        <div className="nav-links" style={{ display: 'flex', gap: 18, marginLeft: 28 }}>
+          {links.map(([l, h, act]) => (
+            <a key={l} href={h} style={{ fontSize: 13.5, color: act ? 'var(--teal-light)' : 'var(--text-muted)', textDecoration: 'none', fontWeight: act ? 600 : 500, padding: '6px 0', borderBottom: act ? '2px solid var(--teal)' : '2px solid transparent' }}>{l}</a>
+          ))}
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onCartClick} style={{ position: 'relative', width: 38, height: 38, borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 16, fontFamily: 'var(--font)' }}>🛒
+            {cart.length > 0 && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: 'var(--teal)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg)', animation: 'bounce .4s ease' }}>{cart.length}</span>}
+          </button>
+          <div className="desktop-only"><Btn variant="ghost" onClick={onLogin}>Sign In</Btn></div>
+          <Btn variant="primary" onClick={onLogin}>Order Now</Btn>
+          <button className="mobile-only" onClick={() => setMenuOpen(!menuOpen)} style={{ width: 38, height: 38, borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 20, alignItems: 'center', justifyContent: 'center', padding: 0 }}>☰</button>
+        </div>
+      </nav>
+      {menuOpen && (
+        <div className="mobile-only" style={{ position: 'fixed', top: 66, left: 0, right: 0, background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '16px 24px', zIndex: 999, flexDirection: 'column', gap: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', animation: 'fadeUp .2s ease' }}>
+          {links.map(([l, h, act]) => (
+            <a key={l} href={h} style={{ fontSize: 15, color: act ? 'var(--teal-light)' : 'var(--text)', textDecoration: 'none', fontWeight: 600 }}>{l}</a>
+          ))}
+          <div style={{ height: 1, background: 'var(--border2)' }} />
+          <a href="#" onClick={(e) => { e.preventDefault(); onLogin(); }} style={{ fontSize: 15, color: 'var(--teal-light)', textDecoration: 'none', fontWeight: 600 }}>Sign In</a>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -150,7 +164,7 @@ function ProductDrawer({ prod, onClose, onAdd }) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 1100, animation: 'fadeIn .2s ease' }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'none', zIndex: 1100, animation: 'fadeIn .2s ease' }} />
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(620px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 1200, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '22px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           <div style={{ width: 54, height: 54, borderRadius: 12, background: 'linear-gradient(135deg,rgba(13,148,136,0.25),rgba(13,148,136,0.08))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{prod.icon}</div>
@@ -255,7 +269,7 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
   const total = subtotal + fee + tax;
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, animation: 'fadeIn .2s' }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'none', zIndex: 1100, animation: 'fadeIn .2s' }} />
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(480px,92vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', zIndex: 1200, display: 'flex', flexDirection: 'column', animation: 'slideLeft .25s cubic-bezier(.2,.9,.3,1.2)', boxShadow: '-30px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div><div style={{ fontSize: 17, fontWeight: 700 }}>Your Cart</div><div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{cart.length} {cart.length === 1 ? 'item' : 'items'}</div></div>
@@ -318,7 +332,7 @@ function Journey() {
         <h2 className="h2" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 8 }}>From browse to delivery in 8 steps</h2>
         <p className="lead" style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 300, maxWidth: 580, margin: '0 auto' }}>Frictionless ordering with automatic CRM integration — every order flows from website → checkout → writer assignment → delivery.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+      <div className="journey-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
         {steps.map((s, i) => (<div key={s.n} style={{ position: 'relative', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 11, padding: '20px 18px', animation: `fadeUp .3s ease ${i * .05}s both` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 8, background: 'linear-gradient(135deg,rgba(13,148,136,0.2),rgba(13,148,136,0.06))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{s.i}</div>
@@ -349,7 +363,7 @@ function Hero() {
     tick();
   }, []);
   return (
-    <section style={{ position: 'relative', minHeight: '82vh', padding: '120px 32px 100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+    <section className="hero-section" style={{ position: 'relative', minHeight: '82vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
       <div className="hero-bg">
         <div className="hero-grid" />
         <div className="hero-orb1" />
@@ -375,7 +389,7 @@ function Hero() {
           {!session && <Link className="btn-outline-teal" href="/login">Sign in / Sign up</Link>}
         </div>
 
-        <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 32, marginTop: 72, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', animationDelay: '.2s' }}>
+        <div className="hero-stats fade-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 32, marginTop: 72, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', animationDelay: '.2s' }}>
           {[
             { k: counts.orders.toLocaleString() + '+', l: 'Orders delivered' },
             { k: counts.writers.toLocaleString() + '+', l: 'Vetted writers' },
@@ -475,7 +489,7 @@ function Features() {
 function DashboardPreview() {
   return (
     <section className="section">
-      <div className="container" style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 48, alignItems: 'center' }}>
+      <div className="container dash-preview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 48, alignItems: 'center' }}>
         <div>
           <div className="eyebrow">Your Command Center</div>
           <h2 className="h2" style={{ marginBottom: 18 }}>A real dashboard. <span className="gradient-text">Not an inbox.</span></h2>
@@ -560,7 +574,7 @@ function WriterCTA() {
   return (
     <section className="section">
       <div className="container">
-        <div style={{ padding: '48px 40px', borderRadius: 14, background: 'linear-gradient(135deg,rgba(13,148,136,0.12),rgba(13,148,136,0.04))', border: '1px solid rgba(13,148,136,0.3)', display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 36, alignItems: 'center' }}>
+        <div className="writer-cta-grid" style={{ padding: '48px 40px', borderRadius: 14, background: 'linear-gradient(135deg,rgba(13,148,136,0.12),rgba(13,148,136,0.04))', border: '1px solid rgba(13,148,136,0.3)', display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 36, alignItems: 'center' }}>
           <div>
             <div className="eyebrow">For freelancers</div>
             <h2 className="h2" style={{ marginBottom: 14 }}>Write for clients who <span className="gradient-text">actually pay on time</span></h2>
@@ -729,7 +743,7 @@ export default function App() {
       <TrustBar />
 
       {/* Category bar */}
-      <div id="services" style={{ position: 'sticky', top: 66, zIndex: 50, background: 'rgba(10,10,20,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
+      <div id="services" style={{ position: 'sticky', top: 66, zIndex: 50, background: 'rgba(10,10,20,0.95)', backdropFilter: 'none', borderBottom: '1px solid var(--border)', padding: '14px 32px' }}>
         <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 5, padding: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 9, flexWrap: 'wrap' }}>
             <button onClick={() => setActiveCat('all')} style={{ padding: '7px 13px', borderRadius: 6, border: 'none', background: activeCat === 'all' ? 'var(--teal)' : 'transparent', color: activeCat === 'all' ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all .15s' }}>All</button>
@@ -767,7 +781,7 @@ export default function App() {
 
       {/* Trust band */}
       <div style={{ padding: '40px 32px', background: 'linear-gradient(135deg,rgba(13,148,136,0.06),transparent)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ maxWidth: 1320, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, textAlign: 'center' }}>
+        <div className="trust-band-grid" style={{ maxWidth: 1320, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, textAlign: 'center' }}>
           {[
             ['🔒', '100% Confidential', 'NDA-grade privacy on every order'],
             ['🎓', 'PhD-level writers', '340+ verified domain experts'],

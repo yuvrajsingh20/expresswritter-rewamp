@@ -140,7 +140,7 @@ export const NOTIFICATION_REGISTRY = {
       ADMIN: {
         icon: '💰',
         title: 'Payout request',
-        msg: (ctx) => `${ctx.freelancerName || 'A freelancer'} requested a payout of $${ctx.amount}`,
+        msg: (ctx) => `${ctx.freelancerName || 'A freelancer'} requested a payout of ₹${ctx.amount}`,
       },
     },
     entity: { type: 'payout', idKey: 'payoutId' },
@@ -153,7 +153,7 @@ export const NOTIFICATION_REGISTRY = {
       FREELANCER: {
         icon: '✅',
         title: 'Payout approved!',
-        msg: (ctx) => `Your payout of $${ctx.amount} has been approved and will be processed soon.`,
+        msg: (ctx) => `Your payout of ₹${ctx.amount} has been approved and will be processed soon.`,
       },
     },
     entity: { type: 'payout', idKey: 'payoutId' },
@@ -166,7 +166,7 @@ export const NOTIFICATION_REGISTRY = {
       FREELANCER: {
         icon: '❌',
         title: 'Payout rejected',
-        msg: (ctx) => `Your payout request of $${ctx.amount} was rejected. Please contact support.`,
+        msg: (ctx) => `Your payout request of ₹${ctx.amount} was rejected. Please contact support.`,
       },
     },
     entity: { type: 'payout', idKey: 'payoutId' },

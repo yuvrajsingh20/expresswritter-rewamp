@@ -64,7 +64,8 @@ function LoginForm() {
         return;
       }
 
-      router.push(callbackUrl);
+      const targetUrl = role === 'writer' ? '/onboard/freelancer/setup' : callbackUrl;
+      router.push(targetUrl);
       router.refresh();
     } catch (err) {
       setError("Unexpected protocol error.");

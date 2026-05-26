@@ -205,7 +205,7 @@ export function AdminToastProvider({ children }) {
               display: 'flex',
               alignItems: 'flex-start',
               gap: 12,
-              backdropFilter: 'blur(20px)',
+              backdropFilter: 'none',
               boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset',
               animation: 'toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
               minWidth: 280,

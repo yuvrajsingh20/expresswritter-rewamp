@@ -73,25 +73,10 @@ export const getProjectsByUser = async (userId, role) => {
     where: whereClause,
     orderBy: { createdAt: 'desc' },
     take: is_admin ? 400 : 100, // Added a safety limit for freelancers too
-    select: {
-      id: true,
-      title: true,
-      status: true,
-      deadline: true,
-      createdAt: true,
-      amount: true,
-      serviceType: true,
-      studentId: true,
-      freelancerId: true,
+    include: {
       student: { select: { id: true, name: true, role: true } },
       freelancer: { select: { id: true, name: true, role: true } },
-      // Summary counts are much lighter than full arrays
-      _count: {
-        select: {
-          messages: true,
-          logs: true
-        }
-      }
+      messages: { orderBy: { createdAt: 'asc' } },
     },
   });
 };

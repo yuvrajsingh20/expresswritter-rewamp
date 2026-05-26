@@ -83,7 +83,7 @@ function NewServiceModal({ onClose, onCreate }) {
         style={{
           position: 'fixed', inset: 0,
           background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'none',
           zIndex: 9000,
         }}
       />
@@ -216,7 +216,7 @@ function ServiceDrawer({ service, onClose, onSave, onDelete }) {
         style={{
           position: 'fixed', inset: 0,
           background: 'rgba(0,0,0,0.65)',
-          backdropFilter: 'blur(6px)',
+          backdropFilter: 'none',
           zIndex: 8000,
         }}
       />

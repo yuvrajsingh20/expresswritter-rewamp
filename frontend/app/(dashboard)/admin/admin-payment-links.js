@@ -587,7 +587,7 @@ export function AdminPaymentLinks() {
             position: "fixed",
             inset: 0,
             background: "rgba(0,0,0,0.65)",
-            backdropFilter: "blur(4px)",
+            backdropFilter: "none",
             zIndex: 10000,
             display: "flex",
             alignItems: "center",

@@ -5,7 +5,7 @@ import { safeSendEmail, welcomeHtml } from '@/lib/emails';
 
 export async function POST(req) {
   try {
-    const { name, email, password, role } = await req.json();
+    const { name, email, password } = await req.json();
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -14,8 +14,9 @@ export async function POST(req) {
 
     const hashedPassword = await hashPassword(password);
 
+    // Only allow STUDENT role via public registration (prevents privilege escalation)
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword, role: role || 'STUDENT' },
+      data: { name, email, password: hashedPassword, role: 'STUDENT' },
     });
 
     const token = signToken({ id: user.id, role: user.role, name: user.name });

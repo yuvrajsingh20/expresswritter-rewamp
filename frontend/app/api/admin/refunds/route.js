@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 import { safeSendEmail, refundStatusHtml } from "@/lib/emails";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser();
+  if (!authUser || !checkPermission(authUser, "ticket:resolve")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -21,9 +21,9 @@ export async function GET() {
 }
 
 export async function PATCH(req) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = await getAuthUser();
+  if (!authUser || !checkPermission(authUser, "ticket:resolve")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -36,8 +36,8 @@ export async function PATCH(req) {
 
     await prisma.auditLog.create({
       data: {
-        userId:    session.user.id,
-        userName:  session.user.name,
+        userId:    authUser.id,
+        userName:  authUser.name,
         action:    `Updated Refund ${id} status to ${status}`,
         ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       },

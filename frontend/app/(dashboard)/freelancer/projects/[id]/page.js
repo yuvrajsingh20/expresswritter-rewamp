@@ -1376,5 +1376,3 @@ export default function SpecialistConsole() {
     </div>
   );
 }
-
-import { PlayCircle } from 'lucide-react';

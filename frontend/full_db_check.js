@@ -12,6 +12,7 @@ async function checkCollection(collectionName, validationFn) {
       find: collectionName,
       limit: 10000
     });
+    //test
     const documents = response.cursor.firstBatch;
     let issues = [];
     

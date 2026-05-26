@@ -41,16 +41,7 @@ export async function GET(req) {
       const projects = await prisma.project.findMany({
         orderBy: { createdAt: 'desc' },
         take: 400,
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          deadline: true,
-          createdAt: true,
-          amount: true,
-          serviceType: true,
-          studentId: true,
-          freelancerId: true,
+        include: {
           student: { select: { id: true, name: true, role: true } },
           freelancer: { select: { id: true, name: true, role: true } },
           orders: { select: { paymentStatus: true } },

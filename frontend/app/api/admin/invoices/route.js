@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, getAuthUser } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth-guards";
 import { safeSendEmail, payoutProcessedHtml } from "@/lib/emails";
 import { createNotification } from "@/lib/notify";
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const authUser = await getAuthUser(req);
+    if (!authUser || !checkPermission(authUser, 'payment:issue_links')) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
     const { projectId, freelancerId, amount, description } = await req.json();
@@ -28,7 +29,7 @@ export async function POST(req) {
       data: {
         action:    `Freelancer payout of ₹${amount} initiated/logged.`,
         projectId,
-        userId:    session.user.id,
+        userId:    authUser.id,
       },
     });
 
@@ -68,8 +69,8 @@ export async function POST(req) {
 
 export async function GET(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -79,9 +80,9 @@ export async function GET(req) {
     const where = {};
     if (projectId) where.projectId = projectId;
 
-    if (session.user.role === 'FREELANCER') {
-      where.freelancerId = session.user.id;
-    } else if (session.user.role !== 'ADMIN') {
+    if (authUser.role === 'FREELANCER') {
+      where.freelancerId = authUser.id;
+    } else if (authUser.role !== 'ADMIN' && !checkPermission(authUser, 'payment:view_metrics')) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 

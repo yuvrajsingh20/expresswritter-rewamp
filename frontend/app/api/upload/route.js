@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req) {
   try {
@@ -16,10 +17,10 @@ export async function POST(req) {
       return NextResponse.json({ message: 'No file uploaded' }, { status: 400 });
     }
 
-    // 2. Max File Size Check (5MB for Base64 safety)
+    // 2. Max File Size Check (5MB)
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ message: 'File size exceeds limit of 5MB for direct database storage' }, { status: 400 });
+      return NextResponse.json({ message: 'File size exceeds limit of 5MB' }, { status: 400 });
     }
 
     // 3. File Type Validation
@@ -35,24 +36,38 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Invalid file type. Only PDF, DOC, DOCX and images are allowed.' }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // 4. Upload to Supabase Storage using Service Role (Admin) key to bypass RLS
+    // If the service role key is not defined, we fallback to the public key.
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    );
     
-    // Convert to Base64 Data URL for direct storage in the database
-    const base64Data = buffer.toString('base64');
-    const dataUrl = `data:${file.type};base64,${base64Data}`;
+    const folder = formData.get('folder') || 'general';
+    const uniquePath = `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    
+    const { data, error } = await supabaseAdmin.storage
+      .from('uploads')
+      .upload(uniquePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
 
-    console.log('Specialist Console: Converting file to Data URL for direct DB storage:', file.name);
+    if (error) {
+      throw error;
+    }
+
+    const { data: publicUrlData } = supabaseAdmin.storage.from('uploads').getPublicUrl(data.path);
 
     return NextResponse.json({
-      url: dataUrl,
+      url: publicUrlData.publicUrl,
       name: file.name
     }, { status: 200 });
 
   } catch (error) {
     console.error('Upload Error:', error);
     return NextResponse.json({ 
-        message: 'Direct data conversion failed', 
+        message: 'Upload failed', 
         error: error.message 
     }, { status: 500 });
   }

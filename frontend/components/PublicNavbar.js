@@ -16,7 +16,7 @@ export default function PublicNavbar() {
         <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--teal),#0f766e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: '#fff' }}>X</div>
         <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Xpresswriters</span>
       </Link>
-      <div style={{ display: 'flex', gap: 18, marginLeft: 28 }}>
+      <div className="nav-links" style={{ display: 'flex', gap: 18, marginLeft: 28 }}>
         {[
           ['Services', '/services'],
           ['Track Order', '/track'],

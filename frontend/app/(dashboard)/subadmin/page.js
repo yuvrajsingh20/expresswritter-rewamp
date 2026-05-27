@@ -42,7 +42,7 @@ function SubAdminSidebar({ active, setActive }) {
       width: 224, flexShrink: 0,
       background: 'linear-gradient(180deg,#0d0d1c 0%,#0a1520 60%,#0d0d1c 100%)',
       borderRight: '1px solid var(--border)',
-      display: 'flex', flexDirection: 'column', height: '100vh'
+      display: 'flex', flexDirection: 'column', height: '100%'
     }}>
       <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border)' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', marginBottom: 10 }}>

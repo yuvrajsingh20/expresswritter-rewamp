@@ -14,6 +14,7 @@ import { AdminRefunds } from "./admin-refunds";
 import { AdminPromos } from "./admin-promos";
 import { AdminPaymentLinks } from "./admin-payment-links";
 import { AdminServices } from "./admin-services";
+import { AdminPaymentGateways } from "./admin-payment-gateways";
 import Notifications from "@/components/NotificationsView";
 import NotificationBell from "@/components/NotificationBell";
 import { Toggle, SectionHeader, Card, CardHeader, Pill, StatusDot, Btn, Input, Select, Table, SubTabs, SaveBar, AdminToastProvider } from "./admin-shared";
@@ -31,6 +32,7 @@ const NAV = [
   { id: 'integrations', label: 'API Integrations', icon: '🔌', group: 'Platform' },
   { id: 'tickets', label: 'Ticketing', icon: '🎫', group: 'Platform' },
   { id: 'payments', label: 'Payments', icon: '💰', group: 'Platform' },
+  { id: 'payment-gateways', label: 'Payment Gateway', icon: '💳', group: 'Platform' },
   { id: 'refunds', label: 'Refund Claims', icon: '↩️', group: 'Platform' },
   { id: 'promos', label: 'Promo Engine', icon: '🏷️', group: 'Platform' },
   { id: 'currency', label: 'Currency Settings', icon: '💱', group: 'Platform' },
@@ -218,7 +220,7 @@ function AdminSidebar({ active, setActive, dark }) {
   const groups = [...new Set(NAV.map((n) => n.group))];
 
   return (
-    <div style={{ width: 224, flexShrink: 0, background: dark ? 'linear-gradient(180deg,#0d0d1c 0%,#0a1520 60%,#0d0d1c 100%)' : 'linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ width: 224, flexShrink: 0, background: dark ? 'linear-gradient(180deg,#0d0d1c 0%,#0a1520 60%,#0d0d1c 100%)' : 'linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Logo */}
       <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border)' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', marginBottom: 10 }}>
@@ -508,6 +510,7 @@ export default function App() {
     integrations: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminIntegrations /></div>,
     tickets: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminTickets /></div>,
     payments: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPayments projects={projects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} config={config} /></div>,
+    'payment-gateways': <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPaymentGateways /></div>,
     refunds: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminRefunds /></div>,
     promos: <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPromos /></div>,
     'payment-links': <div className="scrollable" style={{ padding: isMobile ? '16px' : '28px 32px', overflowY: 'auto', height: '100%', animation: 'fadeIn .3s ease' }}><AdminPaymentLinks /></div>,

@@ -143,7 +143,7 @@ function Sidebar({ active, setActive, unreadCount = 0, userName = "Student" }) {
   ];
 
   return (
-    <div style={{ width: 220, flexShrink: 0, background: 'var(--surface)', borderRight: '1px solid var(--border2)', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ width: 220, flexShrink: 0, background: 'var(--surface)', borderRight: '1px solid var(--border2)', display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Logo */}
       <div style={{ padding: '22px 20px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', gap: 10 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
@@ -868,12 +868,12 @@ function Messages({ projects = [], userId, isMobile }) {
   const chatFileInputRef = useRef(null);
   const endRef = useRef(null);
 
-  // Pick the first real project by default
+  // Pick the first real project by default (only on desktop to prevent mobile view lock)
   useEffect(() => {
-    if (projects.length > 0 && !activeProjectId) {
+    if (projects.length > 0 && !activeProjectId && !isMobile) {
       setActiveProjectId(projects[0].id);
     }
-  }, [projects]);
+  }, [projects, isMobile]);
 
   const activeProject = projects.find(p => p.id === activeProjectId);
 

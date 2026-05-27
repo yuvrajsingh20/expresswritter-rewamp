@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -38,7 +38,7 @@ enum PaymentStatus {
 }
 
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
@@ -67,9 +67,7 @@ model User {
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   freelancerInvoices FreelancerInvoice[] @relation("FreelancerInvoices")
-  collaboratingProjects Project[] @relation("CollaboratingProjects", fields: [collaboratingProjectIds], references: [id])
-  collaboratingProjectIds String[] @db.ObjectId
-  
+  collaboratingProjects Project[] @relation("CollaboratingProjects")
   studentChats     Chat[]    @relation("StudentChats")
   freelancerChats  Chat[]    @relation("FreelancerChats")
   
@@ -85,8 +83,8 @@ model User {
 }
 
 model FreelancerProfile {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String   @unique @db.ObjectId
+  id String @id @default(uuid())
+  userId        String   @unique 
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   bio           String?
@@ -129,17 +127,17 @@ model FreelancerProfile {
 }
 
 model Account {
-  id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
+  id String @id @default(uuid())
+  userId            String  
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.String
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -148,15 +146,15 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   sessionToken String   @unique
-  userId       String   @db.ObjectId
+  userId       String   
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   identifier String
   token      String   @unique
   expires    DateTime
@@ -165,7 +163,7 @@ model VerificationToken {
 }
 
 model Project {
-  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   title             String
   description       String?
   status            ProjectStatus @default(CREATED)
@@ -174,17 +172,16 @@ model Project {
   updatedAt         DateTime      @updatedAt
 
   // Relations
-  studentId        String        @db.ObjectId
+  studentId        String        
   student          User          @relation("StudentProjects", fields: [studentId], references: [id], onDelete: Cascade)
   
-  freelancerId     String?       @db.ObjectId
+  freelancerId     String?       
   freelancer       User?         @relation("FreelancerProjects", fields: [freelancerId], references: [id])
   
-  subAdminId       String?       @db.ObjectId
+  subAdminId       String?       
   subAdmin         User?         @relation("SubAdminProjects", fields: [subAdminId], references: [id])
 
-  collaboratorIds   String[]      @db.ObjectId
-  collaborators     User[]        @relation("CollaboratingProjects", fields: [collaboratorIds], references: [id])
+  collaborators User[] @relation("CollaboratingProjects")
 
   serviceType       String?       // E.g. "SOP", "LOR", "RESUME"
   amount            Float?        @default(0)
@@ -205,7 +202,7 @@ model Project {
 }
 
 model Message {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   content     String
   chatType    ChatType
   attachments Json[]   // Array of {url, name}
@@ -213,16 +210,16 @@ model Message {
   createdAt   DateTime @default(now())
 
   // Relations
-  senderId    String   @db.ObjectId
+  senderId    String   
   sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   
-  receiverId  String?  @db.ObjectId
+  receiverId  String?  
   receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
   
-  projectId   String?  @db.ObjectId
+  projectId   String?  
   project     Project? @relation(fields: [projectId], references: [id])
 
-  chatId      String?  @db.ObjectId
+  chatId      String?  
   chat        Chat?    @relation(fields: [chatId], references: [id])
 
   @@index([projectId])
@@ -230,18 +227,18 @@ model Message {
 }
 
 model Notification {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   message     String
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   // Relations
-  userId      String   @db.ObjectId
+  userId      String   
   user        User     @relation(fields: [userId], references: [id])
 }
 
 model Ticket {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   type          String   // Order, Client, Writer
   subject       String
   description   String?  // Detailed issue description
@@ -253,18 +250,18 @@ model Ticket {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  clientId      String?  @db.ObjectId
+  clientId      String?  
   client        User?    @relation("ClientTickets", fields: [clientId], references: [id])
   
-  writerId      String?  @db.ObjectId
+  writerId      String?  
   writer        User?    @relation("WriterTickets", fields: [writerId], references: [id])
   
-  orderId       String?  @db.ObjectId
+  orderId       String?  
   order         Order?   @relation(fields: [orderId], references: [id])
 }
 
 model Order {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   amount        Float
   paymentStatus PaymentStatus @default(PENDING)
   razorpayId    String?       @unique
@@ -272,10 +269,10 @@ model Order {
   createdAt     DateTime      @default(now())
 
   // Relations
-  projectId     String        @db.ObjectId
+  projectId     String        
   project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  studentId     String        @db.ObjectId
+  studentId     String        
   student       User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   chat          Chat?
@@ -283,20 +280,20 @@ model Order {
 }
 
 model ProjectLog {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   action    String
   timestamp DateTime @default(now())
 
   // Relations
-  projectId String   @db.ObjectId
+  projectId String   
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  userId    String   @db.ObjectId
+  userId    String   
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model FreelancerInvoice {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   amount          Float
   status          PaymentStatus  @default(PENDING)
   description     String?
@@ -304,15 +301,15 @@ model FreelancerInvoice {
   updatedAt       DateTime       @updatedAt
 
   // Relations
-  projectId       String         @db.ObjectId
+  projectId       String         
   project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  freelancerId    String         @db.ObjectId
+  freelancerId    String         
   freelancer      User           @relation("FreelancerInvoices", fields: [freelancerId], references: [id], onDelete: Cascade)
 }
 
 model PayoutRequest {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   amount        Float
   status        String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
   paymentMethod String?
@@ -320,19 +317,19 @@ model PayoutRequest {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  freelancerId  String   @db.ObjectId
+  freelancerId  String   
   freelancer    User     @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
 }
 
 model Chat {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  orderId      String    @unique @db.ObjectId
+  id String @id @default(uuid())
+  orderId      String    @unique 
   order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  studentId    String    @db.ObjectId
+  studentId    String    
   student      User      @relation("StudentChats", fields: [studentId], references: [id], onDelete: Cascade)
   
-  freelancerId String?   @db.ObjectId
+  freelancerId String?   
   freelancer   User?     @relation("FreelancerChats", fields: [freelancerId], references: [id])
   
   messages     Message[]
@@ -341,7 +338,7 @@ model Chat {
   updatedAt    DateTime  @updatedAt
 }
 model Service {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   slug          String   @unique
   name          String
   description   String
@@ -364,9 +361,9 @@ model Service {
 }
 
 model RefundRequest {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId       String   @db.ObjectId
-  userId        String   @db.ObjectId
+  id String @id @default(uuid())
+  orderId       String   
+  userId        String   
   amount        Float
   reason        String
   status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
@@ -376,7 +373,7 @@ model RefundRequest {
 }
 
 model PromoCode {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   code          String   @unique
   type          String   // PERCENTAGE, FIXED
   value         Float
@@ -389,15 +386,15 @@ model PromoCode {
 }
 
 model SystemConfig {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   key           String   @unique // e.g. "SEO_SETTINGS", "MAINTENANCE_MODE"
   value         Json
   updatedAt     DateTime @updatedAt
 }
 
 model AuditLog {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String?  @db.ObjectId
+  id String @id @default(uuid())
+  userId        String?  
   userName      String?
   action        String
   details       String?
@@ -409,10 +406,10 @@ model AuditLog {
 
 // Student review submitted after project COMPLETED
 model Review {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  projectId       String   @unique @db.ObjectId
-  freelancerId    String   @db.ObjectId
-  studentId       String   @db.ObjectId
+  id String @id @default(uuid())
+  projectId       String   @unique 
+  freelancerId    String   
+  studentId       String   
 
   // Core rubric (each 1-5)
   qualityScore      Int   // Writing quality / accuracy
@@ -427,9 +424,9 @@ model Review {
 
 // SLA event log — one row per tracked milestone per project
 model SLAEvent {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  projectId       String   @db.ObjectId
-  freelancerId    String   @db.ObjectId
+  id String @id @default(uuid())
+  projectId       String   
+  freelancerId    String   
 
   // Which milestone
   eventType       String
@@ -452,15 +449,11 @@ model SLAEvent {
   revisionMinutes   Int?   // Turnaround on revision (target ≤240)
 }
 
-type ServiceItem {
-  name     String
-  price    Float
-  quantity Int    @default(1)
-}
+
 
 model CheckoutSession {
-  id         String        @id @default(auto()) @map("_id") @db.ObjectId
-  services   ServiceItem[]
+  id String @id @default(uuid())
+  services Json
   totalPrice Float
   status     String        @default("pending")
   createdBy  String
@@ -471,7 +464,7 @@ model CheckoutSession {
 }
 
 model Payment {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(uuid())
   userId            String   
   razorpayOrderId   String?  @unique
   razorpayPaymentId String?
@@ -485,7 +478,7 @@ model Payment {
   planKey           String
   planName          String
   planDescription   String?
-  checkoutSessionId String?  @db.ObjectId
+  checkoutSessionId String?  
   checkoutSession   CheckoutSession? @relation("CheckoutSessionPayments", fields: [checkoutSessionId], references: [id])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

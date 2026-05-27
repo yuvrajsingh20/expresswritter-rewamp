@@ -88,7 +88,7 @@ function Navbar({ cart, onCartClick, onLogin }) {
             {cart.length > 0 && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: 'var(--teal)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg)', animation: 'bounce .4s ease' }}>{cart.length}</span>}
           </button>
           <div className="desktop-only"><Btn variant="ghost" onClick={onLogin}>Sign In</Btn></div>
-          <Btn variant="primary" onClick={onLogin}>Order Now</Btn>
+          <div className="desktop-only"><Btn variant="primary" onClick={onLogin}>Order Now</Btn></div>
           <button className="mobile-only" onClick={() => setMenuOpen(!menuOpen)} style={{ width: 38, height: 38, borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 20, alignItems: 'center', justifyContent: 'center', padding: 0 }}>☰</button>
         </div>
       </nav>
@@ -261,7 +261,7 @@ function AddonRow({ checked, onChange, icon, label, sub, price }) {
 }
 
 /* ─── CART DRAWER ─── */
-function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
+function CartDrawer({ open, onClose, cart, setCart, onCheckout, onLogin }) {
   if (!open) return null;
   const subtotal = cart.reduce((s, i) => s + i.total, 0);
   const fee = Math.round(subtotal * 0.05);
@@ -280,7 +280,12 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
             <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.4 }}>🛒</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Your cart is empty</div>
             <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 18 }}>Browse our services to add items</div>
-            <Btn variant="primary" onClick={onClose}>Browse Services</Btn>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+              <Btn variant="primary" onClick={onClose}>Browse Services</Btn>
+              <div className="mobile-only">
+                <Btn variant="ghost" onClick={() => { onClose(); onLogin(); }}>Sign in / Log in</Btn>
+              </div>
+            </div>
           </div> : cart.map((item, i) => (<div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid var(--border2)', display: 'flex', gap: 13 }}>
             <div style={{ width: 42, height: 42, borderRadius: 9, background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.prod.icon}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -849,7 +854,8 @@ export default function App() {
       </footer>
 
       <ProductDrawer prod={openProd} onClose={() => setOpenProd(null)} onAdd={addToCart} />
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setCart={setCart} onCheckout={() => { 
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setCart={setCart} onLogin={() => router.push('/login')} onCheckout={() => { 
+        setCartOpen(false); 
         setCartOpen(false); 
         if (cart.length > 0) {
           localStorage.setItem('pendingOrder', JSON.stringify(cart[0]));
